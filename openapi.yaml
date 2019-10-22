@@ -1,0 +1,66 @@
+openapi: 3.0.1
+info:
+  title: DIM API
+  description: The Destiny Item Manager API. This is meant to be used by many Destiny apps.
+  license:
+    name: MIT
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 1.0.0
+servers:
+  - url: 'https://api.destinyitemmanager.com'
+tags:
+  - name: auth
+    description: Authenticating to the DIM API
+paths:
+  /auth/token:
+    post:
+      tags:
+        - auth
+      summary: Create a DIM auth token from a Bungie.net auth token.
+      operationId: createAuthToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+        required: true
+      responses:
+        '400':
+          description: >-
+            You did not provide all the information required in the request
+            body.
+          content: {}
+        '403':
+          description: >-
+            Failed to authenticate with Bungie.net, or your app is not in the
+            app registry.
+      security:
+        - token_auth: []
+components:
+  schemas:
+    AuthTokenRequest:
+      description: The payload for the auth token request
+      type: object
+      properties:
+        app:
+          type: string
+          description: The name of your app. This must be pre-registered with the DIM API.
+        bungieAccessToken:
+          type: string
+          description: >-
+            The access token from authenticating a user with Bungie.net for your
+            app. This must have been created using your app's API key, which is
+            registered in the DIM API along with your app name.
+        membershipId:
+          type: number
+          description: The Bungie.net membership ID of the user you are authenticating.
+          format: int64
+      required:
+        - app
+        - bungieAccessToken
+        - membershipId
+  securitySchemes:
+    token_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

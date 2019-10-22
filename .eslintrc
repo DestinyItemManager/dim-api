@@ -1,0 +1,53 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "prettier/@typescript-eslint"
+  ],
+  "globals": {},
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "no-console": "off",
+    "no-empty": "off",
+    "require-atomic-updates": "off",
+    "@typescript-eslint/explicit-member-accessibility": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-use-before-define": [
+      "error",
+      { "functions": false }
+    ],
+    "@typescript-eslint/no-parameter-properties": "off",
+    "@typescript-eslint/no-extraneous-class": "error",
+    "@typescript-eslint/no-this-alias": "error",
+    "@typescript-eslint/no-unnecessary-qualifier": "error",
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    "@typescript-eslint/prefer-function-type": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "(^_|[iI]gnored)",
+        "argsIgnorePattern": "(^_|[iI]gnored)",
+        "ignoreRestSiblings": true
+      }
+    ]
+  }
+}

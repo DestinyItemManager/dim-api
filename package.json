@@ -1,0 +1,30 @@
+{
+  "name": "dim-api",
+  "version": "1.0.0",
+  "description": "Destiny Item Manager API Server",
+  "main": "api/index.js",
+  "repository": "https://github.com/DestinyItemManager/dim-api",
+  "author": "Ben Hollis <ben@benhollis.net>",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node-dev --respawn -P tsconfig.json ./api/index.ts",
+    "build:api": "tsc -p ./api/tsconfig.json",
+    "lint": "eslint --fix api --ext .js,.ts"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.1",
+    "@typescript-eslint/eslint-plugin": "^2.5.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^2.5.0",
+    "@typescript-eslint/parser": "^2.5.0",
+    "eslint": "^6.5.1",
+    "eslint-config-prettier": "^6.4.0",
+    "prettier": "^1.18.2",
+    "ts-node": "^8.4.1",
+    "ts-node-dev": "^1.0.0-pre.43",
+    "typescript": "^3.6.4"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "superagent": "^5.1.0"
+  }
+}
