@@ -4,10 +4,10 @@ info:
   description: The Destiny Item Manager API. This is meant to be used by many Destiny apps.
   license:
     name: MIT
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
   version: 1.0.0
 servers:
-  - url: 'https://api.destinyitemmanager.com'
+  - url: "https://api.destinyitemmanager.com"
 tags:
   - name: auth
     description: Authenticating to the DIM API
@@ -22,15 +22,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthTokenRequest'
+              $ref: "#/components/schemas/AuthTokenRequest"
         required: true
       responses:
-        '400':
+        "200":
+          description: Auth token information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
           description: >-
             You did not provide all the information required in the request
             body.
           content: {}
-        '403':
+        "403":
           description: >-
             Failed to authenticate with Bungie.net, or your app is not in the
             app registry.
@@ -52,8 +58,22 @@ components:
             app. This must have been created using your app's API key, which is
             registered in the DIM API along with your app name.
         membershipId:
-          type: number
+          type: string
           description: The Bungie.net membership ID of the user you are authenticating.
+      required:
+        - app
+        - bungieAccessToken
+        - membershipId
+    AuthTokenResponse:
+      description: The response for the auth token request
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Your DIM API access token, to be used in further requests.
+        expiresInSeconds:
+          type: number
+          description: How many seconds from now the token will expire.
           format: int64
       required:
         - app
