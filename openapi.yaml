@@ -42,6 +42,20 @@ paths:
             app registry.
       security:
         - token_auth: []
+
+  /platform_info:
+    get:
+      tags:
+        - platform
+      summary: Get global information and configuration about the DIM API platform
+      operationId: getPlatformInfo
+      responses:
+        "200":
+          description: Global platform information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformInfoResponse"
 components:
   schemas:
     AuthTokenRequest:
@@ -75,10 +89,54 @@ components:
           type: number
           description: How many seconds from now the token will expire.
           format: int64
-      required:
-        - app
-        - bungieAccessToken
-        - membershipId
+
+    PlatformInfoResponse:
+      description: Global platform information
+      type: object
+      properties:
+        settings:
+          $ref: "#/components/schemas/GlobalSettings"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalAlert"
+          description: Global alerts/notifications from the DIM team
+
+    GlobalSettings:
+      description: Global platform settings
+      type: object
+      properties:
+        dimApiEnabled:
+          type: boolean
+          description: Whether the DIM API is enabled. Clients must respect this and not make any calls besides /platform_info when this is false.
+        dimProfileMinimumRefreshInterval:
+          type: number
+          description: The minimum amount of time in seconds allowed between refreshes of the DIM API profile data
+        destinyProfileRefreshInterval:
+          type: number
+          description: How often to auto-refresh the user's Destiny profile, in seconds.
+        autoRefresh:
+          type: boolean
+          description: Whether to auto refresh profile.
+
+    GlobalAlert:
+      description: An alert or notification from the DIM team
+      type: object
+      properties:
+        key:
+          type: string
+          description: A unique identifier for this alert.
+        type:
+          type: string
+          description: The severity of the alert.
+        body:
+          type: string
+          description: The message in the alert.
+        timestamp:
+          type: number
+          format: int64
+          description: When this alert was created.
+
   securitySchemes:
     token_auth:
       type: http

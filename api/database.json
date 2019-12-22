@@ -4,6 +4,7 @@
     "user": "postgresadmin",
     "password": "dsjdsFwqklqwkbj",
     "host": "localhost",
+    "database": "postgres",
     "port": 31744
   }
 }
