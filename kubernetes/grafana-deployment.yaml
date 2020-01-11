@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3000
+      name: grafana
+  selector:
+    app: grafana
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: admin_password
+            - name: GF_AUTH_GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: gh_client_id
+            - name: GF_AUTH_GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: gh_secret
+          envFrom:
+            - configMapRef:
+                name: grafana-config
+          ports:
+            - containerPort: 3000
+              name: grafana
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-storage
+            #- mountPath: /etc/grafana/provisioning/datasources
+            #  name: grafana-datasources
+            #  readOnly: false
+      volumes:
+        - name: grafana-storage
+          persistentVolumeClaim:
+            claimName: grafana-storage-claim
+            #spec:
+            #  accessModes: ["ReadWriteOnce"]
+            #  resources:
+            #    requests:
+            #      storage: 50Mi
+        #- name: grafana-datasources
+        #  configMap:
+        #    defaultMode: 420
+        #    name: grafana-datasources

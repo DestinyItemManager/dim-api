@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dim-api-config
+  labels:
+    app: dim-api
+data:
+  TEST: 'what'

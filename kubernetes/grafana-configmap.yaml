@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  labels:
+    app: grafana
+data:
+  GF_ENABLE_GZIP: 'true'
+  GF_AUTH_GITHUB_ENABLED: 'true'
+  GF_AUTH_GITHUB_SCOPES: user:email,read:org
+  GF_AUTH_GITHUB_AUTH_URL: https://github.com/login/oauth/authorize
+  GF_AUTH_GITHUB_TOKEN_URL: https://github.com/login/oauth/access_token
+  GF_AUTH_GITHUB_API_URL: https://api.github.com/user
+  GF_AUTH_GITHUB_ALLOW_SIGN_UP: 'true'
+  GF_AUTH_GITHUB_ALLOWED_ORGANIZATIONS: DestinyItemManager

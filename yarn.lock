@@ -51,6 +51,15 @@
     "@types/node" "*"
     "@types/range-parser" "*"
 
+"@types/express@*":
+  version "4.17.2"
+  resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.2.tgz#a0fb7a23d8855bac31bc01d5a58cadd9b2173e6c"
+  integrity sha512-5mHFNyavtLoJmnusB8OKJ5bshSzw+qkMIBAobLrIM48HJvunFva9mOa6aBwh64lBFyNwBbs0xiEFuj4eU/NjCA==
+  dependencies:
+    "@types/body-parser" "*"
+    "@types/express-serve-static-core" "*"
+    "@types/serve-static" "*"
+
 "@types/express@^4.17.1":
   version "4.17.1"
   resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.1.tgz#4cf7849ae3b47125a567dfee18bfca4254b88c5c"
@@ -107,6 +116,13 @@
   dependencies:
     "@types/express-serve-static-core" "*"
     "@types/mime" "*"
+
+"@types/statsd-client@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@types/statsd-client/-/statsd-client-0.4.0.tgz#eb17ad9f96cf5669b52c1c925d487217159da295"
+  integrity sha512-wvN6KMkYKbFjQKo7hzm5WYZA5PtRwkw8Pii2AAf2n4gOq7pA4jBADWn1A1Ue9T+kTbqL5GRYr29gjxds+/INDw==
+  dependencies:
+    "@types/express" "*"
 
 "@types/strip-bom@^3.0.0":
   version "3.0.0"
@@ -2029,6 +2045,11 @@ stack-trace@0.0.x:
   version "0.0.10"
   resolved "https://registry.yarnpkg.com/stack-trace/-/stack-trace-0.0.10.tgz#547c70b347e8d32b4e108ea1a2a159e5fdde19c0"
   integrity sha1-VHxws0fo0ytOEI6hoqFZ5f3eGcA=
+
+statsd-client@^0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/statsd-client/-/statsd-client-0.4.4.tgz#75b05717bd3d00ef296a9f3cb546bcb16596f77f"
+  integrity sha512-GjAReJDNZomTTTaIaDuDddWknHO2GXmXS/9JKy6iQFOHNSQ4yeaRGP18oNgahl+c3XTUfUWBYIUnipznNh5Vww==
 
 "statuses@>= 1.5.0 < 2", statuses@~1.5.0:
   version "1.5.0"
