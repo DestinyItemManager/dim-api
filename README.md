@@ -7,8 +7,7 @@
 In production we use a hosted Postgres, but in development we'll deploy it using Kubernetes.
 
 1. `kubectl apply -f kubernetes/postgres-configmap.yaml` - this contains our development password.
-2. `kubectl apply -f kubernetes/postgres-service.yaml` - this exposes the Postgres service on port 31744.
-3. `kubectl apply -f kubernetes/postgres-deployment.yaml` - this actually runs Postgres.
+2. `kubectl apply -f kubernetes/postgres-deployment.yaml` - this actually runs Postgres on port 31744.
 
 You can now connect to postgres on port 31744 with the username and password from the configmap.
 
