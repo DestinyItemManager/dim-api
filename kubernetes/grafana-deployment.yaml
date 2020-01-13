@@ -22,7 +22,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Mi
+      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -69,15 +69,18 @@ spec:
             #- mountPath: /etc/grafana/provisioning/datasources
             #  name: grafana-datasources
             #  readOnly: false
+      initContainers:
+        # https://www.digitalocean.com/docs/kubernetes/how-to/add-volumes/
+        - name: grafana-data-permission-fix
+          image: busybox
+          command: ['/bin/chmod', '-R', '777', '/var/lib/grafana']
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-storage
       volumes:
         - name: grafana-storage
           persistentVolumeClaim:
             claimName: grafana-storage-claim
-            #spec:
-            #  accessModes: ["ReadWriteOnce"]
-            #  resources:
-            #    requests:
-            #      storage: 50Mi
         #- name: grafana-datasources
         #  configMap:
         #    defaultMode: 420

@@ -21,6 +21,7 @@ interface ApiApp {
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { app, bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
 
+  // TODO: maybe load the apps from the DB?
   const apiApp = apps[app] as ApiApp;
   if (!apiApp) {
     res.status(403).send(`App ${app} not registered`);

@@ -33,7 +33,13 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: '500m'
+              cpu: '100m'
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: pg_password
           envFrom:
             - configMapRef:
                 name: dim-api-config

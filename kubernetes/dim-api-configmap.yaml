@@ -5,4 +5,8 @@ metadata:
   labels:
     app: dim-api
 data:
-  TEST: 'what'
+  PGHOST: placeholder
+  PGPORT: placeholder
+  PGDATABASE: placeholder
+  PGUSER: placeholder
+  PGSSLMODE: require

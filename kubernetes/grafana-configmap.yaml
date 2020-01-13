@@ -5,6 +5,7 @@ metadata:
   labels:
     app: grafana
 data:
+  GF_SERVER_ROOT_URL: https://grafana.destinyitemmanager.com/
   GF_ENABLE_GZIP: 'true'
   GF_AUTH_GITHUB_ENABLED: 'true'
   GF_AUTH_GITHUB_SCOPES: user:email,read:org
