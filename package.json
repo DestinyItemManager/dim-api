@@ -11,7 +11,7 @@
     "build:api": "tsc -p ./api/tsconfig.json",
     "docker:build": "docker build -t destinyitemmanager/dim-api .",
     "docker:run": "docker run -p 3000:3000 destinyitemmanager/dim-api:latest",
-    "docker:publish": "docker publish destinyitemmanager/dim-api:latest",
+    "docker:push": "docker push destinyitemmanager/dim-api:latest",
     "lint": "eslint --fix api --ext .js,.ts"
   },
   "devDependencies": {

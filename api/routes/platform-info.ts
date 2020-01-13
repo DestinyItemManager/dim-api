@@ -32,6 +32,8 @@ export const platformInfoHandler = asyncHandler(async (_, res) => {
     'SELECT * FROM global_settings'
   );
 
+  // Instruct CF not to cache this
+  res.set('Cache-Control', 'no-cache, max-age=0');
   res.send({
     settings: { ...defaultSettings, ...rows[0] }
   });
