@@ -1,8 +1,8 @@
 'use strict';
 
-let dbm;
-let type;
-let seed;
+var dbm;
+var type;
+var seed;
 
 /**
  * We receive the dbmigrate dependency from dbmigrate initially.
@@ -16,24 +16,18 @@ exports.setup = function(options, seedLink) {
 
 exports.up = function(db, callback) {
   db.runSql(
-    `CREATE TABLE global_settings (
-      dimApiEnabled boolean,
-      dimProfileMinimumRefreshInterval int,
-      destinyProfileRefreshInterval int,
-      autoRefresh boolean
+    `CREATE TABLE apps (
+      id text PRIMARY KEY NOT NULL,
+      bungie_api_key text NOT NULL,
+      dim_api_key UUID NOT NULL
     );
-
-    INSERT INTO global_settings
-    (dimApiEnabled, dimProfileMinimumRefreshInterval, destinyProfileRefreshInterval, autoRefresh)
-    VALUES
-    (true, 300, 30, true);
     `,
     callback
   );
 };
 
 exports.down = function(db, callback) {
-  db.dropTable('global_settings', callback);
+  db.dropTable('apps', callback);
 };
 
 exports._meta = {
