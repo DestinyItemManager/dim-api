@@ -1,5 +1,6 @@
 import express from 'express';
 import morgan from 'morgan';
+import cors from 'cors';
 import jwt from 'express-jwt';
 import { authTokenHandler } from './routes/auth-token';
 import { platformInfoHandler } from './routes/platform-info';
@@ -10,6 +11,7 @@ const port = 3000;
 
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
+app.use(cors()); // support CORS for all origins. TODO: limit to only registered apps?
 app.use(express.json()); // for parsing application/json
 
 app.get('/', (_, res) => res.send('Hello from DIM!!!'));
