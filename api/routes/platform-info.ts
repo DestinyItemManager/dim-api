@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { pool } from '../db';
+import _ from 'lodash';
 
 interface GlobalSettings {
   /** Whether to use the DIM API for  */
@@ -25,6 +26,10 @@ const defaultSettings: GlobalSettings = {
   bustProfileCacheOnHardRefresh: false
 };
 
+function camelize(data: object) {
+  return _.mapKeys(data, (_value, key) => _.camelCase(key));
+}
+
 // TODO: middleware to validate the app parameter
 export const platformInfoHandler = asyncHandler(async (_, res) => {
   // TODO: load and merge in app-specific settings?
@@ -35,6 +40,6 @@ export const platformInfoHandler = asyncHandler(async (_, res) => {
   // Instruct CF not to cache this
   res.set('Cache-Control', 'no-cache, max-age=0');
   res.send({
-    settings: { ...defaultSettings, ...result.rows[0] }
+    settings: { ...defaultSettings, ...camelize(result.rows[0]) }
   });
 });

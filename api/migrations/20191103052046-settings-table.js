@@ -19,12 +19,12 @@ exports.setup = function(options, seedLink) {
 exports.up = function(db, callback) {
   db.runSql(
     `CREATE TABLE settings (
-      membershipId int PRIMARY KEY NOT NULL,
+      membership_id int PRIMARY KEY NOT NULL,
       settings jsonb NOT NULL default '{}'::jsonb,
-      createdAt timestamp NOT NULL,
-      createdBy text NOT NULL,
-      lastUpdatedAt timestamp NOT NULL,
-      lastUpdatedBy text NOT NULL
+      created_at timestamp NOT NULL,
+      created_by text NOT NULL,
+      last_updated_at timestamp NOT NULL,
+      last_updated_by text NOT NULL
     )`,
     callback
   );

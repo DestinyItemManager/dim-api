@@ -17,16 +17,18 @@ exports.setup = function(options, seedLink) {
 exports.up = function(db, callback) {
   db.runSql(
     `CREATE TABLE global_settings (
-      dimApiEnabled boolean,
-      dimProfileMinimumRefreshInterval int,
-      destinyProfileRefreshInterval int,
-      autoRefresh boolean
+      dim_api_enabled boolean,
+      destiny_profile_minimum_refresh_interval int,
+      destiny_profile_refresh_interval int,
+      auto_refresh boolean,
+      refresh_profile_on_visible boolean,
+      bust_profile_cache_on_hard_refresh boolean
     );
 
     INSERT INTO global_settings
-    (dimApiEnabled, dimProfileMinimumRefreshInterval, destinyProfileRefreshInterval, autoRefresh)
+    (dim_api_enabled, destiny_profile_minimum_refresh_interval, destiny_profile_refresh_interval, auto_refresh, refresh_profile_on_visible, bust_profile_cache_on_hard_refresh)
     VALUES
-    (true, 300, 30, true);
+    (true, 15, 30, false, true, false);
     `,
     callback
   );
