@@ -7,11 +7,9 @@ WORKDIR /home/node/app
 COPY package*.json ./
 COPY yarn.lock ./
 USER node
-RUN yarn install
-COPY --chown=node:node tsconfig.json .
+RUN yarn install --production
 COPY --chown=node:node run.sh .
-COPY --chown=node:node api api
-RUN yarn build:api
+COPY --chown=node:node dist dist
 
 EXPOSE 3000
 

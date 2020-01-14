@@ -6,7 +6,7 @@ interface GlobalSettings {
   /** Whether to use the DIM API for  */
   dimApiEnabled: boolean;
   /** Don't allow refresh more often than this many seconds. */
-  dimProfileMinimumRefreshInterval: number;
+  destinyProfileMinimumRefreshInterval: number;
   /** Time in seconds to refresh the profile when autoRefresh is true. */
   destinyProfileRefreshInterval: number;
   /** Whether to refresh profile automatically. */
@@ -19,7 +19,7 @@ interface GlobalSettings {
 
 const defaultSettings: GlobalSettings = {
   dimApiEnabled: true,
-  dimProfileMinimumRefreshInterval: 300,
+  destinyProfileMinimumRefreshInterval: 15,
   destinyProfileRefreshInterval: 30,
   autoRefresh: true,
   refreshProfileOnVisible: true,

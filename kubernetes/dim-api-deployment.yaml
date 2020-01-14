@@ -45,6 +45,8 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: jwt_secret
+            - name: TWIDDLE
+              value: tw1
           envFrom:
             - configMapRef:
                 name: dim-api-config
