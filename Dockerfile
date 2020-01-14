@@ -8,9 +8,9 @@ COPY package*.json ./
 COPY yarn.lock ./
 USER node
 RUN yarn install
-COPY --chown=node:node api api
 COPY --chown=node:node tsconfig.json .
 COPY --chown=node:node run.sh .
+COPY --chown=node:node api api
 RUN yarn build:api
 
 EXPOSE 3000

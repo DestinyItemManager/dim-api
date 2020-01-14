@@ -11,7 +11,7 @@ const port = 3000;
 
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
-app.use(cors()); // support CORS for all origins. TODO: limit to only registered apps?
+app.use(cors()); // support CORS for all origins. TODO: for POST / include-credentials limit to only registered apps?
 app.use(express.json()); // for parsing application/json
 
 app.get('/', (_, res) => res.send('Hello from DIM!!!'));
@@ -23,7 +23,7 @@ app.get('/platform_info', platformInfoHandler);
 app.all('*', jwt({ secret: process.env.JWT_SECRET! }));
 
 app.get('/test', (req, res) =>
-  res.send(`Secret squirrel ${JSON.stringify(req.user)}`)
+  res.send(`Secret squirrel ${JSON.stringify((req as any).user)}`)
 );
 
 app.use((err, _req, res, next) => {

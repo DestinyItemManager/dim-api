@@ -28,13 +28,13 @@ const defaultSettings: GlobalSettings = {
 // TODO: middleware to validate the app parameter
 export const platformInfoHandler = asyncHandler(async (_, res) => {
   // TODO: load and merge in app-specific settings?
-  const rows = await pool.query<GlobalSettings>(
+  const result = await pool.query<GlobalSettings>(
     'SELECT * FROM global_settings'
   );
 
   // Instruct CF not to cache this
   res.set('Cache-Control', 'no-cache, max-age=0');
   res.send({
-    settings: { ...defaultSettings, ...rows[0] }
+    settings: { ...defaultSettings, ...result.rows[0] }
   });
 });

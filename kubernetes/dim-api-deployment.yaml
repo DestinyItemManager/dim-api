@@ -18,7 +18,7 @@ kind: Deployment
 metadata:
   name: dim-api
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: dim-api
@@ -33,13 +33,18 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: '100m'
+              cpu: '50m'
           env:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: dim-api-secret
                   key: pg_password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: jwt_secret
           envFrom:
             - configMapRef:
                 name: dim-api-config
