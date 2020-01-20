@@ -11,7 +11,11 @@ const port = 3000;
 
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
-app.use(cors()); // support CORS for all origins. TODO: for POST / include-credentials limit to only registered apps?
+app.use(
+  cors({
+    maxAge: 3600
+  })
+); // support CORS for all origins. TODO: for POST / include-credentials limit to only registered apps?
 app.use(express.json()); // for parsing application/json
 
 app.get('/', (_, res) => res.send('Hello from DIM!!!'));
