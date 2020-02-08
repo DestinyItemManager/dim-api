@@ -1015,6 +1015,11 @@ buffer-writer@2.0.0:
   resolved "https://registry.yarnpkg.com/buffer-writer/-/buffer-writer-2.0.0.tgz#ce7eb81a38f7829db09c873f2fbb792c0c98ec04"
   integrity sha512-a7ZpuTZU1TRtnwyCNW3I5dc0wWNC3VR9S++Ewyk2HHZdrO3CQJqSpd+95Us590V6AL7JqUAH2IwZ/398PmNFgw==
 
+bungie-api-ts@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/bungie-api-ts/-/bungie-api-ts-2.3.0.tgz#2c95bf197a71ea876bc6829335c385acbec909af"
+  integrity sha512-tHN6p+QazQ4AKf0gnqxAeJZ1ZRgY1+/LeqGiJ1VkhxrkA7FNKLeZEzabEQTDxZSVkJEYA02+gZpWEP+7G6LxHg==
+
 bytes@3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/bytes/-/bytes-3.1.0.tgz#f6cf7933a360e0588fa9fde85651cdc7f805d1f6"

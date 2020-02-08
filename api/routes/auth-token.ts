@@ -1,4 +1,5 @@
 import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth';
+import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
 import superagent from 'superagent';
 import asyncHandler from 'express-async-handler';
 import util from 'util';
@@ -45,8 +46,11 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       .set('X-API-Key', apiApp.bungieApiKey)
       .set('Authorization', `Bearer ${bungieAccessToken}`);
 
-    const serverMembershipId =
-      bungieResponse.body.Response.bungieNetUser.membershipId;
+    const responseData = bungieResponse.body as ServerResponse<
+      UserMembershipData
+    >;
+
+    const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
     if (serverMembershipId === membershipId) {
       // generate and return a token
       const token = await signJwt({}, process.env.JWT_SECRET!, {
