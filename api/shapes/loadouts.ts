@@ -14,14 +14,12 @@ export interface Loadout {
   // Chosen by the client
   id: string;
   name: string;
-  // Whether this is for Destiny 1 or Destiny 2 (default: 2)
-  destinyVersion: 1 | 2;
   // DestinyClass enum value for the class this loadout is restricted
   // to. This is optional (set to Unknown for loadouts that can be used anywhere).
   classType: DestinyClass;
   // DestinyInventoryItemDefinition hash of an emblem to use as
   // an icon for this loadout
-  emblemHash: number;
+  emblemHash?: number;
   // Whether to clear out other items when applying this loadout
   clearSpace: boolean;
   // Lists of equipped and unequipped items in the loadout

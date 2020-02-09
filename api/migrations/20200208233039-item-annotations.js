@@ -25,7 +25,9 @@ exports.up = function(db, callback) {
       inventory_item_id text PRIMARY KEY NOT NULL,
       tag item_tag,
       notes text,
-      last_updated_at timestamp NOT NULL,
+      created_at timestamp NOT NULL default current_timestamp,
+      created_by text NOT NULL,
+      last_updated_at timestamp NOT NULL default current_timestamp,
       last_updated_by text NOT NULL
     )
 

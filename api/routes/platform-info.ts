@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { pool } from '../db';
-import _ from 'lodash';
+import { camelize } from '../utils';
 
 interface GlobalSettings {
   /** Whether to use the DIM API for  */
@@ -25,10 +25,6 @@ const defaultSettings: GlobalSettings = {
   refreshProfileOnVisible: true,
   bustProfileCacheOnHardRefresh: false
 };
-
-function camelize(data: object) {
-  return _.mapKeys(data, (_value, key) => _.camelCase(key));
-}
 
 // TODO: middleware to validate the app parameter
 export const platformInfoHandler = asyncHandler(async (_, res) => {

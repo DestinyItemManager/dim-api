@@ -103,7 +103,7 @@ export interface Settings {
   readonly wishListSource: string;
 }
 
-export const initialState: Settings = {
+export const defaultSettings: Settings = {
   // Show full details in item popup
   itemDetails: true,
   // Show item quality percentages

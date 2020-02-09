@@ -21,9 +21,9 @@ exports.up = function(db, callback) {
     `CREATE TABLE settings (
       membership_id int PRIMARY KEY NOT NULL,
       settings jsonb NOT NULL default '{}'::jsonb,
-      created_at timestamp NOT NULL,
+      created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
-      last_updated_at timestamp NOT NULL,
+      last_updated_at timestamp NOT NULL default current_timestamp,
       last_updated_by text NOT NULL
     )`,
     callback

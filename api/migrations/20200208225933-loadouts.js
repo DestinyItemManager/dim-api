@@ -28,9 +28,9 @@ exports.up = function(db, callback) {
       /* Items in a loadout are just JSON */
       equipped jsonb NOT NULL default '[]'::jsonb,
       unequipped jsonb NOT NULL default '[]'::jsonb,
-      created_at timestamp NOT NULL,
+      created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
-      last_updated_at timestamp NOT NULL,
+      last_updated_at timestamp NOT NULL default current_timestamp,
       last_updated_by text NOT NULL
     )
 
