@@ -21,13 +21,15 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
     await deleteAllItemAnnotations(client, user.bungieMembershipId);
 
     await client.query('COMMIT');
+
+    // default 200 OK
+    res.status(200).send({
+      Status: 'Success'
+    });
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
   } finally {
     client.release();
   }
-
-  // default 200 OK
-  res.status(200);
 });

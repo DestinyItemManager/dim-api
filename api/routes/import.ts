@@ -46,66 +46,53 @@ export const importHandler = asyncHandler(async (req, res) => {
     await client.query('BEGIN');
 
     // TODO: pass a list of keys that are being set to default?
-    try {
-      await replaceSettings(
+    await replaceSettings(
+      client,
+      user.appId,
+      user.bungieMembershipId,
+      settings
+    );
+
+    // TODO: query first so we can delete after?
+    for (const loadout of loadouts) {
+      // For now, ignore ancient loadouts
+      if (!loadout.platformMembershipId || !loadout.destinyVersion) {
+        continue;
+      }
+      await updateLoadout(
         client,
         user.appId,
         user.bungieMembershipId,
-        settings
+        loadout.platformMembershipId,
+        loadout.destinyVersion,
+        loadout
       );
-    } catch (e) {
-      console.error('Failed to replace settings');
-      throw e;
     }
 
     // TODO: query first so we can delete after?
-    try {
-      for (const loadout of loadouts) {
-        // For now, ignore ancient loadouts
-        if (!loadout.platformMembershipId || !loadout.destinyVersion) {
-          continue;
-        }
-        await updateLoadout(
-          client,
-          user.appId,
-          user.bungieMembershipId,
-          loadout.platformMembershipId,
-          loadout.destinyVersion,
-          loadout
-        );
-      }
-    } catch (e) {
-      console.error('Failed to update loadouts');
-      throw e;
-    }
-
-    try {
-      // TODO: query first so we can delete after?
-      for (const annotation of itemAnnotations) {
-        await updateItemAnnotation(
-          client,
-          user.appId,
-          user.bungieMembershipId,
-          annotation.platformMembershipId,
-          annotation.destinyVersion,
-          annotation
-        );
-      }
-    } catch (e) {
-      console.error('Failed to update annotations');
-      throw e;
+    for (const annotation of itemAnnotations) {
+      await updateItemAnnotation(
+        client,
+        user.appId,
+        user.bungieMembershipId,
+        annotation.platformMembershipId,
+        annotation.destinyVersion,
+        annotation
+      );
     }
 
     await client.query('COMMIT');
+
+    // default 200 OK
+    res.status(200).send({
+      Status: 'Success'
+    });
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
   } finally {
     client.release();
   }
-
-  // default 200 OK
-  res.status(200);
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */

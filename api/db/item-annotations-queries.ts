@@ -50,16 +50,6 @@ export async function updateItemAnnotation(
   destinyVersion: 1 | 2,
   itemAnnotation: ItemAnnotation
 ): Promise<QueryResult<any>> {
-  console.log([
-    bungieMembershipId,
-    platformMembershipId,
-    destinyVersion,
-    itemAnnotation.id,
-    clearValue(itemAnnotation.tag),
-    clearValue(itemAnnotation.notes),
-    appId
-  ]);
-
   // TODO: if both are null, issue a delete? or just tombstone them?
   if (itemAnnotation.notes === null && itemAnnotation.tag === null) {
     return deleteItemAnnotation(client, itemAnnotation.id);
