@@ -17,10 +17,10 @@ exports.setup = function(options, seedLink) {
 exports.up = function(db, callback) {
   db.runSql(
     `
-    CREATE TYPE item_tag AS ENUM ('favorite', 'keep', 'infuse', 'junk', 'archive');
+    CREATE TYPE item_tag AS ENUM ('favorite', 'keep', 'infuse', 'junk', 'archive', 'clear');
     CREATE TABLE item_annotations (
       membership_id int NOT NULL,
-      platform_membership_id int NOT NULL,
+      platform_membership_id text NOT NULL,
       destiny_version smallint NOT NULL default 2,
       inventory_item_id text PRIMARY KEY NOT NULL,
       tag item_tag,
@@ -29,7 +29,7 @@ exports.up = function(db, callback) {
       created_by text NOT NULL,
       last_updated_at timestamp NOT NULL default current_timestamp,
       last_updated_by text NOT NULL
-    )
+    );
 
     /* The typical query to get all item annotations specifies both platform_membership_id and destiny_version. destiny_version is low-cardinality enough to not need to be indexed. */
     CREATE INDEX item_annotations_by_platform_membership ON item_annotations (platform_membership_id);
@@ -39,7 +39,9 @@ exports.up = function(db, callback) {
 };
 
 exports.down = function(db, callback) {
-  db.dropTable('item_annotations', callback);
+  db.dropTable('item_annotations', () => {
+    db.runSql('drop type item_tag', callback);
+  });
 };
 
 exports._meta = {

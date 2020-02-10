@@ -13,4 +13,4 @@ You can now connect to postgres on port 31744 with the username and password fro
 
 # DB Migrations
 
-Run `npx db-migrate up` to update the database to the current version. Run `npx db-migrate create settings_table` to create a new migration file in the `migrations` folder, where you can use the db-migrate API to modify the database. Check in all migrations.
+Run `cd api && npx db-migrate up` to update the database to the current version. Run `cd api && npx db-migrate create settings_table` to create a new migration file in the `migrations` folder, where you can use the db-migrate API to modify the database. Check in all migrations.

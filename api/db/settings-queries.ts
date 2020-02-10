@@ -30,8 +30,7 @@ export async function replaceSettings(
     text: `insert into settings (membership_id, settings, created_by, last_updated_by)
 values ($1, $2, $3, $3)
 on conflict (membership_id)
-do update set (settings, last_updated_at, last_updated_by) = ($2, current_timestamp(), $3)
-where membership_id = $1`,
+do update set (settings, last_updated_at, last_updated_by) = ($2, current_timestamp, $3)`,
     values: [bungieMembershipId, settings, appId]
   });
 }
@@ -50,8 +49,7 @@ export async function setSetting(
     text: `insert into settings (membership_id, settings, created_by, last_updated_by)
 values ($1, $2, $3, $3)
 on conflict (membership_id)
-do update set (settings, last_updated_at, last_updated_by) = (settings || $2, current_timestamp(), $3)
-where membership_id = $1`,
+do update set (settings, last_updated_at, last_updated_by) = (settings || $2, current_timestamp, $3)`,
     values: [bungieMembershipId, settings, appId]
   });
 }

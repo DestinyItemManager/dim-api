@@ -19,20 +19,19 @@ exports.up = function(db, callback) {
     `CREATE TABLE loadouts (
       id UUID PRIMARY KEY NOT NULL,
       membership_id int NOT NULL,
-      platform_membership_id int NOT NULL,
+      platform_membership_id text NOT NULL,
       destiny_version smallint NOT NULL default 2,
       name text NOT NULL,
       class_type smallint NOT NULL default 3,
       emblem_hash int,
       clear_space boolean default false,
       /* Items in a loadout are just JSON */
-      equipped jsonb NOT NULL default '[]'::jsonb,
-      unequipped jsonb NOT NULL default '[]'::jsonb,
+      items jsonb NOT NULL default '{}'::jsonb,
       created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
       last_updated_at timestamp NOT NULL default current_timestamp,
       last_updated_by text NOT NULL
-    )
+    );
 
     /* The typical query to get all loadouts specifies both platform_membership_id and destiny_version. destiny_version is low-cardinality enough to not need to be indexed. */
     CREATE INDEX loadouts_by_platform_membership ON loadouts (platform_membership_id);

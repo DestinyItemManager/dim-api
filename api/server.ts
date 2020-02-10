@@ -7,6 +7,8 @@ import { platformInfoHandler } from './routes/platform-info';
 import { metrics } from './metrics';
 import { importHandler } from './routes/import';
 import { deleteAllDataHandler } from './routes/delete-all-data';
+import { exportHandler } from './routes/export';
+import { profileHandler } from './routes/profile';
 
 export const app = express();
 
@@ -31,7 +33,9 @@ app.get('/test', (req, res) =>
   res.send(`Secret squirrel ${JSON.stringify((req as any).user)}`)
 );
 
+app.get('/profile', profileHandler);
 app.post('/import', importHandler);
+app.get('/export', exportHandler);
 app.post('/delete_all_data', deleteAllDataHandler);
 
 app.use((err, _req, res, next) => {

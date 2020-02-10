@@ -1,5 +1,3 @@
-import { DestinyActivityModeType } from 'bungie-api-ts/destiny2';
-
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
 export type CharacterOrder =
@@ -17,12 +15,12 @@ export const enum InfuseDirection {
 
 /** The subset of DestinyActivityModeType that we use for game modes. */
 export const enum DtrD2ActivityModes {
-  notSpecified = DestinyActivityModeType.None,
-  playerVersusEnemy = DestinyActivityModeType.AllPvE,
-  playerVersusPlayer = DestinyActivityModeType.AllPvP,
-  raid = DestinyActivityModeType.Raid,
+  notSpecified = 0,
+  playerVersusEnemy = 7,
+  playerVersusPlayer = 5,
+  raid = 4,
   // trials = DestinyActivityModeType.TrialsOfTheNine
-  gambit = DestinyActivityModeType.Gambit
+  gambit = 63
 }
 
 export const enum DtrReviewPlatform {

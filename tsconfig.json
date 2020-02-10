@@ -5,7 +5,7 @@
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "module": "commonjs",
-    "target": "ESNext",
+    "target": "es2018",
     "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,

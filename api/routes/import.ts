@@ -3,7 +3,6 @@ import { getUser } from '../utils';
 import { Settings, defaultSettings } from '../shapes/settings';
 import { pool } from '../db';
 import { Loadout } from '../shapes/loadouts';
-import { DestinyClass } from 'bungie-api-ts/destiny2';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { replaceSettings } from '../db/settings-queries';
 import { updateLoadout } from '../db/loadouts-queries';
@@ -47,35 +46,54 @@ export const importHandler = asyncHandler(async (req, res) => {
     await client.query('BEGIN');
 
     // TODO: pass a list of keys that are being set to default?
-    await replaceSettings(
-      client,
-      user.appId,
-      user.bungieMembershipId,
-      settings
-    );
-
-    // TODO: query first so we can delete after?
-    for (const loadout of loadouts) {
-      await updateLoadout(
+    try {
+      await replaceSettings(
         client,
         user.appId,
         user.bungieMembershipId,
-        loadout.platformMembershipId,
-        loadout.destinyVersion,
-        loadout
+        settings
       );
+    } catch (e) {
+      console.error('Failed to replace settings');
+      throw e;
     }
 
     // TODO: query first so we can delete after?
-    for (const annotation of itemAnnotations) {
-      await updateItemAnnotation(
-        client,
-        user.appId,
-        user.bungieMembershipId,
-        annotation.platformMembershipId,
-        annotation.destinyVersion,
-        annotation
-      );
+    try {
+      for (const loadout of loadouts) {
+        // For now, ignore ancient loadouts
+        if (!loadout.platformMembershipId || !loadout.destinyVersion) {
+          continue;
+        }
+        await updateLoadout(
+          client,
+          user.appId,
+          user.bungieMembershipId,
+          loadout.platformMembershipId,
+          loadout.destinyVersion,
+          loadout
+        );
+      }
+    } catch (e) {
+      console.error('Failed to update loadouts');
+      throw e;
+    }
+
+    try {
+      // TODO: query first so we can delete after?
+      for (const annotation of itemAnnotations) {
+        await updateItemAnnotation(
+          client,
+          user.appId,
+          user.bungieMembershipId,
+          annotation.platformMembershipId,
+          annotation.destinyVersion,
+          annotation
+        );
+      }
+    } catch (e) {
+      console.error('Failed to update annotations');
+      throw e;
     }
 
     await client.query('COMMIT');
@@ -91,15 +109,15 @@ export const importHandler = asyncHandler(async (req, res) => {
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
-function subtractObject(obj, defaults) {
+function subtractObject(obj: object | undefined, defaults: object) {
   const result = {};
-
-  for (const key of defaults) {
-    if (obj[key] !== undefined && obj[key] !== defaults[key]) {
-      result[key] = obj[key];
+  if (obj) {
+    for (const key in defaults) {
+      if (obj[key] !== undefined && obj[key] !== defaults[key]) {
+        result[key] = obj[key];
+      }
     }
   }
-
   return result;
 }
 
@@ -111,7 +129,7 @@ function extractSettings(importData: DimData): Settings {
 }
 
 type PlatformLoadout = Loadout & {
-  platformMembershipId: number;
+  platformMembershipId: string;
   destinyVersion: 1 | 2;
 };
 
@@ -147,17 +165,17 @@ export enum LoadoutClass {
 }
 
 export const loadoutClassToClassType = {
-  [LoadoutClass.hunter]: DestinyClass.Hunter,
-  [LoadoutClass.titan]: DestinyClass.Titan,
-  [LoadoutClass.warlock]: DestinyClass.Warlock,
-  [LoadoutClass.any]: DestinyClass.Unknown
+  [LoadoutClass.hunter]: 1,
+  [LoadoutClass.titan]: 0,
+  [LoadoutClass.warlock]: 2,
+  [LoadoutClass.any]: 3
 };
 
 export const classTypeToLoadoutClass = {
-  [DestinyClass.Hunter]: LoadoutClass.hunter,
-  [DestinyClass.Titan]: LoadoutClass.titan,
-  [DestinyClass.Warlock]: LoadoutClass.warlock,
-  [DestinyClass.Unknown]: LoadoutClass.any
+  1: LoadoutClass.hunter,
+  0: LoadoutClass.titan,
+  2: LoadoutClass.warlock,
+  3: LoadoutClass.any
 };
 
 function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
@@ -165,7 +183,7 @@ function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
 }
 
 type PlatformItemAnnotation = ItemAnnotation & {
-  platformMembershipId: number;
+  platformMembershipId: string;
   destinyVersion: 1 | 2;
 };
 
