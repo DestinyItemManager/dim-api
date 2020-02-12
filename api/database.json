@@ -1,4 +1,11 @@
 {
+  "test": {
+    "driver": "pg",
+    "user": "postgres",
+    "password": "",
+    "host": "localhost",
+    "database": "travis_ci_test"
+  },
   "dev": {
     "driver": "pg",
     "user": "postgresadmin",

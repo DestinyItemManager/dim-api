@@ -13,6 +13,7 @@
     "docker:run": "docker run -p 3000:3000 destinyitemmanager/dim-api:latest",
     "docker:push": "docker push destinyitemmanager/dim-api:latest",
     "lint": "eslint --fix api --ext .js,.ts",
+    "lint-check": "eslint api --ext .js,.ts",
     "test": "JWT_SECRET=secret jest",
     "test:watch": "JWT_SECRET=secret jest --watch"
   },

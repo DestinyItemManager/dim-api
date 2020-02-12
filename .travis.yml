@@ -1,0 +1,8 @@
+language: node_js
+services:
+  - postgresql
+script: build/travis_build.sh
+sudo: false
+cache:
+  yarn: true
+  directories: $HOME/.cache/
