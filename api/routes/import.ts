@@ -1,12 +1,13 @@
 import asyncHandler from 'express-async-handler';
 import { getUser } from '../utils';
 import { Settings, defaultSettings } from '../shapes/settings';
-import { pool } from '../db';
+import { transaction } from '../db';
 import { Loadout } from '../shapes/loadouts';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { replaceSettings } from '../db/settings-queries';
 import { updateLoadout } from '../db/loadouts-queries';
 import { updateItemAnnotation } from '../db/item-annotations-queries';
+import { deleteAllData } from './delete-all-data';
 
 // in a transaction:
 // 1. query all tags/loadouts (at least IDs)
@@ -40,10 +41,8 @@ export const importHandler = asyncHandler(async (req, res) => {
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
 
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
+  await transaction(async (client) => {
+    await deleteAllData(client, user);
 
     // TODO: pass a list of keys that are being set to default?
     await replaceSettings(
@@ -80,19 +79,12 @@ export const importHandler = asyncHandler(async (req, res) => {
         annotation
       );
     }
+  });
 
-    await client.query('COMMIT');
-
-    // default 200 OK
-    res.status(200).send({
-      Status: 'Success'
-    });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
+  // default 200 OK
+  res.status(200).send({
+    Status: 'Success'
+  });
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
@@ -179,7 +171,7 @@ function extractItemAnnotations(importData: DimData): PlatformItemAnnotation[] {
   for (const key in importData) {
     const match = /dimItemInfo-m(\d+)-d(1|2)/.exec(key);
     if (match) {
-      const platformMembershipId = parseInt(match[1], 10);
+      const platformMembershipId = match[1];
       const destinyVersion = parseInt(match[2], 10) as 1 | 2;
       for (const id in importData[key]) {
         const value = importData[key][id];

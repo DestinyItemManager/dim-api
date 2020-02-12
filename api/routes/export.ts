@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { getUser } from '../utils';
-import { pool } from '../db';
+import { readTransaction } from '../db';
 import { getSettings } from '../db/settings-queries';
 import { getAllLoadoutsForUser } from '../db/loadouts-queries';
 import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
@@ -8,11 +8,7 @@ import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
 export const exportHandler = asyncHandler(async (req, res) => {
   const user = getUser(req);
 
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
+  await readTransaction(async (client) => {
     const settings = await getSettings(client, user.bungieMembershipId);
     const loadouts = await getAllLoadoutsForUser(
       client,
@@ -30,8 +26,5 @@ export const exportHandler = asyncHandler(async (req, res) => {
       loadouts,
       itemAnnotations
     });
-  } finally {
-    await client.query('ROLLBACK');
-    client.release();
-  }
+  });
 });
