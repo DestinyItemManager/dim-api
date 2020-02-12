@@ -82,9 +82,7 @@ export const importHandler = asyncHandler(async (req, res) => {
   });
 
   // default 200 OK
-  res.status(200).send({
-    Status: 'Success'
-  });
+  res.status(200).send({});
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */

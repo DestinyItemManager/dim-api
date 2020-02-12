@@ -15,9 +15,7 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   await transaction((client) => deleteAllData(client, user));
 
   // default 200 OK
-  res.status(200).send({
-    Status: 'Success'
-  });
+  res.status(200).send({});
 });
 
 export async function deleteAllData(client: ClientBase, user: UserInfo) {

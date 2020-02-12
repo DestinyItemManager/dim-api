@@ -20,22 +20,36 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
   const { app, bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
 
   if (!app) {
-    res.status(400).send('No app provided');
+    res.status(400).send({
+      error: 'InvalidRequest',
+      message: 'No app provided'
+    });
     return;
   }
 
   const apiApp = await getApp(app);
   if (!apiApp) {
-    res.status(400).send(`App ${app} not registered`);
+    res.status(400).send({
+      error: 'InvalidRequest',
+      message: `App ${app} not registered`
+    });
     return;
   }
 
   if (!bungieAccessToken) {
-    res.status(400).send('No bungieAccessToken provided');
+    res.status(400).send({
+      error: 'InvalidRequest',
+      message: 'No bungieAccessToken provided'
+    });
+    return;
   }
 
   if (!membershipId) {
-    res.status(400).send('No membershipId provided');
+    res.status(400).send({
+      error: 'InvalidRequest',
+      message: 'No membershipId provided'
+    });
+    return;
   }
 
   console.log('sending request', app, apiApp);

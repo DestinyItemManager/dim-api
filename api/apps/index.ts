@@ -1,49 +1,66 @@
-import NodeCache from 'node-cache';
+import asyncHandler from 'express-async-handler';
 import { pool } from '../db';
+import { ApiApp } from '../shapes/app';
+import { getAllApps } from '../db/apps-queries';
 
 /**
- * An app registered with the DIM API.
+ * Express middleware that requires an API key be provided in a header
+ * and populates app info in the request based on the matching app.
  */
-export interface ApiApp {
-  /** A short ID that uniquely identifies the app. */
-  id: string;
-  /** Apps must share their Bungie.net API key with us. */
-  bungieApiKey: string;
-  /** Apps also get a generated API key for accessing DIM APIs that don't involve user data. */
-  dimApiKey: string;
-}
-
-// Expire entries in 1 hour
-const appCache = new NodeCache({ stdTTL: 60 * 60, useClones: false });
-
-export function getApp(id: string): Promise<ApiApp | null> {
-  let appPromise = appCache.get<Promise<ApiApp | null>>(id);
-  if (appPromise) {
-    return appPromise;
+export const apiKey = asyncHandler(async (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  if (!apiKey) {
+    res.status(401).send({
+      error: 'MissingApiKey',
+      message: 'This request requires the X-API-Key header to be set'
+    });
+    return;
   }
 
-  appPromise = (async () => {
-    const result = await pool.query(
-      'SELECT * FROM apps WHERE id = $1 LIMIT 1',
-      [id]
-    );
+  const app = await getAppByApiKey(apiKey);
+  if (app) {
+    req.dimApp = app;
+    next();
+  } else {
+    res.status(401).send({
+      error: 'NoAppFound',
+      message: 'No app found that matches the provided API key'
+    });
+  }
+});
 
-    if (!result.rows.length) {
-      return null;
-    }
+let apps: ApiApp[];
+let appsPromise: Promise<ApiApp[]> | null = null;
+let appsInterval: number;
 
-    const row = result.rows[0];
+/**
+ * Look up an app by its API key.
+ */
+async function getAppByApiKey(apiKey: string) {
+  const apps = await getApps();
+  return apps.find((app) => app.dimApiKey === apiKey);
+}
 
-    return {
-      id: row.id,
-      bungieApiKey: row.bungie_api_key,
-      dimApiKey: row.dim_api_key
-    };
-  })();
+/** Get all registered apps, loading them if necessary. */
+async function getApps() {
+  if (apps) {
+    return apps;
+  }
+  if (appsPromise) {
+    return appsPromise;
+  }
+  appsPromise = refreshApps();
+  return appsPromise;
+}
 
-  // TODO: catch the promise and delete the app?
-
-  appCache.set<Promise<ApiApp | null>>(id, appPromise);
-
-  return appPromise;
+async function refreshApps() {
+  const client = await pool.connect();
+  apps = await getAllApps(client);
+  appsPromise = null;
+  // Start refreshing automatically
+  if (!appsInterval) {
+    // Refresh again every minute
+    setInterval(refreshApps, 60000);
+  }
+  return apps;
 }
