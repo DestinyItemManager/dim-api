@@ -89,13 +89,17 @@ app.post('/import', importHandler);
 app.get('/export', exportHandler);
 app.post('/delete_all_data', deleteAllDataHandler);
 
-app.use((err: Error, _req, res, next) => {
+app.use((err: Error, _req, res, _next) => {
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
       error: err.name,
       message: err.message
     });
   } else {
-    next(err);
+    console.error(err);
+    res.status(500).send({
+      error: err.name,
+      message: err.message
+    });
   }
 });

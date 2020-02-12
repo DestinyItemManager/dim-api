@@ -10,5 +10,6 @@ module.exports = {
     pathsToModuleNameMapper(compilerOptions.paths, {
       prefix: '<rootDir>/'
     }),
-  modulePathIgnorePatterns: ['<rootDir>/dist/']
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
+  setupFiles: ['dotenv/config']
 };

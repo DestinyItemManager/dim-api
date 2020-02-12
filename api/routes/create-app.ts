@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { transaction } from '../db';
 import { CreateAppRequest, ApiApp } from '../shapes/app';
-import { insertApp } from '../db/apps-queries';
+import { insertApp, getAppById } from '../db/apps-queries';
 import uuid from 'uuid/v4';
 
 /**
@@ -18,14 +18,14 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   if (originUrl.origin !== request.origin) {
     res.status(400).send({
       error: 'InvalidRequest',
-      message: `Origin provided is not an origin`
+      message: 'Origin provided is not an origin'
     });
     return;
   }
-  if (originUrl.host !== 'localhost') {
+  if (originUrl.hostname !== 'localhost') {
     res.status(400).send({
       error: 'InvalidRequest',
-      message: `Can only register apps for localhost`
+      message: `Can only register apps for localhost, your host was ${originUrl.hostname}`
     });
     return;
   }
@@ -33,7 +33,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   if (!/^[a-z0-9-]{3,}$/.test(request.id)) {
     res.status(400).send({
       error: 'InvalidRequest',
-      message: `id must match the regex /^[a-z0-9-]{3,}$/`
+      message: 'id must match the regex /^[a-z0-9-]{3,}$/'
     });
     return;
   }
@@ -41,22 +41,32 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   if (!request.bungieApiKey) {
     res.status(400).send({
       error: 'InvalidRequest',
-      message: `bungieApiKey must be present`
+      message: 'bungieApiKey must be present'
     });
     return;
   }
 
-  const app: ApiApp = {
+  let app: ApiApp = {
     ...request,
     origin: originUrl.origin,
     dimApiKey: uuid()
   };
 
   await transaction(async (client) => {
-    await insertApp(client, app);
+    try {
+      await insertApp(client, app);
+    } catch (e) {
+      // This is a unique constraint violation, so just get the app!
+      if (e.code == '23505') {
+        await client.query('ROLLBACK');
+        app = (await getAppById(client, request.id))!;
+      } else {
+        throw e;
+      }
+    }
   });
 
-  res.status(200).send({
+  res.send({
     app
   });
 });
