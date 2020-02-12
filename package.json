@@ -14,7 +14,7 @@
     "docker:push": "docker push destinyitemmanager/dim-api:latest",
     "lint": "eslint --fix api --ext .js,.ts",
     "lint-check": "eslint api --ext .js,.ts",
-    "test": "JWT_SECRET=secret jest api",
+    "test": "JWT_SECRET=secret jest --coverage api",
     "test:watch": "JWT_SECRET=secret jest --watch"
   },
   "devDependencies": {
