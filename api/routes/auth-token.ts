@@ -5,7 +5,6 @@ import asyncHandler from 'express-async-handler';
 import util from 'util';
 
 import { sign, Secret, SignOptions } from 'jsonwebtoken';
-import { getApp } from '../apps';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
@@ -17,24 +16,8 @@ const signJwt = util.promisify<
 >(sign);
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
-  const { app, bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
-
-  if (!app) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'No app provided'
-    });
-    return;
-  }
-
-  const apiApp = await getApp(app);
-  if (!apiApp) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: `App ${app} not registered`
-    });
-    return;
-  }
+  const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
+  const apiApp = req.dimApp!;
 
   if (!bungieAccessToken) {
     res.status(400).send({
@@ -52,7 +35,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  console.log('sending request', app, apiApp);
+  console.log('sending request', apiApp);
   // make request to bungie
   try {
     const bungieResponse = await superagent
@@ -69,7 +52,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       // generate and return a token
       const token = await signJwt({}, process.env.JWT_SECRET!, {
         subject: membershipId,
-        issuer: app,
+        issuer: apiApp.dimApiKey,
         expiresIn: TOKEN_EXPIRES_IN
       });
 

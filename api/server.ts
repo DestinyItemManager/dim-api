@@ -54,7 +54,33 @@ app.post('/auth/token', authTokenHandler);
 /* ****** USER AUTH REQUIRED ****** */
 /* Any routes declared below this will require an auth token */
 
-app.all('*', jwt({ secret: process.env.JWT_SECRET! }));
+app.all('*', jwt({ secret: process.env.JWT_SECRET!, userProperty: 'jwt' }));
+
+// Copy info from the auth token into a "user" parameter on the request.
+app.use((req, _, next) => {
+  if (!req.jwt) {
+    next(new Error('Expected JWT info'));
+    return;
+  }
+  req.user = {
+    bungieMembershipId: parseInt(req.jwt.sub, 10),
+    dimApiKey: req.jwt.iss
+  };
+  next();
+});
+
+// Validate that the auth token and the API key in the header match.
+app.use((req, res, next) => {
+  if (req.dimApp!.dimApiKey !== req.jwt!.iss) {
+    res.status(401).send({
+      error: 'ApiKeyMismatch',
+      message:
+        'The auth token was issued for a different app than the API key in X-API-Key indicates'
+    });
+  } else {
+    next();
+  }
+});
 
 app.get('/test', (req, res) => res.send((req as any).user));
 

@@ -1,5 +1,4 @@
 export interface AuthTokenRequest {
-  app: string;
   /** The access token from authenticating with the Bungie.net API */
   bungieAccessToken: string;
   /** The user's Bungie.net membership ID */

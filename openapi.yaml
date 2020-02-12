@@ -4,10 +4,10 @@ info:
   description: The Destiny Item Manager API. This is meant to be used by many Destiny apps.
   license:
     name: MIT
-    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
   version: 1.0.0
 servers:
-  - url: "https://api.destinyitemmanager.com"
+  - url: 'https://api.destinyitemmanager.com'
 tags:
   - name: auth
     description: Authenticating to the DIM API
@@ -22,21 +22,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthTokenRequest"
+              $ref: '#/components/schemas/AuthTokenRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Auth token information
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTokenResponse"
-        "400":
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
           description: >-
             You did not provide all the information required in the request
             body.
           content: {}
-        "403":
+        '403':
           description: >-
             Failed to authenticate with Bungie.net, or your app is not in the
             app registry.
@@ -50,21 +50,18 @@ paths:
       summary: Get global information and configuration about the DIM API platform
       operationId: getPlatformInfo
       responses:
-        "200":
+        '200':
           description: Global platform information
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlatformInfoResponse"
+                $ref: '#/components/schemas/PlatformInfoResponse'
 components:
   schemas:
     AuthTokenRequest:
       description: The payload for the auth token request
       type: object
       properties:
-        app:
-          type: string
-          description: The name of your app. This must be pre-registered with the DIM API.
         bungieAccessToken:
           type: string
           description: >-
@@ -75,7 +72,6 @@ components:
           type: string
           description: The Bungie.net membership ID of the user you are authenticating.
       required:
-        - app
         - bungieAccessToken
         - membershipId
     AuthTokenResponse:
@@ -95,11 +91,11 @@ components:
       type: object
       properties:
         settings:
-          $ref: "#/components/schemas/GlobalSettings"
+          $ref: '#/components/schemas/GlobalSettings'
         alerts:
           type: array
           items:
-            $ref: "#/components/schemas/GlobalAlert"
+            $ref: '#/components/schemas/GlobalAlert'
           description: Global alerts/notifications from the DIM team
 
     GlobalSettings:

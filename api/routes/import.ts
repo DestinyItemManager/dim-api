@@ -1,5 +1,4 @@
 import asyncHandler from 'express-async-handler';
-import { getUser } from '../utils';
 import { Settings, defaultSettings } from '../shapes/settings';
 import { transaction } from '../db';
 import { Loadout } from '../shapes/loadouts';
@@ -33,7 +32,8 @@ export interface DimData {
 }
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const user = getUser(req);
+  const { bungieMembershipId } = req.user!;
+  const { id: appId } = req.dimApp!;
 
   const importData = req.body as DimData;
 
@@ -42,15 +42,10 @@ export const importHandler = asyncHandler(async (req, res) => {
   const itemAnnotations = extractItemAnnotations(importData);
 
   await transaction(async (client) => {
-    await deleteAllData(client, user);
+    await deleteAllData(client, bungieMembershipId);
 
     // TODO: pass a list of keys that are being set to default?
-    await replaceSettings(
-      client,
-      user.appId,
-      user.bungieMembershipId,
-      settings
-    );
+    await replaceSettings(client, appId, bungieMembershipId, settings);
 
     // TODO: query first so we can delete after?
     for (const loadout of loadouts) {
@@ -60,8 +55,8 @@ export const importHandler = asyncHandler(async (req, res) => {
       }
       await updateLoadout(
         client,
-        user.appId,
-        user.bungieMembershipId,
+        appId,
+        bungieMembershipId,
         loadout.platformMembershipId,
         loadout.destinyVersion,
         loadout
@@ -72,8 +67,8 @@ export const importHandler = asyncHandler(async (req, res) => {
     for (const annotation of itemAnnotations) {
       await updateItemAnnotation(
         client,
-        user.appId,
-        user.bungieMembershipId,
+        appId,
+        bungieMembershipId,
         annotation.platformMembershipId,
         annotation.destinyVersion,
         annotation
