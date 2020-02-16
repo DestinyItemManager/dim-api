@@ -3,6 +3,7 @@ import { transaction } from '../db';
 import { CreateAppRequest, ApiApp } from '../shapes/app';
 import { insertApp, getAppById } from '../db/apps-queries';
 import uuid from 'uuid/v4';
+import { badRequest } from '../utils';
 
 /**
  * Create a new API app. This is meant to be used by developers who create
@@ -16,33 +17,24 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   const originUrl = new URL(request.origin);
 
   if (originUrl.origin !== request.origin) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'Origin provided is not an origin'
-    });
+    badRequest(res, 'Origin provided is not an origin');
     return;
   }
   if (originUrl.hostname !== 'localhost') {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: `Can only register apps for localhost, your host was ${originUrl.hostname}`
-    });
+    badRequest(
+      res,
+      `Can only register apps for localhost, your host was ${originUrl.hostname}`
+    );
     return;
   }
 
   if (!/^[a-z0-9-]{3,}$/.test(request.id)) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'id must match the regex /^[a-z0-9-]{3,}$/'
-    });
+    badRequest(res, 'id must match the regex /^[a-z0-9-]{3,}$/');
     return;
   }
 
   if (!request.bungieApiKey) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'bungieApiKey must be present'
-    });
+    badRequest(res, 'bungieApiKey must be present');
     return;
   }
 

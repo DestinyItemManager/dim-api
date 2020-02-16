@@ -5,6 +5,7 @@ import asyncHandler from 'express-async-handler';
 import util from 'util';
 
 import { sign, Secret, SignOptions } from 'jsonwebtoken';
+import { badRequest } from '../utils';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
@@ -20,18 +21,12 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
   const apiApp = req.dimApp!;
 
   if (!bungieAccessToken) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'No bungieAccessToken provided'
-    });
+    badRequest(res, 'No bungieAccessToken provided');
     return;
   }
 
   if (!membershipId) {
-    res.status(400).send({
-      error: 'InvalidRequest',
-      message: 'No membershipId provided'
-    });
+    badRequest(res, 'No membershipId provided');
     return;
   }
 

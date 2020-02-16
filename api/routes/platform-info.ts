@@ -38,5 +38,6 @@ export const platformInfoHandler = asyncHandler(async (_, res) => {
   res.set('Cache-Control', 'no-cache, max-age=0');
   res.send({
     settings: { ...defaultSettings, ...camelize(result.rows[0]) }
+    // TODO: alerts!
   });
 });

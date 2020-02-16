@@ -11,6 +11,7 @@ import { exportHandler } from './routes/export';
 import { profileHandler } from './routes/profile';
 import { createAppHandler } from './routes/create-app';
 import { apiKey } from './apps';
+import { updateHandler } from './routes/update';
 
 export const app = express();
 
@@ -60,13 +61,13 @@ app.all('*', jwt({ secret: process.env.JWT_SECRET!, userProperty: 'jwt' }));
 app.use((req, _, next) => {
   if (!req.jwt) {
     next(new Error('Expected JWT info'));
-    return;
+  } else {
+    req.user = {
+      bungieMembershipId: parseInt(req.jwt.sub, 10),
+      dimApiKey: req.jwt.iss
+    };
+    next();
   }
-  req.user = {
-    bungieMembershipId: parseInt(req.jwt.sub, 10),
-    dimApiKey: req.jwt.iss
-  };
-  next();
 });
 
 // Validate that the auth token and the API key in the header match.
@@ -82,12 +83,19 @@ app.use((req, res, next) => {
   }
 });
 
-app.get('/test', (req, res) => res.send((req as any).user));
-
+// Get user data
 app.get('/profile', profileHandler);
+// Add or update items in the profile
+app.post('/profile', updateHandler);
+
+// Import data from old DIM, or that was exported using /export
 app.post('/import', importHandler);
+// Export all data for an account
 app.get('/export', exportHandler);
+// Delete all data for an account
 app.post('/delete_all_data', deleteAllDataHandler);
+
+// TODO: /audit_log
 
 app.use((err: Error, _req, res, _next) => {
   if (err.name === 'UnauthorizedError') {
