@@ -7,7 +7,7 @@ import { camelize } from '../utils';
  */
 export async function getAllApps(client: ClientBase): Promise<ApiApp[]> {
   const results = await client.query<ApiApp>({
-    name: 'get_apps',
+    name: 'get_all_apps',
     text: 'SELECT * FROM apps'
   });
   return results.rows.map((row) => camelize<ApiApp>(row));

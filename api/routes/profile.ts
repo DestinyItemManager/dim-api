@@ -6,6 +6,7 @@ import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
 import { badRequest } from '../utils';
 import { ProfileResponse } from '../shapes/profile';
 import { DestinyVersion } from '../shapes/general';
+import { defaultSettings } from '../shapes/settings';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -26,7 +27,10 @@ export const profileHandler = asyncHandler(async (req, res) => {
     const response: ProfileResponse = {};
 
     if (components.includes('settings')) {
-      response.settings = await getSettings(client, bungieMembershipId);
+      response.settings = {
+        ...defaultSettings,
+        ...(await getSettings(client, bungieMembershipId))
+      };
     }
 
     if (components.includes('loadouts')) {
@@ -36,6 +40,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
       }
       response.loadouts = await getLoadoutsForProfile(
         client,
+        bungieMembershipId,
         platformMembershipId,
         destinyVersion
       );
@@ -51,6 +56,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
       }
       response.tags = await getItemAnnotationsForProfile(
         client,
+        bungieMembershipId,
         platformMembershipId,
         destinyVersion
       );

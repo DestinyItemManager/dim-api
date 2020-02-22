@@ -7,14 +7,16 @@ export const pool = new Pool();
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction.
  */
-export async function transaction(fn: (client: ClientBase) => Promise<any>) {
+export async function transaction<T>(fn: (client: ClientBase) => Promise<T>) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    await fn(client);
+    const result = await fn(client);
 
     await client.query('COMMIT');
+
+    return result;
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
@@ -26,13 +28,13 @@ export async function transaction(fn: (client: ClientBase) => Promise<any>) {
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction that's only meant for reads.
  */
-export async function readTransaction(
-  fn: (client: ClientBase) => Promise<any>
+export async function readTransaction<T>(
+  fn: (client: ClientBase) => Promise<T>
 ) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await fn(client);
+    return await fn(client);
   } finally {
     await client.query('ROLLBACK');
     client.release();

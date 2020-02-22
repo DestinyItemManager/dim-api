@@ -49,7 +49,7 @@ describe('/new_app', () => {
 
 describe('import/export', () => {
   it('can import and export data', async () => {
-    importData();
+    await importData();
 
     const response = await request
       .get('/export')

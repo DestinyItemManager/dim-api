@@ -1,0 +1,1697 @@
+{
+  "057f1efd-ddd9-6360-c444-6e2567e4fd7c": {
+    "id": "057f1efd-ddd9-6360-c444-6e2567e4fd7c",
+    "name": "Iron Banner",
+    "classType": 0,
+    "version": "v3.0",
+    "items": [
+      {
+        "id": "6917529079713983078",
+        "hash": 3574778422,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079948493155",
+        "hash": 3904536202,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079854254951",
+        "hash": 2642309592,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529032203526699",
+        "hash": 3367786035,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529081823197372",
+        "hash": 523184151,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529075441936459",
+        "hash": 1346849289,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529072005099520",
+        "hash": 486279087,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529071833520813",
+        "hash": 1703777169,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080505311698",
+        "hash": 1551744702,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073781584039",
+        "hash": 2843928135,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073863558247",
+        "hash": 106004904,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074279966700",
+        "hash": 2063415782,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080569701440",
+        "hash": 327933420,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074279967368",
+        "hash": 165221411,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "05bc243d-9f76-c0dc-aa82-925f12e8d8f2": {
+    "id": "05bc243d-9f76-c0dc-aa82-925f12e8d8f2",
+    "name": "Iron Banner",
+    "classType": 1,
+    "version": "v3.0",
+    "items": [
+      {
+        "id": "6917529082051165506",
+        "hash": 82944038,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529081087055878",
+        "hash": 2125621867,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529032203526699",
+        "hash": 3367786035,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529081823197372",
+        "hash": 523184151,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074283284886",
+        "hash": 21395672,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529075441936459",
+        "hash": 1346849289,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529072005099520",
+        "hash": 486279087,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529071833520813",
+        "hash": 1703777169,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080567992214",
+        "hash": 3919765141,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080505311698",
+        "hash": 1551744702,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529072572739432",
+        "hash": 941890990,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080034584019",
+        "hash": 1866413378,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529081087055086",
+        "hash": 1601524313,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074308373173",
+        "hash": 825392783,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529032210141419",
+        "hash": 2326927634,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "0e99385d-1b95-eabe-c53f-a13d6c7ac191": {
+    "id": "0e99385d-1b95-eabe-c53f-a13d6c7ac191",
+    "name": "Too Big!",
+    "classType": -1,
+    "version": "v3.0",
+    "items": [
+      {
+        "id": "6917529070096113171",
+        "hash": 1177550375,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529076918367553",
+        "hash": 2808364178,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529074277992203",
+        "hash": 3068424913,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529081824731644",
+        "hash": 2781253736,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079025341855",
+        "hash": 3322979578,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080571384297",
+        "hash": 3322979578,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529081085261258",
+        "hash": 3176903681,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529047275751208",
+        "hash": 2272644375,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079322098591",
+        "hash": 3598383277,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079948493155",
+        "hash": 3904536202,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079775561780",
+        "hash": 3841866576,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529078453544359",
+        "hash": 4217142167,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529074619005835",
+        "hash": 2167581795,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529081993742095",
+        "hash": 1866413378,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529081826551774",
+        "hash": 3863768569,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079942051453",
+        "hash": 57660787,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529048699188282",
+        "hash": 3892023023,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529075118280485",
+        "hash": 3055446327,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529078173881202",
+        "hash": 3055446326,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079096232492",
+        "hash": 1457207757,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529081023143176",
+        "hash": 1177550375,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529071380200747",
+        "hash": 255654879,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529075148408445",
+        "hash": 3491886958,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529078948165168",
+        "hash": 2447423792,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080942747022",
+        "hash": 3835813881,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529075441936459",
+        "hash": 1346849289,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080567992214",
+        "hash": 3919765141,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529075888144882",
+        "hash": 3227022822,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529072005099520",
+        "hash": 486279087,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529071833520813",
+        "hash": 1703777169,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529046886859936",
+        "hash": 3615265777,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529061871739648",
+        "hash": 3472112597,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529079085450139",
+        "hash": 3675783241,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529074619006009",
+        "hash": 602786655,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073045806285",
+        "hash": 3012398149,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080505311698",
+        "hash": 1551744702,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529074066639164",
+        "hash": 155374077,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529080034584019",
+        "hash": 1866413378,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529073423670833",
+        "hash": 2661471738,
+        "amount": 1,
+        "equipped": false
+      }
+    ]
+  },
+  "2f65d81b-5398-3bde-b6b4-9b0780c9e88c": {
+    "id": "2f65d81b-5398-3bde-b6b4-9b0780c9e88c",
+    "name": "SRL",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529119478433784",
+        "hash": 3909166968,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529118697975126",
+        "hash": 1184900752,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119349856212",
+        "hash": 3325871682,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119480370671",
+        "hash": 2364921277,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529118697980101",
+        "hash": 1944434610,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "30424047-b032-ca5d-00d3-4d248f4dd986": {
+    "id": "30424047-b032-ca5d-00d3-4d248f4dd986",
+    "name": "Leveling",
+    "classType": 0,
+    "version": "v3.0",
+    "items": [
+      {
+        "id": "6917529079713983078",
+        "hash": 3574778422,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074279962223",
+        "hash": 392830828,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079775561780",
+        "hash": 3841866576,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529078453544359",
+        "hash": 4217142167,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079854254951",
+        "hash": 2642309592,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079096232492",
+        "hash": 1457207757,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079323682957",
+        "hash": 3542867423,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073781584039",
+        "hash": 2843928135,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073863558247",
+        "hash": 106004904,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074279966700",
+        "hash": 2063415782,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "5108bb81-d11b-347d-724a-95b9cbdd00f4": {
+    "id": "5108bb81-d11b-347d-724a-95b9cbdd00f4",
+    "name": "Iron Banner Jan",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529027650094504",
+        "hash": 1716862031,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119468422738",
+        "hash": 3172428255,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529084834302744",
+        "hash": 3078564839,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529118267193238",
+        "hash": 2878293129,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529117987518841",
+        "hash": 850974178,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529116945719275",
+        "hash": 2374619875,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529084839890490",
+        "hash": 2001658176,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119349858699",
+        "hash": 1394543945,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099533398090",
+        "hash": 1971451024,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099531282157",
+        "hash": 2672107541,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529109987539344",
+        "hash": 533543004,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "6ca1898c-2c0c-273f-42e2-c2920f1ec66d": {
+    "id": "6ca1898c-2c0c-273f-42e2-c2920f1ec66d",
+    "name": "Exotic Armor",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529093309618935",
+        "hash": 3809851982,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529092533081072",
+        "hash": 2402750214,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529064782573050",
+        "hash": 2217280775,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529087076652277",
+        "hash": 3471865172,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "8a546fd8-dde3-c6a7-b85b-4b7d13583eeb": {
+    "id": "8a546fd8-dde3-c6a7-b85b-4b7d13583eeb",
+    "name": "2",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": []
+  },
+  "976f7aba-b563-1c6d-76f1-81fc63ff64cc": {
+    "id": "976f7aba-b563-1c6d-76f1-81fc63ff64cc",
+    "name": "POWER UP",
+    "classType": -1,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [{ "id": "0", "hash": 2889940663, "amount": 2, "equipped": false }]
+  },
+  "986918cd-8d42-fc75-aec9-037913a89cb6": {
+    "id": "986918cd-8d42-fc75-aec9-037913a89cb6",
+    "name": "T11",
+    "classType": 0,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529074278001485",
+        "hash": 4158489060,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073781584039",
+        "hash": 2843928135,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074278000964",
+        "hash": 1212068371,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529088005105726",
+        "hash": 1275480033,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074279966700",
+        "hash": 2063415782,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079775552735",
+        "hash": 509065043,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080569701440",
+        "hash": 327933420,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "bad23aa7-2acf-c4b5-d3ae-a797c14eb927": {
+    "id": "bad23aa7-2acf-c4b5-d3ae-a797c14eb927",
+    "name": "Tryout",
+    "classType": -1,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529031818760433",
+        "hash": 3658182170,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529074283284886",
+        "hash": 21395672,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529067458797248",
+        "hash": 1475134443,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529061871739648",
+        "hash": 3472112597,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073045806285",
+        "hash": 3012398149,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119468426148",
+        "hash": 661529959,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529118260909964",
+        "hash": 2007792164,
+        "amount": 1,
+        "equipped": false
+      },
+      {
+        "id": "6917529114853690609",
+        "hash": 2196848513,
+        "amount": 1,
+        "equipped": false
+      }
+    ]
+  },
+  "bfc9fa36-2ff2-4204-1d52-3765f6ae7933": {
+    "id": "bfc9fa36-2ff2-4204-1d52-3765f6ae7933",
+    "name": "Leveling",
+    "classType": 1,
+    "version": "v3.0",
+    "items": [
+      {
+        "id": "6917529075351192998",
+        "hash": 904176967,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079775561780",
+        "hash": 3841866576,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529078453544359",
+        "hash": 4217142167,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079096232492",
+        "hash": 1457207757,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529079323682957",
+        "hash": 3542867423,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "f3382e50-3b38-7e49-2c73-858e0647a8f9": {
+    "id": "f3382e50-3b38-7e49-2c73-858e0647a8f9",
+    "name": "Vault",
+    "classType": -1,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529087074438081",
+        "hash": 3919765141,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080649129829",
+        "hash": 2666891171,
+        "amount": 1,
+        "equipped": false
+      }
+    ]
+  },
+  "f98e00c1-f0c4-09e3-4689-57c0701a958e": {
+    "id": "f98e00c1-f0c4-09e3-4689-57c0701a958e",
+    "name": "IDS T12",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529114452018646",
+        "hash": 149041867,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529103803436275",
+        "hash": 2038561477,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529091054212177",
+        "hash": 2747259661,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529114455867280",
+        "hash": 201220485,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529114463852545",
+        "hash": 1665256925,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529110286855773",
+        "hash": 2360294839,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099531282157",
+        "hash": 2672107541,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "loadouts-v3.0": [
+    "30424047-b032-ca5d-00d3-4d248f4dd986",
+    "bfc9fa36-2ff2-4204-1d52-3765f6ae7933",
+    "057f1efd-ddd9-6360-c444-6e2567e4fd7c",
+    "0e99385d-1b95-eabe-c53f-a13d6c7ac191",
+    "05bc243d-9f76-c0dc-aa82-925f12e8d8f2",
+    "986918cd-8d42-fc75-aec9-037913a89cb6",
+    "6ca1898c-2c0c-273f-42e2-c2920f1ec66d",
+    "f3382e50-3b38-7e49-2c73-858e0647a8f9",
+    "976f7aba-b563-1c6d-76f1-81fc63ff64cc",
+    "f98e00c1-f0c4-09e3-4689-57c0701a958e",
+    "2f65d81b-5398-3bde-b6b4-9b0780c9e88c",
+    "bad23aa7-2acf-c4b5-d3ae-a797c14eb927",
+    "5108bb81-d11b-347d-724a-95b9cbdd00f4",
+    "8a546fd8-dde3-c6a7-b85b-4b7d13583eeb",
+    "c40ba18f-c33b-93e0-b3cd-b6dd23f89857",
+    "c6ccccd6-38cf-4037-a3a8-ea3fe8c806f9",
+    "45483553-a04a-4ac5-bd37-695158ed9024",
+    "8ac32715-d2fe-40c0-9380-857e76546820",
+    "3c20b3f5-7ea8-4a19-8f2f-9062c7adb7bf",
+    "52a288dc-8e54-4cd3-b8e2-3509489216e4",
+    "190bffea-3b3c-404f-9c07-e33f966e10a4",
+    "460c684f-f08c-4828-abf8-d10e1b82546a",
+    "8195b3aa-7037-4bd9-a860-0a4ab01f9b95",
+    "4527e640-4c3b-4bfd-8c8f-4c98f0f19d3c",
+    "64d35e92-1b41-4a39-992f-c51ff64da9ef",
+    "87bea3d6-fd96-4342-8841-86484c51d74c",
+    "0b24652d-f925-42ea-9f3f-4c75921a2a43"
+  ],
+  "settings-v1.0": {
+    "itemDetails": true,
+    "itemQuality": true,
+    "showNewItems": false,
+    "showReviews": true,
+    "allowIdPostToDtr": true,
+    "characterOrder": "mostRecent",
+    "itemSort": "custom",
+    "itemSortOrderCustom": ["tag", "rarity", "primStat", "typeName", "name"],
+    "charCol": "3",
+    "charColMobile": "4",
+    "itemSize": 50,
+    "collapsedSections": {
+      "243968262": false,
+      "840570351": true,
+      "Reputation": false,
+      "Armor": false,
+      "Weapons": false,
+      "Postmaster": false,
+      "840570351-1": false,
+      "recordbooks-243968262-1": true,
+      "recordbooks-243968262-2": true,
+      "recordbooks-243968262-3": true,
+      "recordbooks-243968262-4": true,
+      "recordbooks-840570351-1": true,
+      "recordbooks-840570351-2": true,
+      "recordbooks-840570351-3": true,
+      "recordbooks-840570351-4": true,
+      "recordbooks-840570351-5": true,
+      "recordbooks-840570351-6": true,
+      "recordbooks-840570351-7": true,
+      "rb-243968262": false,
+      "rb-840570351": false,
+      "rb-2175864601": false,
+      "rb-3471683641": false,
+      "rbpage-3471683641-2": true,
+      "activities-2659248071": false,
+      "plugSets-3224618006": false,
+      "catalysts": true,
+      "ornaments": false,
+      "activities-": false,
+      "activities-1836893116": false,
+      "General": false,
+      "Inventory": false,
+      "d2vendor-895295461": false,
+      "d2vendor-2190858386": false,
+      "milestones": false,
+      "pursuits": false,
+      "progress-factions": true,
+      "profile-quests": false,
+      "profile-ranks": false,
+      "profile-milestones": false,
+      "d2vendor-3982706173": false,
+      "loadoutbuilder-select": false,
+      "loadoutbuilder-generated": false,
+      "loadoutbuilder-locked": true,
+      "loadoutbuilder-options": false,
+      "rbpage-243968262-1": false,
+      "rbpage-243968262-2": false,
+      "d1vendor-1998812735": false,
+      "pursuits-Items": false,
+      "progress-collections": false,
+      "pursuits-Quests": false,
+      "progress-triumphs": false,
+      "raids": true,
+      "d2vendor-880202832": false,
+      "mods": false,
+      "pursuits-Bounties": false
+    },
+    "completedRecordsHidden": true,
+    "redactedRecordsRevealed": false,
+    "farming": { "makeRoomForItems": true, "moveTokens": false },
+    "reviewsPlatformSelectionV2": 0,
+    "reviewsModeSelection": "0",
+    "hideCompletedRecords": false,
+    "customCharacterSort": [
+      "2305843009271495265",
+      "2305843009214965410",
+      "2305843009234199144"
+    ],
+    "infusionDirection": 1,
+    "itemPickerEquip": true,
+    "language": "en",
+    "colorA11y": "-",
+    "wishListSource": "https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/choosy_voltron.txt",
+    "ornaments": "unique",
+    "reviewsPlatformSelection": "3",
+    "showNewAnimation": false,
+    "showElements": false,
+    "vaultMaxCol": "999",
+    "betaForsakenTiles": false,
+    "destinyVersion": 2,
+    "": false
+  },
+  "c40ba18f-c33b-93e0-b3cd-b6dd23f89857": {
+    "id": "c40ba18f-c33b-93e0-b3cd-b6dd23f89857",
+    "name": "T12",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "items": [
+      {
+        "id": "6917529117987518841",
+        "hash": 850974178,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529114455867280",
+        "hash": 201220485,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529116945719275",
+        "hash": 2374619875,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119349858699",
+        "hash": 1394543945,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529118525326107",
+        "hash": 500381831,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529109987539344",
+        "hash": 533543004,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099531282157",
+        "hash": 2672107541,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "c6ccccd6-38cf-4037-a3a8-ea3fe8c806f9": {
+    "id": "c6ccccd6-38cf-4037-a3a8-ea3fe8c806f9",
+    "name": "From LB",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 1,
+    "items": [
+      {
+        "id": "6917529117987518841",
+        "hash": 850974178,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529114455867280",
+        "hash": 201220485,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529116945719275",
+        "hash": 2374619875,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529119349858699",
+        "hash": 1394543945,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099533398090",
+        "hash": 1971451024,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529110286855773",
+        "hash": 2360294839,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529099531282157",
+        "hash": 2672107541,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "45483553-a04a-4ac5-bd37-695158ed9024": {
+    "id": "45483553-a04a-4ac5-bd37-695158ed9024",
+    "name": "Iron Banner",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529039139397625",
+        "hash": 3125909492,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529038187913681",
+        "hash": 2296691422,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529032571415869",
+        "hash": 1245809814,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529036614809005",
+        "hash": 3433746208,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529031207352862",
+        "hash": 1180270692,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529036611600204",
+        "hash": 1024867629,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529033181705249",
+        "hash": 1331482397,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529030023902409",
+        "hash": 3635991036,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529032882373657",
+        "hash": 3089417788,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529030844209670",
+        "hash": 1843730201,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "destinyVersion": 2,
+  "8ac32715-d2fe-40c0-9380-857e76546820": {
+    "id": "8ac32715-d2fe-40c0-9380-857e76546820",
+    "name": "FWC",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529036623155913",
+        "hash": 1763431309,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529053105941139",
+        "hash": 1418921862,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529053108585938",
+        "hash": 2415993980,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529053102885057",
+        "hash": 1355893732,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529036626041016",
+        "hash": 2524181305,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "3c20b3f5-7ea8-4a19-8f2f-9062c7adb7bf": {
+    "id": "3c20b3f5-7ea8-4a19-8f2f-9062c7adb7bf",
+    "name": "Raid",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529041706242868",
+        "hash": 1667080810,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529052730906136",
+        "hash": 407863747,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529052828673609",
+        "hash": 2339720736,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529053102890543",
+        "hash": 1034660314,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529045619315824",
+        "hash": 3984534842,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "0b24652d-f925-42ea-9f3f-4c75921a2a43": {
+    "id": "0b24652d-f925-42ea-9f3f-4c75921a2a43",
+    "name": "Crucible",
+    "classType": -1,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529051734431348",
+        "hash": 263371518,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529144989382807",
+        "hash": 1506719573,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "52a288dc-8e54-4cd3-b8e2-3509489216e4": {
+    "id": "52a288dc-8e54-4cd3-b8e2-3509489216e4",
+    "name": "Dead Orbit",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529059428395346",
+        "hash": 132368575,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529059437653652",
+        "hash": 3920232320,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529057910521110",
+        "hash": 66235782,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529058103703893",
+        "hash": 3783059515,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529058109237130",
+        "hash": 3146241834,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "platformType": 2,
+  "ignoredUsers": [],
+  "190bffea-3b3c-404f-9c07-e33f966e10a4": {
+    "id": "190bffea-3b3c-404f-9c07-e33f966e10a4",
+    "name": "Gambit Gear",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529080816895410",
+        "hash": 1169857924,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080265460178",
+        "hash": 629787707,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080811098192",
+        "hash": 2130645994,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080499710706",
+        "hash": 3855285278,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080496777944",
+        "hash": 3184912423,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "460c684f-f08c-4828-abf8-d10e1b82546a": {
+    "id": "460c684f-f08c-4828-abf8-d10e1b82546a",
+    "name": "Test",
+    "classType": 1,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529079610792237",
+        "hash": 1891561814,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529060009117760",
+        "hash": 2525344810,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529040354322360",
+        "hash": 3955340735,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529060006322280",
+        "hash": 1847610489,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529059690245010",
+        "hash": 2265859909,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529040346017055",
+        "hash": 1197579132,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529066565221494",
+        "hash": 3957603605,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529040082243407",
+        "hash": 2958378809,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080721716808",
+        "hash": 4288031461,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529030844209670",
+        "hash": 1843730201,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "8195b3aa-7037-4bd9-a860-0a4ab01f9b95": {
+    "id": "8195b3aa-7037-4bd9-a860-0a4ab01f9b95",
+    "name": "Current",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529086536498963",
+        "hash": 3410721600,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529086248169743",
+        "hash": 4261835528,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529086250968990",
+        "hash": 2762426792,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529086392256861",
+        "hash": 307138509,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529086539497419",
+        "hash": 1084033161,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529086418422906",
+        "hash": 25091086,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529083565599188",
+        "hash": 4214004314,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529082011186151",
+        "hash": 3325463374,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529030023902409",
+        "hash": 3635991036,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529085156905206",
+        "hash": 3745990145,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "87bea3d6-fd96-4342-8841-86484c51d74c": {
+    "id": "87bea3d6-fd96-4342-8841-86484c51d74c",
+    "name": "Calus",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529083549941836",
+        "hash": 3984534843,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529073175573842",
+        "hash": 1128225405,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529094064056933",
+        "hash": 174192097,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529080189541525",
+        "hash": 3691881271,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529083562732978",
+        "hash": 2013109093,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529087019788725",
+        "hash": 1960303676,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529087066814428",
+        "hash": 407863747,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529087061141956",
+        "hash": 30962014,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "membershipId": "4611686018433092312",
+  "4527e640-4c3b-4bfd-8c8f-4c98f0f19d3c": {
+    "id": "4527e640-4c3b-4bfd-8c8f-4c98f0f19d3c",
+    "name": "Solstice",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529097883444949",
+        "hash": 2585373098,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529097881109919",
+        "hash": 4242735326,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529097883448273",
+        "hash": 1241704260,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529097878517225",
+        "hash": 3613939175,
+        "amount": 1,
+        "equipped": true
+      },
+      {
+        "id": "6917529097808479431",
+        "hash": 1126194683,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  },
+  "dimItemInfo-m4611686018433092312-d2": {
+    "6917529080189540125": { "tag": "favorite", "notes": "" },
+    "6917529097891091844": {
+      "tag": "keep",
+      "notes": "Precision killer, until I get Hush"
+    },
+    "6917529096821708867": { "tag": "favorite" },
+    "6917529099051159529": { "tag": "keep" },
+    "6917529147983680257": { "tag": "favorite" },
+    "6917529051734431348": { "tag": "favorite", "notes": "Crucible" },
+    "6917529048922676689": { "tag": "favorite", "notes": "EDZ" },
+    "6917529143948708425": { "tag": "keep" },
+    "6917529049320877453": { "tag": "keep", "notes": "" },
+    "6917529080793006701": { "tag": "favorite", "notes": "" },
+    "6917529098481372213": { "tag": "keep" },
+    "6917529046959594046": { "tag": "keep", "notes": "" },
+    "6917529031764435123": { "tag": "keep", "notes": "" },
+    "6917529100126422056": { "tag": "favorite" },
+    "6917529052991081874": { "tag": "favorite", "notes": "" },
+    "6917529032882373657": { "tag": "favorite", "notes": "" },
+    "6917529080189541525": { "tag": "favorite", "notes": "" },
+    "6917529071836071614": { "tag": "keep", "notes": "" },
+    "6917529086343677973": { "tag": "keep" },
+    "6917529135540501216": { "tag": "infuse" },
+    "6917529059073406289": { "tag": "favorite", "notes": "" },
+    "6917529067440267268": { "tag": "keep", "notes": "" },
+    "6917529098547434130": { "tag": "keep" },
+    "6917529097452158996": { "tag": "favorite" },
+    "6917529097447517805": { "tag": "keep" },
+    "6917529080805055249": { "tag": "favorite", "notes": "" },
+    "6917529091750075394": { "tag": "keep" },
+    "6917529143732066066": { "tag": "favorite" },
+    "6917529099046174614": { "tag": "keep" },
+    "6917529145664435984": { "tag": "infuse" },
+    "6917529098474204633": { "tag": "keep" },
+    "6917529089061235239": { "tag": "keep" },
+    "6917529092977248294": { "tag": "keep" },
+    "6917529147217766456": { "tag": "keep" },
+    "6917529092105441798": { "tag": "keep" },
+    "6917529087019788725": { "tag": "keep" },
+    "6917529099873040057": { "tag": "keep" },
+    "6917529149118422958": { "tag": "keep" },
+    "6917529093826366467": { "tag": "keep" },
+    "6917529080271344939": { "tag": "favorite", "notes": "" },
+    "6917529056191489499": { "tag": "keep", "notes": "" },
+    "6917529119967556758": { "tag": "favorite" },
+    "6917529054299706912": { "tag": "keep", "notes": "" },
+    "6917529128688698682": { "tag": "keep", "notes": "Explodes!" },
+    "6917529083562732978": { "tag": "keep" },
+    "6917529151788837888": { "tag": "keep" },
+    "6917529136902806522": { "tag": "favorite" },
+    "6917529138478943194": { "tag": "keep" },
+    "6917529147245940447": { "tag": "keep" },
+    "6917529097115514031": { "tag": "keep", "notes": "Rampage, I guess" },
+    "6917529053352408031": { "tag": "keep" }
+  },
+  "64d35e92-1b41-4a39-992f-c51ff64da9ef": {
+    "id": "64d35e92-1b41-4a39-992f-c51ff64da9ef",
+    "name": "Testing subclass",
+    "classType": 2,
+    "version": "v3.0",
+    "platform": "PlayStation",
+    "membershipId": "4611686018433092312",
+    "destinyVersion": 2,
+    "items": [
+      {
+        "id": "6917529029297933839",
+        "hash": 1334959255,
+        "amount": 1,
+        "equipped": true
+      }
+    ]
+  }
+}
