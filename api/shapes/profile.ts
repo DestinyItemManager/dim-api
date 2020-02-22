@@ -18,7 +18,11 @@ export interface ProfileUpdateRequest {
   updates: ProfileUpdate[];
 }
 
-type ProfileUpdate = TagUpdate | SettingUpdate | LoadoutUpdate;
+type ProfileUpdate =
+  | TagUpdate
+  | SettingUpdate
+  | LoadoutUpdate
+  | DeleteLoadoutUpdate;
 
 export interface TagUpdate {
   action: 'tag';
@@ -34,6 +38,11 @@ export interface SettingUpdate {
 export interface LoadoutUpdate {
   action: 'loadout';
   payload: Loadout;
+}
+
+export interface DeleteLoadoutUpdate {
+  action: 'delete_loadout';
+  payload: string; // A loadout ID
 }
 
 export interface ProfileUpdateResponse {

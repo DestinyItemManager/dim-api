@@ -104,7 +104,7 @@ app.use((err: Error, _req, res, _next) => {
       message: err.message
     });
   } else {
-    console.error(err);
+    console.error('Error handling request', err);
     res.status(500).send({
       error: err.name,
       message: err.message

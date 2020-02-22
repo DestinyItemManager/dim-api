@@ -7,7 +7,10 @@ import { Settings } from '../shapes/settings';
 import { DestinyVersion } from '../shapes/general';
 import { Loadout } from '../shapes/loadouts';
 import { setSetting as setSettingInDb } from '../db/settings-queries';
-import { updateLoadout as updateLoadoutInDb } from '../db/loadouts-queries';
+import {
+  updateLoadout as updateLoadoutInDb,
+  deleteLoadout as deleteLoadoutInDb
+} from '../db/loadouts-queries';
 import { updateItemAnnotation as updateItemAnnotationInDb } from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
@@ -41,6 +44,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             update.payload
           );
           break;
+
         case 'loadout':
           result = await updateLoadout(
             client,
@@ -51,6 +55,15 @@ export const updateHandler = asyncHandler(async (req, res) => {
             update.payload
           );
           break;
+
+        case 'delete_loadout':
+          result = await deleteLoadout(
+            client,
+            bungieMembershipId,
+            update.payload
+          );
+          break;
+
         case 'tag':
           result = await updateItemAnnotation(
             client,
@@ -61,6 +74,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             update.payload
           );
           break;
+
         default:
           badRequest(res, `Unknown action type ${(update as any).action}`);
           return;
@@ -147,6 +161,18 @@ async function updateLoadout(
     destinyVersion,
     loadout
   );
+  return { status: 'Success' };
+}
+
+async function deleteLoadout(
+  client: ClientBase,
+  bungieMembershipId: number,
+  loadoutId: string
+): Promise<ProfileUpdateResult> {
+  const result = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
+  if (result.rowCount !== 1) {
+    return { status: 'NotFound', message: 'No loadout found with that ID' };
+  }
   return { status: 'Success' };
 }
 
