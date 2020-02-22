@@ -22,17 +22,19 @@ exports.up = function(db, callback) {
       membership_id int NOT NULL,
       platform_membership_id text NOT NULL,
       destiny_version smallint NOT NULL default 2,
-      inventory_item_id text PRIMARY KEY NOT NULL,
+      inventory_item_id text NOT NULL,
       tag item_tag,
       notes text,
       created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
       last_updated_at timestamp NOT NULL default current_timestamp,
-      last_updated_by text NOT NULL
+      last_updated_by text NOT NULL,
+      /* tags are unique by membership ID and inventory item ID - effectively they're scoped by user */
+      PRIMARY KEY(membership_id, inventory_item_id)
     );
 
     /* The typical query to get all item annotations specifies both platform_membership_id and destiny_version. destiny_version is low-cardinality enough to not need to be indexed. */
-    CREATE INDEX item_annotations_by_platform_membership ON item_annotations (platform_membership_id);
+    CREATE INDEX item_annotations_by_platform_membership ON item_annotations (membership_id, platform_membership_id);
     `,
     callback
   );

@@ -1,6 +1,7 @@
 import { Loadout, LoadoutItem } from '../shapes/loadouts';
 import { ClientBase, QueryResult } from 'pg';
 import { DestinyVersion } from '../shapes/general';
+import { metrics } from '../metrics';
 
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.
@@ -14,7 +15,7 @@ export async function getLoadoutsForProfile(
   const results = await client.query<Loadout>({
     name: 'get_loadouts_for_platform_membership_id',
     text:
-      'SELECT id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE platform_membership_id = $2 and membership_id = $1 and destiny_version = $3',
+      'SELECT id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
     values: [bungieMembershipId, platformMembershipId, destinyVersion]
   });
   return results.rows.map(convertLoadout);
@@ -67,7 +68,6 @@ function convertLoadout(row: any): Loadout {
 /**
  * Insert or update (upsert) a loadout. Loadouts are totally replaced when updated.
  */
-// TODO: move from upsert to get+update/insert
 export async function updateLoadout(
   client: ClientBase,
   appId: string,
@@ -80,8 +80,8 @@ export async function updateLoadout(
     name: 'upsert_loadout',
     text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, created_by, last_updated_by)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
-on conflict (id)
-do update set (name, class_type, emblem_hash, clear_space, items, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, current_timestamp, $10) where loadouts.membership_id = $2`,
+on conflict (membership_id, id)
+do update set (name, class_type, emblem_hash, clear_space, items, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, current_timestamp, $10)`,
     values: [
       loadout.id,
       bungieMembershipId,
@@ -100,7 +100,9 @@ do update set (name, class_type, emblem_hash, clear_space, items, last_updated_a
   });
 
   if (response.rowCount < 1) {
-    //throw new Error('Shenanigans');
+    // This should never happen!
+    metrics.increment('db.itemAnnotations.noRowUpdated', 1);
+    throw new Error('No row was updated');
   }
 
   return response;
@@ -143,8 +145,8 @@ export async function deleteLoadout(
 ): Promise<QueryResult<any>> {
   return client.query({
     name: 'delete_loadout',
-    text: `delete from loadouts where id = $1 and membership_id = $2`,
-    values: [loadoutId, bungieMembershipId]
+    text: `delete from loadouts where membership_id = $1 and id = $2`,
+    values: [bungieMembershipId, loadoutId]
   });
 }
 

@@ -1,6 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { DestinyVersion } from '../shapes/general';
+import { metrics } from '../metrics';
 
 /**
  * Get all of the item annotations for a particular platform_membership_id and destiny_version.
@@ -14,7 +15,7 @@ export async function getItemAnnotationsForProfile(
   const results = await client.query({
     name: 'get_item_annotations',
     text:
-      'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE platform_membership_id = $2 and membership_id = $1 and destiny_version = $3',
+      'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2  and destiny_version = $3',
     values: [bungieMembershipId, platformMembershipId, destinyVersion]
   });
   return results.rows.map(convertItemAnnotation);
@@ -63,8 +64,6 @@ function convertItemAnnotation(row: any): ItemAnnotation {
 /**
  * Insert or update (upsert) a single item annotation. Loadouts are totally replaced when updated.
  */
-// TODO: move from upsert to get+update/insert
-// TODO: Figure out how to prevent users from modifying data from other users. Maybe partition everything by membership ID in primary key?
 export async function updateItemAnnotation(
   client: ClientBase,
   appId: string,
@@ -84,8 +83,8 @@ export async function updateItemAnnotation(
     name: 'upsert_item_annotation',
     text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, created_by, last_updated_by)
 values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7, $7)
-on conflict (inventory_item_id)
-do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), current_timestamp, $7) where item_annotations.membership_id = $1`,
+on conflict (membership_id, inventory_item_id)
+do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), current_timestamp, $7)`,
     values: [
       bungieMembershipId,
       platformMembershipId,
@@ -98,8 +97,9 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
   });
 
   if (response.rowCount < 1) {
-    // TODO: This means somebody else already imported this under their account. Maybe we should make membership_id part of the primary key.
-    throw new Error('Shenanigans');
+    // This should never happen!
+    metrics.increment('db.itemAnnotations.noRowUpdated', 1);
+    throw new Error('No row was updated');
   }
 
   return response;
@@ -130,7 +130,7 @@ export async function deleteItemAnnotation(
 ): Promise<QueryResult<any>> {
   return client.query({
     name: 'delete_item_annotation',
-    text: `delete from item_annotations where inventory_item_id = $2 and membership_id = $1`,
+    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
     values: [bungieMembershipId, inventoryItemId]
   });
 }
@@ -145,7 +145,7 @@ export async function deleteItemAnnotationList(
 ): Promise<QueryResult<any>> {
   return client.query({
     name: 'delete_item_annotation_list',
-    text: `delete from item_annotations where inventory_item_id = ANY($2::text[]) and membership_id = $1`,
+    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = ANY($2::text[])`,
     values: [bungieMembershipId, inventoryItemIds]
   });
 }

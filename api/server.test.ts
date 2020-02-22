@@ -411,7 +411,6 @@ describe('tags', () => {
       .expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
-    console.log('request 1', updateResult.body, request.updates[0]);
 
     // Change tag and notes
     const request2: ProfileUpdateRequest = {
@@ -434,7 +433,6 @@ describe('tags', () => {
       .expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
-    console.log('request 2', updateResult2.body, request2.updates[0]);
 
     // Read tags back
     const response = await getRequestAuthed(
@@ -471,8 +469,6 @@ describe('tags', () => {
       .expect(200);
 
     expect(updateResult3.body.results[0].status).toBe('Success');
-
-    console.log('request 3', updateResult3.body, request3.updates[0]);
 
     // Read tags back after deleting the tag
     const response2 = await getRequestAuthed(
@@ -574,7 +570,7 @@ describe('tags', () => {
     expect(updateResult.body.results[0].status).toBe('Success');
     expect(updateResult.body.results[1].status).toBe('Success');
 
-    // delete tag and notes
+    // cleanup tags by id
     const request2: ProfileUpdateRequest = {
       platformMembershipId,
       destinyVersion: 2,
