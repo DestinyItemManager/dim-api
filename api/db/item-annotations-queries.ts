@@ -49,7 +49,7 @@ export async function getAllItemAnnotationsForUser(
 
 function convertItemAnnotation(row: any): ItemAnnotation {
   const result: ItemAnnotation = {
-    id: row.id
+    id: row.inventory_item_id
   };
   if (row.tag) {
     result.tag = row.tag;
@@ -73,8 +73,10 @@ export async function updateItemAnnotation(
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation
 ): Promise<QueryResult<any>> {
-  // TODO: if both are null, issue a delete? or just tombstone them?
-  if (!itemAnnotation.notes && !itemAnnotation.tag) {
+  const tagValue = clearValue(itemAnnotation.tag);
+  const notesValue = clearValue(itemAnnotation.notes);
+
+  if (tagValue === 'clear' && notesValue === 'clear') {
     return deleteItemAnnotation(client, bungieMembershipId, itemAnnotation.id);
   }
 
@@ -83,14 +85,14 @@ export async function updateItemAnnotation(
     text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, created_by, last_updated_by)
 values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7, $7)
 on conflict (inventory_item_id)
-do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 = null THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 = null THEN item_annotations.notes ELSE $6 END), current_timestamp, $7) where item_annotations.membership_id = $1`,
+do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), current_timestamp, $7) where item_annotations.membership_id = $1`,
     values: [
       bungieMembershipId,
       platformMembershipId,
       destinyVersion,
       itemAnnotation.id,
-      clearValue(itemAnnotation.tag),
-      clearValue(itemAnnotation.notes),
+      tagValue,
+      notesValue,
       appId
     ]
   });
@@ -109,7 +111,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
  * If it's set, we'll return the input which will update the existing value.
  */
 function clearValue(val: string | null | undefined) {
-  if (val === null || val?.length === 0) {
+  if (val === null || (val !== undefined && val.length === 0)) {
     return 'clear';
   } else if (!val) {
     return null;
@@ -128,8 +130,23 @@ export async function deleteItemAnnotation(
 ): Promise<QueryResult<any>> {
   return client.query({
     name: 'delete_item_annotation',
-    text: `delete from item_annotations where inventory_item_id = $1 and membership_id = $2`,
+    text: `delete from item_annotations where inventory_item_id = $2 and membership_id = $1`,
     values: [bungieMembershipId, inventoryItemId]
+  });
+}
+
+/**
+ * Delete an item annotation.
+ */
+export async function deleteItemAnnotationList(
+  client: ClientBase,
+  bungieMembershipId: number,
+  inventoryItemIds: string[]
+): Promise<QueryResult<any>> {
+  return client.query({
+    name: 'delete_item_annotation_list',
+    text: `delete from item_annotations where inventory_item_id = ANY($2::text[]) and membership_id = $1`,
+    values: [bungieMembershipId, inventoryItemIds]
   });
 }
 

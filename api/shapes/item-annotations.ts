@@ -5,7 +5,7 @@ export interface ItemAnnotation {
   /** The item instance ID for an individual item */
   id: string;
   /** Optional tag for the item. */
-  tag?: TagValue;
+  tag?: TagValue | null;
   /** Optional text notes on the item. */
-  notes?: string;
+  notes?: string | null;
 }

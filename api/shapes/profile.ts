@@ -20,6 +20,7 @@ export interface ProfileUpdateRequest {
 
 type ProfileUpdate =
   | TagUpdate
+  | TagCleanupUpdate
   | SettingUpdate
   | LoadoutUpdate
   | DeleteLoadoutUpdate;
@@ -27,6 +28,11 @@ type ProfileUpdate =
 export interface TagUpdate {
   action: 'tag';
   payload: ItemAnnotation;
+}
+
+export interface TagCleanupUpdate {
+  action: 'tag_cleanup';
+  payload: string[]; // Item instance IDs to delete
 }
 
 export interface SettingUpdate {

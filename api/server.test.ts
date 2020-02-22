@@ -155,6 +155,7 @@ describe('settings', () => {
   beforeEach(async () => {
     await postRequestAuthed('/delete_all_data').expect(200);
   });
+
   it('returns default settings', async () => {
     const response = await getRequestAuthed(
       '/profile?components=settings'
@@ -218,6 +219,7 @@ describe('loadouts', () => {
   beforeEach(async () => {
     await postRequestAuthed('/delete_all_data').expect(200);
   });
+
   it('can add a loadout', async () => {
     const request: ProfileUpdateRequest = {
       platformMembershipId,
@@ -345,6 +347,259 @@ describe('loadouts', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.loadouts?.length).toBe(0);
+  });
+});
+
+describe('tags', () => {
+  beforeEach(async () => {
+    await postRequestAuthed('/delete_all_data').expect(200);
+  });
+
+  it('can add a tag', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '1234',
+            tag: 'favorite'
+          }
+        }
+      ]
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.tags?.length).toBe(1);
+    const resultTag = profileResponse.tags![0];
+    expect(resultTag).toEqual({
+      id: '1234',
+      tag: 'favorite'
+    });
+  });
+
+  it('can update a tag', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '12345',
+            tag: 'favorite'
+          }
+        }
+      ]
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+    console.log('request 1', updateResult.body, request.updates[0]);
+
+    // Change tag and notes
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '12345',
+            tag: 'junk',
+            notes: 'super junky'
+          }
+        }
+      ]
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+    console.log('request 2', updateResult2.body, request2.updates[0]);
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.tags?.length).toBe(1);
+    const resultTag = profileResponse.tags![0];
+    expect(resultTag).toEqual({
+      id: '12345',
+      tag: 'junk',
+      notes: 'super junky'
+    });
+
+    // Delete tag
+    const request3: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '12345',
+            tag: null
+          }
+        }
+      ]
+    };
+
+    const updateResult3 = await postRequestAuthed('/profile')
+      .send(request3)
+      .expect(200);
+
+    expect(updateResult3.body.results[0].status).toBe('Success');
+
+    console.log('request 3', updateResult3.body, request3.updates[0]);
+
+    // Read tags back after deleting the tag
+    const response2 = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse2 = response2.body as ProfileResponse;
+
+    expect(profileResponse2.tags?.length).toBe(1);
+    const resultTag2 = profileResponse2.tags![0];
+    expect(resultTag2).toEqual({
+      id: '12345',
+      notes: 'super junky'
+    });
+  });
+
+  it('can delete a tag', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '1234567',
+            tag: 'favorite',
+            notes: 'the best'
+          }
+        }
+      ]
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // delete tag and notes
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '1234567',
+            tag: null,
+            notes: ''
+          }
+        }
+      ]
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.tags?.length).toBe(0);
+  });
+
+  it('can clear tags', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag',
+          payload: {
+            id: '1234567',
+            tag: 'favorite',
+            notes: 'the best'
+          }
+        },
+        {
+          action: 'tag',
+          payload: {
+            id: '7654321',
+            tag: 'junk',
+            notes: 'the worst'
+          }
+        }
+      ]
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.body.results[1].status).toBe('Success');
+
+    // delete tag and notes
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'tag_cleanup',
+          payload: ['1234567', '7654321']
+        }
+      ]
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.tags?.length).toBe(0);
   });
 });
 

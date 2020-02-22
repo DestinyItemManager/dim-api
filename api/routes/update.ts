@@ -11,7 +11,10 @@ import {
   updateLoadout as updateLoadoutInDb,
   deleteLoadout as deleteLoadoutInDb
 } from '../db/loadouts-queries';
-import { updateItemAnnotation as updateItemAnnotationInDb } from '../db/item-annotations-queries';
+import {
+  updateItemAnnotation as updateItemAnnotationInDb,
+  deleteItemAnnotationList
+} from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
 
@@ -71,6 +74,10 @@ export const updateHandler = asyncHandler(async (req, res) => {
             destinyVersion,
             update.payload
           );
+          break;
+
+        case 'tag_cleanup':
+          result = await tagCleanup(client, bungieMembershipId, update.payload);
           break;
 
         default:
@@ -226,5 +233,14 @@ async function updateItemAnnotation(
     destinyVersion,
     itemAnnotation
   );
+  return { status: 'Success' };
+}
+
+async function tagCleanup(
+  client: ClientBase,
+  bungieMembershipId: number,
+  inventoryItemIds: string[]
+): Promise<ProfileUpdateResult> {
+  await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
   return { status: 'Success' };
 }
