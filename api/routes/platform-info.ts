@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { pool } from '../db';
 import { camelize } from '../utils';
 
-interface GlobalSettings {
+export interface GlobalSettings {
   /** Whether to use the DIM API for  */
   dimApiEnabled: boolean;
   /** Don't allow refresh more often than this many seconds. */

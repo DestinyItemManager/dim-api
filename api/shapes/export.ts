@@ -4,7 +4,7 @@ import { DestinyVersion } from './general';
 import { Loadout } from './loadouts';
 
 export interface ExportResponse {
-  settings: Settings;
+  settings: Partial<Settings>;
   loadouts: {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
@@ -14,5 +14,5 @@ export interface ExportResponse {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
     annotation: ItemAnnotation;
-  };
+  }[];
 }

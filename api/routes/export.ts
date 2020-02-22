@@ -3,6 +3,7 @@ import { readTransaction } from '../db';
 import { getSettings } from '../db/settings-queries';
 import { getAllLoadoutsForUser } from '../db/loadouts-queries';
 import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
+import { ExportResponse } from '../shapes/export';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -15,12 +16,14 @@ export const exportHandler = asyncHandler(async (req, res) => {
       bungieMembershipId
     );
 
-    // Instruct CF not to cache this
-    res.set('Cache-Control', 'no-cache, max-age=0');
-    res.send({
+    const response: ExportResponse = {
       settings,
       loadouts,
-      itemAnnotations
-    });
+      tags: itemAnnotations
+    };
+
+    // Instruct CF not to cache this
+    res.set('Cache-Control', 'no-cache, max-age=0');
+    res.send(response);
   });
 });

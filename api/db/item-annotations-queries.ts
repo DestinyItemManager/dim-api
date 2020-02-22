@@ -35,7 +35,7 @@ export async function getAllItemAnnotationsForUser(
 > {
   // TODO: this isn't indexed!
   const results = await client.query({
-    name: 'get_item_annotations',
+    name: 'get_all_item_annotations',
     text:
       'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1',
     values: [bungieMembershipId]
@@ -96,6 +96,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
   });
 
   if (response.rowCount < 1) {
+    // TODO: This means somebody else already imported this under their account. Maybe we should make membership_id part of the primary key.
     throw new Error('Shenanigans');
   }
 

@@ -100,7 +100,7 @@ do update set (name, class_type, emblem_hash, clear_space, items, last_updated_a
   });
 
   if (response.rowCount < 1) {
-    throw new Error('Shenanigans');
+    //throw new Error('Shenanigans');
   }
 
   return response;
