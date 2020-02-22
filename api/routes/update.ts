@@ -24,11 +24,9 @@ import { metrics } from '../metrics';
 export const updateHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
-  const {
-    platformMembershipId,
-    destinyVersion,
-    updates
-  } = req.body as ProfileUpdateRequest;
+  const request = req.body as ProfileUpdateRequest;
+  const { platformMembershipId, updates } = request;
+  const destinyVersion = request.destinyVersion ?? 2;
 
   const results: ProfileUpdateResult[] = [];
 
@@ -104,10 +102,18 @@ async function updateLoadout(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  platformMembershipId: string,
+  platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
   loadout: Loadout
 ): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadouts require platform membership ID to be set'
+    };
+  }
+
   if (!loadout.name) {
     metrics.increment('update.validation.loadoutNameMissing');
     return {
@@ -180,10 +186,18 @@ async function updateItemAnnotation(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  platformMembershipId: string,
+  platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation
 ): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing');
+    return {
+      status: 'InvalidArgument',
+      message: 'Tags require platform membership ID to be set'
+    };
+  }
+
   if (
     itemAnnotation.tag &&
     !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(

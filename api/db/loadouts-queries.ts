@@ -52,7 +52,7 @@ export async function getAllLoadoutsForUser(
 function convertLoadout(row: any): Loadout {
   const loadout: Loadout = {
     id: row.id,
-    name: row.id,
+    name: row.name,
     classType: row.class_type,
     clearSpace: row.clear_space,
     equipped: row.items.equipped || [],
@@ -125,7 +125,7 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
 
   if (item.id) {
     if (!/^\d{1,32}$/.test(item.id)) {
-      throw new Error('item ID is not in the right format');
+      throw new Error(`item ID ${item.id} is not in the right format`);
     }
     result.id = item.id;
   }

@@ -14,7 +14,7 @@ export async function getAllApps(client: ClientBase): Promise<ApiApp[]> {
 }
 
 /**
- * Get all registered apps.
+ * Get an app by its ID.
  */
 export async function getAppById(
   client: ClientBase,

@@ -13,8 +13,8 @@ export interface ProfileResponse {
  * A list of updates for a particular profile.
  */
 export interface ProfileUpdateRequest {
-  platformMembershipId: string;
-  destinyVersion: DestinyVersion;
+  platformMembershipId?: string;
+  destinyVersion?: DestinyVersion;
   updates: ProfileUpdate[];
 }
 
