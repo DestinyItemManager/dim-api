@@ -30,6 +30,7 @@ app.get('/', permissiveCors, (_, res) =>
   res.send({ message: 'Hello from DIM!!!' })
 );
 app.get('/platform_info', permissiveCors, platformInfoHandler);
+app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
 
 /* ****** API KEY REQUIRED ****** */
