@@ -142,12 +142,18 @@ export async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
   loadoutId: string
-): Promise<QueryResult<any>> {
-  return client.query({
+): Promise<Loadout | null> {
+  const response = await client.query({
     name: 'delete_loadout',
-    text: `delete from loadouts where membership_id = $1 and id = $2`,
+    text: `delete from loadouts where membership_id = $1 and id = $2 returning *`,
     values: [bungieMembershipId, loadoutId]
   });
+
+  if (response.rowCount < 1) {
+    return null;
+  }
+
+  return convertLoadout(response.rows[0]);
 }
 
 /**

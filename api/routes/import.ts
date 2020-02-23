@@ -9,6 +9,7 @@ import { updateItemAnnotation } from '../db/item-annotations-queries';
 import { deleteAllData } from './delete-all-data';
 import { DestinyVersion } from '../shapes/general';
 import { ExportResponse } from '../shapes/export';
+import { recordAuditLog } from '../db/audit-log-queries';
 
 // in a transaction:
 // 1. query all tags/loadouts (at least IDs)
@@ -77,6 +78,15 @@ export const importHandler = asyncHandler(async (req, res) => {
         annotation
       );
     }
+
+    await recordAuditLog(client, bungieMembershipId, {
+      type: 'import',
+      payload: {
+        loadouts: loadouts.length,
+        tags: itemAnnotations.length
+      },
+      createdBy: appId
+    });
   });
 
   // default 200 OK

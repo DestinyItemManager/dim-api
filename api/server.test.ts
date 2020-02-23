@@ -136,9 +136,11 @@ describe('profile', () => {
   it('can delete all data with /delete_all_data', async () => {
     const response = await postRequestAuthed('/delete_all_data').expect(200);
 
-    expect(response.body.deleted.settings).toBe(1);
-    expect(response.body.deleted.loadouts).toBe(12);
-    expect(response.body.deleted.tags).toBe(51);
+    expect(response.body.deleted).toEqual({
+      settings: 1,
+      loadouts: 12,
+      tags: 51
+    });
 
     // Now re-export and make sure it's all gone
     const exported = await getRequestAuthed('/export').expect(200);
@@ -596,6 +598,39 @@ describe('tags', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(0);
+  });
+});
+
+describe('audit', () => {
+  it('records info about a loadout', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'loadout',
+          payload: loadout
+        }
+      ]
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    const auditResult = await getRequestAuthed('/audit').expect(200);
+
+    const expectedEntry = {
+      createdAt: auditResult.body.log[0].createdAt,
+      createdBy: 'settings-queries-test-app',
+      destinyVersion: 2,
+      payload: {},
+      platformMembershipId: '213512057',
+      type: 'tag_cleanup'
+    };
+    expect(auditResult.body.log[0]).toEqual(expectedEntry);
   });
 });
 

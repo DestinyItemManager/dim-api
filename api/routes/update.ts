@@ -17,6 +17,7 @@ import {
 } from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
+import { recordAuditLog } from '../db/audit-log-queries';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -36,6 +37,9 @@ export const updateHandler = asyncHandler(async (req, res) => {
   await transaction(async (client) => {
     for (const update of updates) {
       let result: ProfileUpdateResult;
+
+      metrics.increment('update.action.' + update.action);
+
       switch (update.action) {
         case 'setting':
           result = await updateSetting(
@@ -60,7 +64,10 @@ export const updateHandler = asyncHandler(async (req, res) => {
         case 'delete_loadout':
           result = await deleteLoadout(
             client,
+            appId,
             bungieMembershipId,
+            platformMembershipId,
+            destinyVersion,
             update.payload
           );
           break;
@@ -77,7 +84,14 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'tag_cleanup':
-          result = await tagCleanup(client, bungieMembershipId, update.payload);
+          result = await tagCleanup(
+            client,
+            appId,
+            bungieMembershipId,
+            platformMembershipId,
+            destinyVersion,
+            update.payload
+          );
           break;
 
         default:
@@ -102,6 +116,13 @@ async function updateSetting(
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
   await setSettingInDb(client, appId, bungieMembershipId, settings);
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'settings',
+    payload: settings,
+    createdBy: appId
+  });
+
   return { status: 'Success' };
 }
 
@@ -174,18 +195,47 @@ async function updateLoadout(
     destinyVersion,
     loadout
   );
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'loadout',
+    platformMembershipId,
+    destinyVersion,
+    payload: {
+      name: loadout.name
+    },
+    createdBy: appId
+  });
+
   return { status: 'Success' };
 }
 
 async function deleteLoadout(
   client: ClientBase,
+  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
   loadoutId: string
 ): Promise<ProfileUpdateResult> {
-  const result = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
-  if (result.rowCount !== 1) {
+  const loadout = await deleteLoadoutInDb(
+    client,
+    bungieMembershipId,
+    loadoutId
+  );
+  if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
   }
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'delete_loadout',
+    platformMembershipId,
+    destinyVersion,
+    payload: {
+      name: loadout.name
+    },
+    createdBy: appId
+  });
+
   return { status: 'Success' };
 }
 
@@ -233,14 +283,35 @@ async function updateItemAnnotation(
     destinyVersion,
     itemAnnotation
   );
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'tag',
+    platformMembershipId,
+    destinyVersion,
+    payload: itemAnnotation,
+    createdBy: appId
+  });
+
   return { status: 'Success' };
 }
 
 async function tagCleanup(
   client: ClientBase,
+  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
   inventoryItemIds: string[]
 ): Promise<ProfileUpdateResult> {
   await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'tag_cleanup',
+    platformMembershipId,
+    destinyVersion,
+    payload: {},
+    createdBy: appId
+  });
+
   return { status: 'Success' };
 }

@@ -12,6 +12,7 @@ import { profileHandler } from './routes/profile';
 import { createAppHandler } from './routes/create-app';
 import { apiKey } from './apps';
 import { updateHandler } from './routes/update';
+import { auditLogHandler } from './routes/audit-log';
 
 export const app = express();
 
@@ -94,6 +95,8 @@ app.post('/import', importHandler);
 app.get('/export', exportHandler);
 // Delete all data for an account
 app.post('/delete_all_data', deleteAllDataHandler);
+// Audit log
+app.get('/audit', auditLogHandler);
 
 // TODO: /audit_log
 
