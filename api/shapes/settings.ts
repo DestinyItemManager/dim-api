@@ -63,12 +63,8 @@ export interface Settings {
   readonly completedRecordsHidden: boolean;
   /** Hide show triumphs the manifest recommends be redacted */
   readonly redactedRecordsRevealed: boolean;
-  /** What settings for farming mode */
-  readonly farming: {
-    /** Whether to keep one slot per item type open */
-    readonly makeRoomForItems: boolean;
-    readonly moveTokens: boolean;
-  };
+  /** Whether to keep one slot per item type open */
+  readonly farmingMakeRoomForItems: boolean;
   /** Destiny 2 platform selection for ratings + reviews */
   readonly reviewsPlatformSelectionV2: DtrReviewPlatform;
   /** Destiny 2 play mode selection for ratings + reviews - see DestinyActivityModeType for values */
@@ -129,13 +125,8 @@ export const defaultSettings: Settings = {
   completedRecordsHidden: false,
   // Hide show triumphs the manifest recommends be redacted
   redactedRecordsRevealed: false,
-
-  // What settings for farming mode
-  farming: {
-    // Whether to keep one slot per item type open
-    makeRoomForItems: true,
-    moveTokens: false
-  },
+  // Whether to keep one slot per item type open
+  farmingMakeRoomForItems: true,
   // Destiny 2 platform selection for ratings + reviews
   reviewsPlatformSelectionV2: 0,
   // Destiny 2 play mode selection for ratings + reviews - see DestinyActivityModeType for values
