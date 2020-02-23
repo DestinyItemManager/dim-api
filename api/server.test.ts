@@ -622,15 +622,20 @@ describe('audit', () => {
 
     const auditResult = await getRequestAuthed('/audit').expect(200);
 
+    const matchingEntry = auditResult.body.log.find(
+      (e) => e.createdBy === 'test-app'
+    );
     const expectedEntry = {
-      createdAt: auditResult.body.log[0].createdAt,
-      createdBy: 'settings-queries-test-app',
+      createdAt: matchingEntry.createdAt,
+      createdBy: 'test-app',
       destinyVersion: 2,
-      payload: {},
-      platformMembershipId: '213512057',
-      type: 'tag_cleanup'
+      payload: {
+        name: loadout.name
+      },
+      platformMembershipId,
+      type: 'loadout'
     };
-    expect(auditResult.body.log[0]).toEqual(expectedEntry);
+    expect(matchingEntry).toEqual(expectedEntry);
   });
 });
 
