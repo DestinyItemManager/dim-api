@@ -7,7 +7,7 @@ WORKDIR /home/node/app
 COPY package*.json ./
 COPY yarn.lock ./
 USER node
-RUN yarn install --production
+RUN yarn install --frozen-lockfile --production && yarn cache clean
 COPY --chown=node:node run.sh .
 COPY --chown=node:node dist dist
 
