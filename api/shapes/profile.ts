@@ -18,7 +18,7 @@ export interface ProfileUpdateRequest {
   updates: ProfileUpdate[];
 }
 
-type ProfileUpdate =
+export type ProfileUpdate =
   | TagUpdate
   | TagCleanupUpdate
   | SettingUpdate

@@ -1,37 +1,30 @@
 {
   "name": "@destinyitemmanager/dim-api-types",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript types for the DIM API",
   "main": "./index.js",
   "types": "./index.d.ts",
   "sideEffects": false,
-  "scripts": {
-    "start": "./build.sh",
-    "submodule": "git submodule init && git submodule update",
-    "lint": "tslint --fix -p tsconfig.json"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/DestinyItemManager/bungie-api-ts.git"
+    "url": "https://github.com/DestinyItemManager/dim-api.git"
   },
   "author": "Ben Hollis",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DestinyItemManager/bungie-api-ts/issues"
+    "url": "https://github.com/DestinyItemManager/dim-api/issues"
   },
-  "keywords": ["Destiny", "Bungie", "Bungie.net", "TypeScript"],
-  "homepage": "https://github.com/DestinyItemManager/bungie-api-ts",
+  "keywords": [
+    "Destiny",
+    "Bungie",
+    "Bungie.net",
+    "TypeScript"
+  ],
+  "homepage": "https://github.com/DestinyItemManager/dim-api",
   "devDependencies": {
     "@types/node": "^10.14.8",
-    "@types/underscore": "^1.8.18",
-    "mkdirp": "^0.5.1",
-    "openapi3-ts": "^0.12.0",
-    "ts-node": "^8.2.0",
-    "tslint": "^5.17.0",
-    "tslint-eslint-rules": "^5.4.0",
-    "typedoc": "^0.14.2",
-    "typescript": "^3.5.1",
-    "underscore": "^1.9.1"
+    "typescript": "^3.5.1"
   },
   "dependencies": {}
 }
