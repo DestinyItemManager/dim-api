@@ -15,7 +15,8 @@
     "lint": "eslint --fix api --ext .js,.ts",
     "lint-check": "eslint api --ext .js,.ts",
     "test": "jest --verbose --coverage api --forceExit",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
     "@types/cors": "^2.8.6",

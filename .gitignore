@@ -16,3 +16,5 @@ npm-debug.log
 .nvmrc
 yarn-error.log
 coverage/
+dim-api-types/*.js
+dim-api-types/*.ts
