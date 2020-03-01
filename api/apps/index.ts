@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { pool } from '../db';
+import { readTransaction } from '../db';
 import { ApiApp } from '../shapes/app';
 import { getAllApps } from '../db/apps-queries';
 import { metrics } from '../metrics';
@@ -61,13 +61,14 @@ export async function getApps() {
 }
 
 async function refreshApps() {
-  const client = await pool.connect();
-  apps = await getAllApps(client);
-  appsPromise = null;
-  // Start refreshing automatically
-  if (!appsInterval) {
-    // Refresh again every minute
-    setInterval(refreshApps, 60000);
-  }
-  return apps;
+  return readTransaction(async (client) => {
+    apps = await getAllApps(client);
+    appsPromise = null;
+    // Start refreshing automatically
+    if (!appsInterval) {
+      // Refresh again every minute
+      setInterval(refreshApps, 60000);
+    }
+    return apps;
+  });
 }
