@@ -15,7 +15,7 @@ export const apiKey = asyncHandler(async (req, res, next) => {
   }
   const apiKey = req.headers['x-api-key'] as string;
   if (!apiKey) {
-    metrics.increment('apiKey.missing');
+    metrics.increment('apiKey.missing.count');
     res.status(401).send({
       error: 'MissingApiKey',
       message: 'This request requires the X-API-Key header to be set'
@@ -28,7 +28,7 @@ export const apiKey = asyncHandler(async (req, res, next) => {
     req.dimApp = app;
     next();
   } else {
-    metrics.increment('apiKey.noAppFound');
+    metrics.increment('apiKey.noAppFound.count');
     res.status(401).send({
       error: 'NoAppFound',
       message: 'No app found that matches the provided API key'
@@ -38,7 +38,14 @@ export const apiKey = asyncHandler(async (req, res, next) => {
 
 let apps: ApiApp[];
 let appsPromise: Promise<ApiApp[]> | null = null;
-let appsInterval: number;
+let appsInterval: NodeJS.Timeout | null = null;
+
+export function stopAppsRefresh() {
+  if (appsInterval) {
+    clearTimeout(appsInterval);
+  }
+  appsInterval = null;
+}
 
 /**
  * Look up an app by its API key.
@@ -61,16 +68,18 @@ export async function getApps() {
 }
 
 async function refreshApps() {
+  stopAppsRefresh();
   const client = await pool.connect();
   try {
     apps = await getAllApps(client);
-    // Start refreshing automatically
+    metrics.increment('apps.refresh.success.count');
+    // Refresh again every minute or so
     if (!appsInterval) {
-      // Refresh again every minute
-      setInterval(refreshApps, 60000);
+      appsInterval = setTimeout(refreshApps, 60000 + Math.random() * 10000);
     }
     return apps;
   } catch (e) {
+    metrics.increment('apps.refresh.error.count');
     console.error('Error refreshing apps', e);
     throw e;
   } finally {

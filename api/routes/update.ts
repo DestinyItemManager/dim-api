@@ -38,7 +38,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
     for (const update of updates) {
       let result: ProfileUpdateResult;
 
-      metrics.increment('update.action.' + update.action);
+      metrics.increment('update.action.' + update.action + '.count');
 
       switch (update.action) {
         case 'setting':
@@ -135,7 +135,7 @@ async function updateLoadout(
   loadout: Loadout
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing');
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadouts require platform membership ID to be set'
@@ -143,14 +143,14 @@ async function updateLoadout(
   }
 
   if (!loadout.name) {
-    metrics.increment('update.validation.loadoutNameMissing');
+    metrics.increment('update.validation.loadoutNameMissing.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout name missing'
     };
   }
   if (loadout.name && loadout.name.length > 120) {
-    metrics.increment('update.validation.loadoutNameTooLong');
+    metrics.increment('update.validation.loadoutNameTooLong.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout names must be under 120 characters'
@@ -158,14 +158,14 @@ async function updateLoadout(
   }
 
   if (!loadout.id) {
-    metrics.increment('update.loadoutIdMissing');
+    metrics.increment('update.loadoutIdMissing.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout id missing'
     };
   }
   if (loadout.id && loadout.id.length > 120) {
-    metrics.increment('update.validation.loadoutIdTooLong');
+    metrics.increment('update.validation.loadoutIdTooLong.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout ids must be under 120 characters'
@@ -173,14 +173,14 @@ async function updateLoadout(
   }
 
   if (!Number.isFinite(loadout.classType)) {
-    metrics.increment('update.validation.classTypeMissing');
+    metrics.increment('update.validation.classTypeMissing.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout class type missing or malformed'
     };
   }
   if (loadout.classType < 0 || loadout.classType > 3) {
-    metrics.increment('update.validation.classTypeOutOfRange');
+    metrics.increment('update.validation.classTypeOutOfRange.count');
     return {
       status: 'InvalidArgument',
       message: 'Loadout class type out of range'
@@ -248,7 +248,7 @@ async function updateItemAnnotation(
   itemAnnotation: ItemAnnotation
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing');
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
     return {
       status: 'InvalidArgument',
       message: 'Tags require platform membership ID to be set'
@@ -261,14 +261,14 @@ async function updateItemAnnotation(
       itemAnnotation.tag
     )
   ) {
-    metrics.increment('update.validation.tagNotRecognized');
+    metrics.increment('update.validation.tagNotRecognized.count');
     return {
       status: 'InvalidArgument',
       message: `Tag value ${itemAnnotation.tag} is not recognized`
     };
   }
   if (itemAnnotation.notes && itemAnnotation.notes.length > 1024) {
-    metrics.increment('update.validation.notesTooLong');
+    metrics.increment('update.validation.notesTooLong.count');
     return {
       status: 'InvalidArgument',
       message: 'Notes must be under 1024 characters'

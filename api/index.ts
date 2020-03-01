@@ -2,10 +2,12 @@ const http = require('http');
 import { app } from './server';
 import { metrics } from './metrics';
 import { createTerminus } from '@godaddy/terminus';
+import { pool } from './db';
+import { stopAppsRefresh } from './apps';
 
 const port = 3000;
 
-metrics.increment('startup', 1);
+metrics.increment('startup.count', 1);
 
 const server = http.createServer(app);
 
@@ -26,7 +28,11 @@ createTerminus(server, {
     '/healthcheck': healthCheck
   },
   beforeShutdown,
-  onShutdown: async () => console.log('Shutting down')
+  onShutdown: async () => {
+    console.log('Shutting down');
+    stopAppsRefresh();
+    pool.end();
+  }
 });
 
 server.listen(port, () => console.log(`DIM API started up on port ${port}`));

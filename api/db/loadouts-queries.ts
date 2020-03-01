@@ -101,7 +101,7 @@ do update set (name, class_type, emblem_hash, clear_space, items, last_updated_a
 
   if (response.rowCount < 1) {
     // This should never happen!
-    metrics.increment('db.itemAnnotations.noRowUpdated', 1);
+    metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
     throw new Error('No row was updated');
   }
 
