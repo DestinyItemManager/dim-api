@@ -10,7 +10,7 @@ import { deleteAllDataHandler } from './routes/delete-all-data';
 import { exportHandler } from './routes/export';
 import { profileHandler } from './routes/profile';
 import { createAppHandler } from './routes/create-app';
-import { apiKey } from './apps';
+import { apiKey, getApps } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
 
@@ -39,15 +39,17 @@ app.post('/new_app', permissiveCors, createAppHandler);
 app.use(apiKey);
 
 // Use the DIM App looked up from the API Key to set the CORS header
-const apiKeyCors = cors((req, callback) => {
-  const app = req.dimApp;
-  if (app) {
-    callback(null, {
-      origin: app.origin,
-      maxAge: 3600
-    });
-  } else {
-    callback(new Error('Unknown DIM app'));
+const apiKeyCors = cors({
+  origin: (origin, callback) => {
+    getApps()
+      .then((apps) => {
+        if (!origin || apps.some((app) => app.origin === origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      })
+      .catch(callback);
   }
 });
 app.use(apiKeyCors);

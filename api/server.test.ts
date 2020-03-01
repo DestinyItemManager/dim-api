@@ -5,11 +5,11 @@ import supertest from 'supertest';
 import { sign } from 'jsonwebtoken';
 import { ExportResponse } from './shapes/export';
 import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
-import { GlobalSettings } from './routes/platform-info';
 import _ from 'lodash';
 import { defaultSettings } from './shapes/settings';
 import uuid from 'uuid/v4';
 import { LoadoutItem, Loadout } from './shapes/loadouts';
+import { GlobalSettings } from './shapes/global-settings';
 
 const request = supertest(app);
 

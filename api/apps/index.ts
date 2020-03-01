@@ -2,14 +2,20 @@ import asyncHandler from 'express-async-handler';
 import { pool } from '../db';
 import { ApiApp } from '../shapes/app';
 import { getAllApps } from '../db/apps-queries';
+import { metrics } from '../metrics';
 
 /**
  * Express middleware that requires an API key be provided in a header
  * and populates app info in the request based on the matching app.
  */
 export const apiKey = asyncHandler(async (req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    next();
+    return;
+  }
   const apiKey = req.headers['x-api-key'] as string;
   if (!apiKey) {
+    metrics.increment('apiKey.missing');
     res.status(401).send({
       error: 'MissingApiKey',
       message: 'This request requires the X-API-Key header to be set'
@@ -22,6 +28,7 @@ export const apiKey = asyncHandler(async (req, res, next) => {
     req.dimApp = app;
     next();
   } else {
+    metrics.increment('apiKey.noAppFound');
     res.status(401).send({
       error: 'NoAppFound',
       message: 'No app found that matches the provided API key'
@@ -42,7 +49,7 @@ async function getAppByApiKey(apiKey: string) {
 }
 
 /** Get all registered apps, loading them if necessary. */
-async function getApps() {
+export async function getApps() {
   if (apps) {
     return apps;
   }
