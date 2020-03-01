@@ -13,6 +13,7 @@ import { createAppHandler } from './routes/create-app';
 import { apiKey, getApps } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
+import { createTerminus } from '@godaddy/terminus';
 
 export const app = express();
 
@@ -116,4 +117,23 @@ app.use((err: Error, _req, res, _next) => {
       message: err.message
     });
   }
+});
+
+function beforeShutdown() {
+  console.log('Wait before shutdown');
+  // allow readiness probes to notice things are down
+  return new Promise((resolve) => {
+    setTimeout(resolve, 5000);
+  });
+}
+
+async function healthCheck() {
+  return;
+}
+createTerminus(app, {
+  healthChecks: {
+    '/healthcheck': healthCheck
+  },
+  beforeShutdown, // [optional] called before the HTTP server starts its shutdown
+  onShutdown: async () => console.log('Shutting down')
 });

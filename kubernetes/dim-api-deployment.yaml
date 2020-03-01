@@ -33,7 +33,7 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: '50m'
+              cpu: "50m"
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -46,10 +46,24 @@ spec:
                   name: dim-api-secret
                   key: jwt_secret
             - name: TWIDDLE
-              value: tw1
+              value: tw6
           envFrom:
             - configMapRef:
                 name: dim-api-config
           ports:
             - containerPort: 3000
               name: dim-api
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: dim-api
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: dim-api
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            failureThreshold: 1
