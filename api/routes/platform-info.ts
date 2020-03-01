@@ -14,8 +14,8 @@ export const platformInfoHandler = asyncHandler(async (_, res) => {
     text: 'SELECT * FROM global_settings'
   });
 
-  // Instruct CF not to cache this
-  res.set('Cache-Control', 'no-cache, max-age=0');
+  // Instruct CF to cache for 5 minutes
+  res.set('Cache-Control', 'max-age=300');
   res.send({
     settings: { ...defaultGlobalSettings, ...camelize(result.rows[0]) }
     // TODO: alerts!
