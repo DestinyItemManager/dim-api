@@ -1,10 +1,31 @@
 import { Pool, ClientBase } from 'pg';
+import { metrics } from '../metrics';
 
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
 export const pool = new Pool({
   max: 6 // We get 25 connections per 1GB of RAM, minus 3 connections for maintenance. We run 3 DIM services.
 });
+
+pool.on('connect', () => {
+  metrics.increment('db.pool.connect.count');
+});
+pool.on('acquire', () => {
+  metrics.increment('db.pool.acquire.count');
+});
+pool.on('error', (e: Error) => {
+  metrics.increment('db.pool.error.count');
+  metrics.increment('db.pool.error.' + e.name + '.count');
+});
+pool.on('remove', () => {
+  metrics.increment('db.pool.remove.count');
+});
+
+setInterval(() => {
+  metrics.gauge('db.pool.total', pool.totalCount);
+  metrics.gauge('db.pool.idle', pool.idleCount);
+  metrics.gauge('db.pool.waiting', pool.waitingCount);
+}, 10000);
 
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction.
