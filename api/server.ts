@@ -21,6 +21,25 @@ app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // m
 app.use(morgan('combined')); // logging
 app.use(express.json()); // for parsing application/json
 
+function beforeShutdown() {
+  console.log('Wait before shutdown');
+  // allow readiness probes to notice things are down
+  return new Promise((resolve) => {
+    setTimeout(resolve, 5000);
+  });
+}
+
+async function healthCheck() {
+  return;
+}
+createTerminus(app, {
+  healthChecks: {
+    '/healthcheck': healthCheck
+  },
+  beforeShutdown, // [optional] called before the HTTP server starts its shutdown
+  onShutdown: async () => console.log('Shutting down')
+});
+
 /** CORS config that allows any origin to call */
 const permissiveCors = cors({
   maxAge: 3600
@@ -117,23 +136,4 @@ app.use((err: Error, _req, res, _next) => {
       message: err.message
     });
   }
-});
-
-function beforeShutdown() {
-  console.log('Wait before shutdown');
-  // allow readiness probes to notice things are down
-  return new Promise((resolve) => {
-    setTimeout(resolve, 5000);
-  });
-}
-
-async function healthCheck() {
-  return;
-}
-createTerminus(app, {
-  healthChecks: {
-    '/healthcheck': healthCheck
-  },
-  beforeShutdown, // [optional] called before the HTTP server starts its shutdown
-  onShutdown: async () => console.log('Shutting down')
 });
