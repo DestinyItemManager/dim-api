@@ -9,6 +9,7 @@
   "scripts": {
     "start": "ts-node-dev --respawn -P tsconfig.json -r dotenv/config ./api/index.ts",
     "build:api": "tsc -p ./api/tsconfig.json",
+    "deploy": "kubernetes/deploy.sh",
     "docker:build": "rm -rf dist && yarn build:api && docker build -t destinyitemmanager/dim-api .",
     "docker:run": "docker run -p 3000:3000 destinyitemmanager/dim-api:latest",
     "docker:push": "docker push destinyitemmanager/dim-api:latest",

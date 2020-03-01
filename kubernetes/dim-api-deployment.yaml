@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: dim-api
-          image: destinyitemmanager/dim-api:latest
+          image: destinyitemmanager/dim-api:$COMMITHASH
           imagePullPolicy: Always
           resources:
             requests:
@@ -45,8 +45,6 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: jwt_secret
-            - name: TWIDDLE
-              value: tw7
           envFrom:
             - configMapRef:
                 name: dim-api-config
