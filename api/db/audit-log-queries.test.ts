@@ -13,6 +13,8 @@ beforeEach(async () => {
   });
 });
 
+afterAll(() => pool.end());
+
 it('can insert audit logs', async () => {
   await transaction(async (client) => {
     const entry: AuditLogEntry = {

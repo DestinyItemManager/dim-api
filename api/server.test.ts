@@ -10,6 +10,7 @@ import { defaultSettings } from './shapes/settings';
 import uuid from 'uuid/v4';
 import { LoadoutItem, Loadout } from './shapes/loadouts';
 import { GlobalSettings } from './shapes/global-settings';
+import { pool } from './db';
 
 const request = supertest(app);
 
@@ -29,6 +30,8 @@ beforeAll(async () => {
     expiresIn: 60 * 60
   });
 });
+
+afterAll(() => pool.end());
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint
@@ -81,9 +84,7 @@ describe('import/export', () => {
 
 describe('profile', () => {
   // Applies only to tests in this describe block
-  beforeEach(async () => {
-    await importData();
-  });
+  beforeEach(importData);
 
   it('can retrieve all profile data', async () => {
     const response = await getRequestAuthed(
@@ -154,9 +155,7 @@ describe('profile', () => {
 });
 
 describe('settings', () => {
-  beforeEach(async () => {
-    await postRequestAuthed('/delete_all_data').expect(200);
-  });
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('returns default settings', async () => {
     const response = await getRequestAuthed(
@@ -218,9 +217,7 @@ const loadout: Loadout = {
 };
 
 describe('loadouts', () => {
-  beforeEach(async () => {
-    await postRequestAuthed('/delete_all_data').expect(200);
-  });
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a loadout', async () => {
     const request: ProfileUpdateRequest = {
@@ -353,9 +350,7 @@ describe('loadouts', () => {
 });
 
 describe('tags', () => {
-  beforeEach(async () => {
-    await postRequestAuthed('/delete_all_data').expect(200);
-  });
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a tag', async () => {
     const request: ProfileUpdateRequest = {

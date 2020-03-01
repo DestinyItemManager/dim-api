@@ -11,9 +11,11 @@ const app: ApiApp = {
   dimApiKey: uuid()
 };
 
-beforeEach(async () => {
-  await pool.query({ text: 'delete from apps where id = $1', values: [appId] });
-});
+beforeEach(() =>
+  pool.query({ text: 'delete from apps where id = $1', values: [appId] })
+);
+
+afterAll(() => pool.end());
 
 it('can create a new app', async () => {
   await transaction(async (client) => {

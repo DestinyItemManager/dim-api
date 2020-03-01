@@ -1,4 +1,4 @@
-import { transaction } from '.';
+import { transaction, pool } from '.';
 import {
   updateItemAnnotation,
   getItemAnnotationsForProfile,
@@ -11,11 +11,13 @@ const appId = 'settings-queries-test-app';
 const platformMembershipId = '213512057';
 const bungieMembershipId = 4321;
 
-beforeEach(async () => {
-  await transaction(async (client) => {
+beforeEach(() =>
+  transaction(async (client) => {
     await deleteAllItemAnnotations(client, bungieMembershipId);
-  });
-});
+  })
+);
+
+afterAll(() => pool.end());
 
 it('can insert tags where none exist before', async () => {
   await transaction(async (client) => {

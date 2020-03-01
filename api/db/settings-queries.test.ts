@@ -1,8 +1,10 @@
-import { transaction } from '.';
+import { transaction, pool } from '.';
 import { setSetting, getSettings } from './settings-queries';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
+
+afterAll(() => pool.end());
 
 it('can insert settings where none exist before', async () => {
   await transaction(async (client) => {

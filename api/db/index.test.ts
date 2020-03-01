@@ -10,6 +10,13 @@ beforeEach(async () => {
   )`);
 });
 
+afterAll(async () => {
+  try {
+    await pool.query(`DROP TABLE transaction_test`);
+  } catch {}
+  await pool.end();
+});
+
 describe('transaction', () => {
   it('rolls back on errors', async () => {
     await pool.query(
@@ -91,8 +98,4 @@ describe('readTransaction', () => {
     );
     expect(result.rows[0].test).toBe('updated');
   });
-});
-
-afterAll(async () => {
-  await pool.query(`DROP TABLE transaction_test`);
 });
