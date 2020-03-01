@@ -9,7 +9,7 @@ import { metrics } from '../metrics';
  * and populates app info in the request based on the matching app.
  */
 export const apiKey = asyncHandler(async (req, res, next) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === 'OPTIONS' || req.path === '/heathcheck') {
     next();
     return;
   }

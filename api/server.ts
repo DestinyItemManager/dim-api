@@ -13,32 +13,12 @@ import { createAppHandler } from './routes/create-app';
 import { apiKey, getApps } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
-import { createTerminus } from '@godaddy/terminus';
 
 export const app = express();
 
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
 app.use(express.json()); // for parsing application/json
-
-function beforeShutdown() {
-  console.log('Wait before shutdown');
-  // allow readiness probes to notice things are down
-  return new Promise((resolve) => {
-    setTimeout(resolve, 5000);
-  });
-}
-
-async function healthCheck() {
-  return;
-}
-createTerminus(app, {
-  healthChecks: {
-    '/healthcheck': healthCheck
-  },
-  beforeShutdown, // [optional] called before the HTTP server starts its shutdown
-  onShutdown: async () => console.log('Shutting down')
-});
 
 /** CORS config that allows any origin to call */
 const permissiveCors = cors({
@@ -84,6 +64,7 @@ app.all('*', jwt({ secret: process.env.JWT_SECRET!, userProperty: 'jwt' }));
 // Copy info from the auth token into a "user" parameter on the request.
 app.use((req, _, next) => {
   if (!req.jwt) {
+    console.log('JWT expected', req.path);
     next(new Error('Expected JWT info'));
   } else {
     req.user = {
