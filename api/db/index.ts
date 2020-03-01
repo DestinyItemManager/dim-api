@@ -2,7 +2,9 @@ import { Pool, ClientBase } from 'pg';
 
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
-export const pool = new Pool();
+export const pool = new Pool({
+  max: 6 // We get 25 connections per 1GB of RAM, minus 3 connections for maintenance. We run 3 DIM services.
+});
 
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction.
