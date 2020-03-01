@@ -30,7 +30,6 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  console.log('sending request', apiApp);
   // make request to bungie
   try {
     const bungieResponse = await superagent
