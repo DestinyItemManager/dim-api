@@ -52,7 +52,7 @@ export interface DeleteLoadoutUpdate {
 }
 
 export interface ProfileUpdateResponse {
-  results: ProfileUpdateResult;
+  results: ProfileUpdateResult[];
 }
 
 export interface ProfileUpdateResult {
