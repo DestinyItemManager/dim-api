@@ -58,7 +58,12 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     }
   });
 
-  res.send({
-    app
-  });
+  // Only return the recovered app if it's for the same origin
+  if (app.origin === originUrl.origin) {
+    res.send({
+      app
+    });
+  } else {
+    badRequest(res, 'An app already exists with that id');
+  }
 });

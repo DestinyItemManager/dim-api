@@ -26,9 +26,11 @@ const permissiveCors = cors({
 });
 
 // These paths can be accessed by any caller
+app.options('/', permissiveCors);
 app.get('/', permissiveCors, (_, res) =>
   res.send({ message: 'Hello from DIM!!!' })
 );
+app.options('/platform_info', permissiveCors);
 app.get('/platform_info', permissiveCors, platformInfoHandler);
 app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
@@ -38,11 +40,14 @@ app.post('/new_app', permissiveCors, createAppHandler);
 
 app.use(apiKey);
 
-// Use the DIM App looked up from the API Key to set the CORS header
+// Use the list of known DIM apps to set the CORS header
 const apiKeyCors = cors({
   origin: (origin, callback) => {
     getApps()
       .then((apps) => {
+        // We can't check the API key in OPTIONS requests (the header isn't sent)
+        // so we have to just check if their origin is on *any* app and let them
+        // through.
         if (!origin || apps.some((app) => app.origin === origin)) {
           callback(null, true);
         } else {
@@ -82,6 +87,16 @@ app.use((req, res, next) => {
       error: 'ApiKeyMismatch',
       message:
         'The auth token was issued for a different app than the API key in X-API-Key indicates'
+    });
+  } else if (
+    req.dimApp &&
+    req.headers.origin &&
+    req.dimApp.origin !== req.headers.origin
+  ) {
+    res.status(401).send({
+      error: 'OriginMismatch',
+      message:
+        'The origin of this request and the origin registered to the provided API key do not match'
     });
   } else {
     next();
