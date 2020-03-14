@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { transaction } from '../db';
 import { CreateAppRequest, ApiApp } from '../shapes/app';
 import { insertApp, getAppById } from '../db/apps-queries';
-import uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { badRequest } from '../utils';
 
 /**

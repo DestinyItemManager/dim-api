@@ -1,6 +1,6 @@
 import { pool, transaction } from '.';
 import { insertApp, getAppById, getAllApps } from './apps-queries';
-import uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { ApiApp } from '../shapes/app';
 
 const appId = 'apps-queries-test-app';
