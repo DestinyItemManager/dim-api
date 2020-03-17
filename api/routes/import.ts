@@ -10,6 +10,8 @@ import { deleteAllData } from './delete-all-data';
 import { DestinyVersion } from '../shapes/general';
 import { ExportResponse } from '../shapes/export';
 import { recordAuditLog } from '../db/audit-log-queries';
+import { badRequest } from '../utils';
+import _ from 'lodash';
 
 // in a transaction:
 // 1. query all tags/loadouts (at least IDs)
@@ -44,6 +46,15 @@ export const importHandler = asyncHandler(async (req, res) => {
   const settings = extractSettings(importData);
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
+
+  if (
+    _.isEmpty(settings) &&
+    loadouts.length === 0 &&
+    itemAnnotations.length === 0
+  ) {
+    badRequest(res, "Won't import empty data");
+    return;
+  }
 
   await transaction(async (client) => {
     await deleteAllData(client, bungieMembershipId);

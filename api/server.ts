@@ -55,7 +55,8 @@ const apiKeyCors = cors({
         }
       })
       .catch(callback);
-  }
+  },
+  maxAge: 3600
 });
 app.use(apiKeyCors);
 
@@ -116,8 +117,6 @@ app.get('/export', exportHandler);
 app.post('/delete_all_data', deleteAllDataHandler);
 // Audit log
 app.get('/audit', auditLogHandler);
-
-// TODO: /audit_log
 
 app.use((err: Error, _req, res, _next) => {
   if (err.name === 'UnauthorizedError') {
