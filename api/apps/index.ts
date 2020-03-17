@@ -52,7 +52,13 @@ export function stopAppsRefresh() {
  */
 async function getAppByApiKey(apiKey: string) {
   const apps = await getApps();
-  return apps.find((app) => app.dimApiKey === apiKey);
+  const app = apps.find(
+    (app) => app.dimApiKey.toLowerCase() === apiKey.toLowerCase()
+  );
+  if (!app) {
+    console.error('No app found: ', apps, apiKey);
+  }
+  return app;
 }
 
 /** Get all registered apps, loading them if necessary. */
