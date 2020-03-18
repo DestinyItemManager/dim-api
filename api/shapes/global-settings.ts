@@ -11,6 +11,8 @@ export interface GlobalSettings {
   refreshProfileOnVisible: boolean;
   /** Whether to use dirty tricks to bust the Bungie.net cache when users manually refresh. */
   bustProfileCacheOnHardRefresh: boolean;
+  /** Don't automatically refresh DIM profile info more often than this many seconds. */
+  dimProfileMinimumRefreshInterval: number;
 }
 
 export const defaultGlobalSettings: GlobalSettings = {
@@ -19,5 +21,6 @@ export const defaultGlobalSettings: GlobalSettings = {
   destinyProfileRefreshInterval: 30,
   autoRefresh: true,
   refreshProfileOnVisible: true,
-  bustProfileCacheOnHardRefresh: false
+  bustProfileCacheOnHardRefresh: false,
+  dimProfileMinimumRefreshInterval: 300
 };

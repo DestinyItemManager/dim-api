@@ -12,6 +12,7 @@ import { ExportResponse } from '../shapes/export';
 import { recordAuditLog } from '../db/audit-log-queries';
 import { badRequest } from '../utils';
 import _ from 'lodash';
+import { DestinyClass } from 'bungie-api-ts/destiny2';
 
 // in a transaction:
 // 1. query all tags/loadouts (at least IDs)
@@ -101,7 +102,10 @@ export const importHandler = asyncHandler(async (req, res) => {
   });
 
   // default 200 OK
-  res.status(200).send({});
+  res.status(200).send({
+    loadouts: loadouts.length,
+    tags: itemAnnotations.length
+  });
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
@@ -163,6 +167,7 @@ function extractLoadouts(
     }));
 }
 
+/** Legacy loadout class assignment */
 export enum LoadoutClass {
   any = -1,
   warlock = 0,
@@ -171,17 +176,17 @@ export enum LoadoutClass {
 }
 
 export const loadoutClassToClassType = {
-  [LoadoutClass.hunter]: 1,
-  [LoadoutClass.titan]: 0,
-  [LoadoutClass.warlock]: 2,
-  [LoadoutClass.any]: 3
+  [LoadoutClass.hunter]: DestinyClass.Hunter,
+  [LoadoutClass.titan]: DestinyClass.Titan,
+  [LoadoutClass.warlock]: DestinyClass.Warlock,
+  [LoadoutClass.any]: DestinyClass.Unknown
 };
 
 export const classTypeToLoadoutClass = {
-  1: LoadoutClass.hunter,
-  0: LoadoutClass.titan,
-  2: LoadoutClass.warlock,
-  3: LoadoutClass.any
+  [DestinyClass.Hunter]: LoadoutClass.hunter,
+  [DestinyClass.Titan]: LoadoutClass.titan,
+  [DestinyClass.Warlock]: LoadoutClass.warlock,
+  [DestinyClass.Unknown]: LoadoutClass.any
 };
 
 function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
