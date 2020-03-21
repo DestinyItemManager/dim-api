@@ -12,7 +12,6 @@ import { ExportResponse } from '../shapes/export';
 import { recordAuditLog } from '../db/audit-log-queries';
 import { badRequest } from '../utils';
 import _ from 'lodash';
-import { DestinyClass } from 'bungie-api-ts/destiny2';
 
 // in a transaction:
 // 1. query all tags/loadouts (at least IDs)
@@ -176,17 +175,17 @@ export enum LoadoutClass {
 }
 
 export const loadoutClassToClassType = {
-  [LoadoutClass.hunter]: DestinyClass.Hunter,
-  [LoadoutClass.titan]: DestinyClass.Titan,
-  [LoadoutClass.warlock]: DestinyClass.Warlock,
-  [LoadoutClass.any]: DestinyClass.Unknown
+  [LoadoutClass.hunter]: 1,
+  [LoadoutClass.titan]: 0,
+  [LoadoutClass.warlock]: 2,
+  [LoadoutClass.any]: 3
 };
 
 export const classTypeToLoadoutClass = {
-  [DestinyClass.Hunter]: LoadoutClass.hunter,
-  [DestinyClass.Titan]: LoadoutClass.titan,
-  [DestinyClass.Warlock]: LoadoutClass.warlock,
-  [DestinyClass.Unknown]: LoadoutClass.any
+  1: LoadoutClass.hunter,
+  0: LoadoutClass.titan,
+  2: LoadoutClass.warlock,
+  3: LoadoutClass.any
 };
 
 function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
