@@ -33,7 +33,11 @@ export interface ImportAuditLogEntry {
 // This is all we'll record about a user once they've asked to delete all data.
 export interface DeleteAllLogEntry {
   type: 'delete_all';
-  payload: {};
+  payload: {
+    settings: number;
+    loadouts: number;
+    tags: number;
+  };
 }
 
 export interface SettingsLogEntry {

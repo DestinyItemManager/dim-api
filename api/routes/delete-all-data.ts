@@ -17,7 +17,7 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
     const deleted = await deleteAllData(client, bungieMembershipId);
     await recordAuditLog(client, bungieMembershipId, {
       type: 'delete_all',
-      payload: {},
+      payload: deleted,
       createdBy: appId
     });
     return deleted;
