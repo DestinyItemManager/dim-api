@@ -210,7 +210,7 @@ function extractItemAnnotations(
 
   const annotations: PlatformItemAnnotation[] = [];
   for (const key in importData) {
-    const match = /dimItemInfo-m(\d+)-d(1|2)/.exec(key);
+    const match = /^dimItemInfo-m(\d+)-d(1|2)$/.exec(key);
     if (match) {
       const platformMembershipId = match[1];
       const destinyVersion = parseInt(match[2], 10) as DestinyVersion;
