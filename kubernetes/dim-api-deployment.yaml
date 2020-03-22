@@ -13,12 +13,39 @@ spec:
   selector:
     app: dim-api
 ---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: dim-api-pdb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: dim-api
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dim-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dim-api
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dim-api
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: dim-api
@@ -30,10 +57,11 @@ spec:
       containers:
         - name: dim-api
           image: destinyitemmanager/dim-api:$COMMITHASH
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           resources:
             requests:
               cpu: "50m"
+              memory: "50Mi"
           env:
             - name: PGPASSWORD
               valueFrom:

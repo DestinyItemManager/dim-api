@@ -45,6 +45,10 @@ spec:
       containers:
         - name: graphite
           image: graphiteapp/graphite-statsd
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "250Mi"
           ports:
             - containerPort: 80
               name: graphite
