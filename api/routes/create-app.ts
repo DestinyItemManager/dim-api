@@ -5,6 +5,8 @@ import { insertApp, getAppById } from '../db/apps-queries';
 import { v4 as uuid } from 'uuid';
 import { badRequest } from '../utils';
 
+const localHosts = ['localhost', '127.0.0.1'];
+
 /**
  * Create a new API app. This is meant to be used by developers who create
  * their own testing app for local testing. In the future it may be extended
@@ -20,10 +22,12 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     badRequest(res, 'Origin provided is not an origin');
     return;
   }
-  if (originUrl.hostname !== 'localhost') {
+  if (!localHosts.includes(originUrl.hostname)) {
     badRequest(
       res,
-      `Can only register apps for localhost, your host was ${originUrl.hostname}`
+      `Can only register apps for ${localHosts.join(' or ')}, your host was ${
+        originUrl.hostname
+      }`
     );
     return;
   }
