@@ -33,12 +33,12 @@ spec:
     kind: Deployment
     name: dim-api
   minReplicas: 2
-  maxReplicas: 20
+  maxReplicas: 7
   metrics:
     - type: Resource
       resource:
         name: cpu
-        targetAverageUtilization: 80
+        targetAverageUtilization: 70
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -60,7 +60,7 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: "50m"
+              cpu: "100m"
               memory: "50Mi"
           env:
             - name: PGPASSWORD
