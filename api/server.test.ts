@@ -7,7 +7,7 @@ import { ExportResponse } from './shapes/export';
 import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
 import _ from 'lodash';
 import { defaultSettings } from './shapes/settings';
-import { v4 as uuid } from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { LoadoutItem, Loadout } from './shapes/loadouts';
 import { GlobalSettings } from './shapes/global-settings';
 import { pool } from './db';
@@ -27,7 +27,7 @@ beforeAll(async () => {
   testUserToken = sign({}, process.env.JWT_SECRET!, {
     subject: bungieMembershipId.toString(),
     issuer: testApiKey,
-    expiresIn: 60 * 60
+    expiresIn: 60 * 60,
   });
 });
 
@@ -72,7 +72,7 @@ describe('import/export', () => {
       'rarity',
       'primStat',
       'typeName',
-      'name'
+      'name',
     ]);
 
     expect(exportResponse.loadouts.length).toBe(12);
@@ -98,7 +98,7 @@ describe('profile', () => {
       'rarity',
       'primStat',
       'typeName',
-      'name'
+      'name',
     ]);
     expect(profileResponse.loadouts!.length).toBe(11);
     expect(profileResponse.tags!.length).toBe(51);
@@ -116,7 +116,7 @@ describe('profile', () => {
       'rarity',
       'primStat',
       'typeName',
-      'name'
+      'name',
     ]);
     expect(profileResponse.loadouts).toBeUndefined();
     expect(profileResponse.tags).toBeUndefined();
@@ -140,7 +140,7 @@ describe('profile', () => {
     expect(response.body.deleted).toEqual({
       settings: 1,
       loadouts: 12,
-      tags: 51
+      tags: 51,
     });
 
     // Now re-export and make sure it's all gone
@@ -173,10 +173,10 @@ describe('settings', () => {
         {
           action: 'setting',
           payload: {
-            showNewItems: true
-          }
-        }
-      ]
+            showNewItems: true,
+          },
+        },
+      ],
     };
 
     await postRequestAuthed('/profile')
@@ -202,8 +202,8 @@ const loadout: Loadout = {
   equipped: [
     {
       hash: 100,
-      id: '1234'
-    }
+      id: '1234',
+    },
   ],
   unequipped: [
     // This item has an extra property which shouldn't be saved
@@ -211,9 +211,9 @@ const loadout: Loadout = {
       hash: 200,
       id: '5678',
       amount: 10,
-      fizbuzz: 11
-    } as any) as LoadoutItem
-  ]
+      fizbuzz: 11,
+    } as any) as LoadoutItem,
+  ],
 };
 
 describe('loadouts', () => {
@@ -226,9 +226,9 @@ describe('loadouts', () => {
       updates: [
         {
           action: 'loadout',
-          payload: loadout
-        }
-      ]
+          payload: loadout,
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -262,9 +262,9 @@ describe('loadouts', () => {
       updates: [
         {
           action: 'loadout',
-          payload: loadout
-        }
-      ]
+          payload: loadout,
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -280,9 +280,9 @@ describe('loadouts', () => {
       updates: [
         {
           action: 'loadout',
-          payload: { ...loadout, name: 'Updated Name' }
-        }
-      ]
+          payload: { ...loadout, name: 'Updated Name' },
+        },
+      ],
     };
 
     const updateResult2 = await postRequestAuthed('/profile')
@@ -309,9 +309,9 @@ describe('loadouts', () => {
       updates: [
         {
           action: 'loadout',
-          payload: loadout
-        }
-      ]
+          payload: loadout,
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -327,9 +327,9 @@ describe('loadouts', () => {
       updates: [
         {
           action: 'delete_loadout',
-          payload: loadout.id
-        }
-      ]
+          payload: loadout.id,
+        },
+      ],
     };
 
     const updateResult2 = await postRequestAuthed('/profile')
@@ -361,10 +361,10 @@ describe('tags', () => {
           action: 'tag',
           payload: {
             id: '1234',
-            tag: 'favorite'
-          }
-        }
-      ]
+            tag: 'favorite',
+          },
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -384,7 +384,7 @@ describe('tags', () => {
     const resultTag = profileResponse.tags![0];
     expect(resultTag).toEqual({
       id: '1234',
-      tag: 'favorite'
+      tag: 'favorite',
     });
   });
 
@@ -397,10 +397,10 @@ describe('tags', () => {
           action: 'tag',
           payload: {
             id: '12345',
-            tag: 'favorite'
-          }
-        }
-      ]
+            tag: 'favorite',
+          },
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -419,10 +419,10 @@ describe('tags', () => {
           payload: {
             id: '12345',
             tag: 'junk',
-            notes: 'super junky'
-          }
-        }
-      ]
+            notes: 'super junky',
+          },
+        },
+      ],
     };
 
     const updateResult2 = await postRequestAuthed('/profile')
@@ -443,7 +443,7 @@ describe('tags', () => {
     expect(resultTag).toEqual({
       id: '12345',
       tag: 'junk',
-      notes: 'super junky'
+      notes: 'super junky',
     });
 
     // Delete tag
@@ -455,10 +455,10 @@ describe('tags', () => {
           action: 'tag',
           payload: {
             id: '12345',
-            tag: null
-          }
-        }
-      ]
+            tag: null,
+          },
+        },
+      ],
     };
 
     const updateResult3 = await postRequestAuthed('/profile')
@@ -478,7 +478,7 @@ describe('tags', () => {
     const resultTag2 = profileResponse2.tags![0];
     expect(resultTag2).toEqual({
       id: '12345',
-      notes: 'super junky'
+      notes: 'super junky',
     });
   });
 
@@ -492,10 +492,10 @@ describe('tags', () => {
           payload: {
             id: '1234567',
             tag: 'favorite',
-            notes: 'the best'
-          }
-        }
-      ]
+            notes: 'the best',
+          },
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -514,10 +514,10 @@ describe('tags', () => {
           payload: {
             id: '1234567',
             tag: null,
-            notes: ''
-          }
-        }
-      ]
+            notes: '',
+          },
+        },
+      ],
     };
 
     const updateResult2 = await postRequestAuthed('/profile')
@@ -546,18 +546,18 @@ describe('tags', () => {
           payload: {
             id: '1234567',
             tag: 'favorite',
-            notes: 'the best'
-          }
+            notes: 'the best',
+          },
         },
         {
           action: 'tag',
           payload: {
             id: '7654321',
             tag: 'junk',
-            notes: 'the worst'
-          }
-        }
-      ]
+            notes: 'the worst',
+          },
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -574,9 +574,9 @@ describe('tags', () => {
       updates: [
         {
           action: 'tag_cleanup',
-          payload: ['1234567', '7654321']
-        }
-      ]
+          payload: ['1234567', '7654321'],
+        },
+      ],
     };
 
     const updateResult2 = await postRequestAuthed('/profile')
@@ -604,9 +604,9 @@ describe('audit', () => {
       updates: [
         {
           action: 'loadout',
-          payload: loadout
-        }
-      ]
+          payload: loadout,
+        },
+      ],
     };
 
     const updateResult = await postRequestAuthed('/profile')
@@ -625,10 +625,10 @@ describe('audit', () => {
       createdBy: 'test-app',
       destinyVersion: 2,
       payload: {
-        name: loadout.name
+        name: loadout.name,
       },
       platformMembershipId,
-      type: 'loadout'
+      type: 'loadout',
     };
     expect(matchingEntry).toEqual(expectedEntry);
   });
@@ -640,7 +640,7 @@ async function createApp() {
     .send({
       id: 'test-app',
       bungieApiKey: 'test-api-key',
-      origin: 'https://localhost:8080'
+      origin: 'https://localhost:8080',
     })
     .expect('Content-Type', /json/)
     .expect(200);
