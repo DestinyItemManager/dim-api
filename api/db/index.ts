@@ -4,7 +4,7 @@ import { metrics } from '../metrics';
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
 export const pool = new Pool({
-  max: 3, // We get 25 connections per 1GB of RAM, minus 3 connections for maintenance. We run a variable number of DIM services.
+  max: 2, // We get 25 connections per 1GB of RAM, minus 3 connections for maintenance. We run a variable number of DIM services.
 });
 
 pool.on('connect', () => {

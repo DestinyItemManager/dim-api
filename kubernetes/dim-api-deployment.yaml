@@ -32,8 +32,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dim-api
-  minReplicas: 2
-  maxReplicas: 7
+  minReplicas: 3
+  maxReplicas: 10
   metrics:
     - type: Resource
       resource:
