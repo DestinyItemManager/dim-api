@@ -10,11 +10,14 @@ import { deleteAllDataHandler } from './routes/delete-all-data';
 import { exportHandler } from './routes/export';
 import { profileHandler } from './routes/profile';
 import { createAppHandler } from './routes/create-app';
-import { apiKey, getApps } from './apps';
+import { apiKey, isAppOrigin } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
 
 export const app = express();
+
+app.set('trust proxy', true); // enable x-forwarded-for
+app.set('x-powered-by', false);
 
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
@@ -22,7 +25,7 @@ app.use(express.json()); // for parsing application/json
 
 /** CORS config that allows any origin to call */
 const permissiveCors = cors({
-  maxAge: 3600
+  maxAge: 3600,
 });
 
 // These paths can be accessed by any caller
@@ -43,22 +46,20 @@ app.use(apiKey);
 // Use the list of known DIM apps to set the CORS header
 const apiKeyCors = cors({
   origin: (origin, callback) => {
-    getApps()
-      .then((apps) => {
-        // We can't check the API key in OPTIONS requests (the header isn't sent)
-        // so we have to just check if their origin is on *any* app and let them
-        // through.
-        if (!origin || apps.some((app) => app.origin === origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      })
-      .catch(callback);
+    // We can't check the API key in OPTIONS requests (the header isn't sent)
+    // so we have to just check if their origin is on *any* app and let them
+    // through.
+    if (!origin || isAppOrigin(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
-  maxAge: 3600
+  maxAge: 3600,
 });
 app.use(apiKeyCors);
+
+// TODO: just explicitly use API key cors on everything so it shows up
 
 app.post('/auth/token', authTokenHandler);
 
@@ -75,7 +76,7 @@ app.use((req, _, next) => {
   } else {
     req.user = {
       bungieMembershipId: parseInt(req.jwt.sub, 10),
-      dimApiKey: req.jwt.iss
+      dimApiKey: req.jwt.iss,
     };
     next();
   }
@@ -87,7 +88,7 @@ app.use((req, res, next) => {
     res.status(401).send({
       error: 'ApiKeyMismatch',
       message:
-        'The auth token was issued for a different app than the API key in X-API-Key indicates'
+        'The auth token was issued for a different app than the API key in X-API-Key indicates',
     });
   } else if (
     req.dimApp &&
@@ -97,7 +98,7 @@ app.use((req, res, next) => {
     res.status(401).send({
       error: 'OriginMismatch',
       message:
-        'The origin of this request and the origin registered to the provided API key do not match'
+        'The origin of this request and the origin registered to the provided API key do not match',
     });
   } else {
     next();
@@ -122,13 +123,13 @@ app.use((err: Error, _req, res, _next) => {
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
       error: err.name,
-      message: err.message
+      message: err.message,
     });
   } else {
     console.error('Error handling request', err);
     res.status(500).send({
       error: err.name,
-      message: err.message
+      message: err.message,
     });
   }
 });

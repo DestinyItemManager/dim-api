@@ -3,7 +3,7 @@ import { app } from './server';
 import { metrics } from './metrics';
 import { createTerminus } from '@godaddy/terminus';
 import { pool } from './db';
-import { stopAppsRefresh } from './apps';
+import { stopAppsRefresh, refreshApps } from './apps';
 
 const port = 3000;
 
@@ -25,14 +25,16 @@ async function healthCheck() {
 }
 createTerminus(server, {
   healthChecks: {
-    '/healthcheck': healthCheck
+    '/healthcheck': healthCheck,
   },
   beforeShutdown,
   onShutdown: async () => {
     console.log('Shutting down');
     stopAppsRefresh();
     pool.end();
-  }
+  },
 });
 
-server.listen(port, () => console.log(`DIM API started up on port ${port}`));
+refreshApps().then(() => {
+  server.listen(port, () => console.log(`DIM API started up on port ${port}`));
+});
