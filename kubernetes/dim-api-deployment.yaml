@@ -28,7 +28,7 @@ kind: Deployment
 metadata:
   name: dim-api
 spec:
-  replicas: 2
+  #replicas: 2
   selector:
     matchLabels:
       app: dim-api
