@@ -13,7 +13,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
   const platformMembershipId = req.query.platformMembershipId as string;
   const destinyVersion: DestinyVersion = req.query.destinyVersion
-    ? (parseInt(req.query.destinyVersion, 10) as DestinyVersion)
+    ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
     : 2;
   const components = ((req.query.components as string) || '').split(/\s*,\s*/);
 
@@ -29,7 +29,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
     if (components.includes('settings')) {
       response.settings = {
         ...defaultSettings,
-        ...(await getSettings(client, bungieMembershipId))
+        ...(await getSettings(client, bungieMembershipId)),
       };
     }
 

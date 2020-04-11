@@ -7,7 +7,7 @@ import { ExportResponse } from './shapes/export';
 import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
 import _ from 'lodash';
 import { defaultSettings } from './shapes/settings';
-import { v4 as uuid } from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { LoadoutItem, Loadout } from './shapes/loadouts';
 import { GlobalSettings } from './shapes/global-settings';
 import { pool } from './db';
