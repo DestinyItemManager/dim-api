@@ -3,12 +3,13 @@ import { ApiApp } from '../shapes/app';
 import { getAllApps } from '../db/apps-queries';
 import { metrics } from '../metrics';
 import _ from 'lodash';
+import { RequestHandler } from 'express';
 
 /**
  * Express middleware that requires an API key be provided in a header
  * and populates app info in the request based on the matching app.
  */
-export const apiKey = (req, res, next) => {
+export const apiKey: RequestHandler = (req, res, next) => {
   if (req.method === 'OPTIONS' || req.path === '/heathcheck') {
     next();
     return;

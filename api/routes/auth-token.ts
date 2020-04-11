@@ -60,7 +60,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     } else {
       console.warn('WrongMembership', membershipId, serverMembershipId);
       metrics.increment('authToken.wrongMembership.count');
-      res.status(401).send({
+      res.status(403).send({
         error: 'WrongMembership',
         message: `Hey you're not ${membershipId}`,
       });
