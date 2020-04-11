@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
 data:
-  use-forwarded-headers: "true"
-  compute-full-forwarded-for: "true"
-  use-proxy-protocol: "true"
+  use-forwarded-headers: 'true'
+  compute-full-forwarded-for: 'true'
+  use-proxy-protocol: 'true'
+  block-user-agents: '"Test Certificate Info"'
+  enable-modsecurity: 'true'
+  enable-owasp-modsecurity-crs: 'true'

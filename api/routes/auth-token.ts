@@ -6,6 +6,7 @@ import util from 'util';
 
 import { sign, Secret, SignOptions } from 'jsonwebtoken';
 import { badRequest } from '../utils';
+import { metrics } from '../metrics';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
@@ -47,26 +48,29 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       const token = await signJwt({}, process.env.JWT_SECRET!, {
         subject: membershipId,
         issuer: apiApp.dimApiKey,
-        expiresIn: TOKEN_EXPIRES_IN
+        expiresIn: TOKEN_EXPIRES_IN,
       });
 
       const response: AuthTokenResponse = {
         accessToken: token,
-        expiresInSeconds: TOKEN_EXPIRES_IN
+        expiresInSeconds: TOKEN_EXPIRES_IN,
       };
 
       res.send(response);
     } else {
+      console.warn('WrongMembership', membershipId, serverMembershipId);
+      metrics.increment('authToken.wrongMembership.count');
       res.status(401).send({
         error: 'WrongMembership',
-        message: `Hey you're not ${membershipId}`
+        message: `Hey you're not ${membershipId}`,
       });
     }
   } catch (e) {
     if (e.response && e.response.body.ErrorStatus == 'WebAuthRequired') {
+      metrics.increment('authToken.webAuthRequired.count');
       res.status(401).send({
         error: 'WebAuthRequired',
-        message: `Bungie.net token is not valid`
+        message: `Bungie.net token is not valid`,
       });
     } else {
       console.error('Error issuing auth token', e);

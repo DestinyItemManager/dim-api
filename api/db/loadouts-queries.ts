@@ -16,7 +16,7 @@ export async function getLoadoutsForProfile(
     name: 'get_loadouts_for_platform_membership_id',
     text:
       'SELECT id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion]
+    values: [bungieMembershipId, platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertLoadout);
 }
@@ -38,14 +38,14 @@ export async function getAllLoadoutsForUser(
     name: 'get_all_loadouts_for_user',
     text:
       'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE membership_id = $1',
-    values: [bungieMembershipId]
+    values: [bungieMembershipId],
   });
   return results.rows.map((row) => {
     const loadout = convertLoadout(row);
     return {
       platformMembershipId: row.platform_membership_id,
       destinyVersion: row.destiny_version,
-      loadout
+      loadout,
     };
   });
 }
@@ -57,7 +57,7 @@ function convertLoadout(row: any): Loadout {
     classType: row.class_type,
     clearSpace: row.clear_space,
     equipped: row.items.equipped || [],
-    unequipped: row.items.unequipped || []
+    unequipped: row.items.unequipped || [],
   };
   if (row.emblem_hash) {
     loadout.emblemHash = row.emblem_hash;
@@ -93,15 +93,15 @@ do update set (name, class_type, emblem_hash, clear_space, items, last_updated_a
       loadout.clearSpace,
       {
         equipped: loadout.equipped.map(cleanItem),
-        unequipped: loadout.unequipped.map(cleanItem)
+        unequipped: loadout.unequipped.map(cleanItem),
       },
-      appId
-    ]
+      appId,
+    ],
   });
 
   if (response.rowCount < 1) {
     // This should never happen!
-    metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
+    metrics.increment('db.loadouts.noRowUpdated.count', 1);
     throw new Error('No row was updated');
   }
 
@@ -118,7 +118,7 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
   }
 
   const result: LoadoutItem = {
-    hash
+    hash,
   };
 
   if (item.amount && Number.isFinite(item.amount)) {
@@ -146,7 +146,7 @@ export async function deleteLoadout(
   const response = await client.query({
     name: 'delete_loadout',
     text: `delete from loadouts where membership_id = $1 and id = $2 returning *`,
-    values: [bungieMembershipId, loadoutId]
+    values: [bungieMembershipId, loadoutId],
   });
 
   if (response.rowCount < 1) {
@@ -166,6 +166,6 @@ export async function deleteAllLoadouts(
   return client.query({
     name: 'delete_all_loadouts',
     text: `delete from loadouts where membership_id = $1`,
-    values: [bungieMembershipId]
+    values: [bungieMembershipId],
   });
 }

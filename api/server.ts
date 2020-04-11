@@ -33,6 +33,11 @@ app.options('/', permissiveCors);
 app.get('/', permissiveCors, (_, res) =>
   res.send({ message: 'Hello from DIM!!!' })
 );
+app.post('/', permissiveCors, (_, res) => res.status(404).send('Not Found'));
+app.get('/favicon.ico', permissiveCors, (_, res) =>
+  res.status(404).send('Not Found')
+);
+
 app.options('/platform_info', permissiveCors);
 app.get('/platform_info', permissiveCors, platformInfoHandler);
 app.options('/new_app', permissiveCors);
@@ -71,7 +76,7 @@ app.all('*', jwt({ secret: process.env.JWT_SECRET!, userProperty: 'jwt' }));
 // Copy info from the auth token into a "user" parameter on the request.
 app.use((req, _, next) => {
   if (!req.jwt) {
-    console.log('JWT expected', req.path);
+    console.error('JWT expected', req.path);
     next(new Error('Expected JWT info'));
   } else {
     req.user = {
@@ -85,6 +90,13 @@ app.use((req, _, next) => {
 // Validate that the auth token and the API key in the header match.
 app.use((req, res, next) => {
   if (req.dimApp && req.dimApp.dimApiKey !== req.jwt!.iss) {
+    console.warn(
+      'ApiKeyMismatch',
+      req.dimApp?.id,
+      req.dimApp?.dimApiKey,
+      req.jwt!.iss
+    );
+    metrics.increment('apiKey.mismatch.count');
     res.status(401).send({
       error: 'ApiKeyMismatch',
       message:
@@ -95,6 +107,13 @@ app.use((req, res, next) => {
     req.headers.origin &&
     req.dimApp.origin !== req.headers.origin
   ) {
+    console.warn(
+      'OriginMismatch',
+      req.dimApp?.id,
+      req.dimApp?.origin,
+      req.headers.origin
+    );
+    metrics.increment('apiKey.wrongOrigin.count');
     res.status(401).send({
       error: 'OriginMismatch',
       message:
@@ -119,8 +138,9 @@ app.post('/delete_all_data', deleteAllDataHandler);
 // Audit log
 app.get('/audit', auditLogHandler);
 
-app.use((err: Error, _req, res, _next) => {
+app.use((err: Error, req, res, _next) => {
   if (err.name === 'UnauthorizedError') {
+    console.warn('Unauthorized', req.path, err);
     res.status(401).send({
       error: err.name,
       message: err.message,
