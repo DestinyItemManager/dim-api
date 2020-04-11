@@ -13,12 +13,14 @@ import { createAppHandler } from './routes/create-app';
 import { apiKey, isAppOrigin } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
+import { setRouteNameForStats } from './metrics/express';
 
 export const app = express();
 
 app.set('trust proxy', true); // enable x-forwarded-for
 app.set('x-powered-by', false);
 
+app.use(setRouteNameForStats); // fix path names for next middleware
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
 app.use(express.json()); // for parsing application/json
