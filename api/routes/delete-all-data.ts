@@ -18,15 +18,14 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
     await recordAuditLog(client, bungieMembershipId, {
       type: 'delete_all',
       payload: deleted,
-      createdBy: appId
+      createdBy: appId,
     });
     return deleted;
   });
 
   // default 200 OK
   res.status(200).send({
-    status: 'Success',
-    deleted: result
+    deleted: result,
   });
 });
 
@@ -37,6 +36,6 @@ export async function deleteAllData(
   return {
     settings: (await deleteSettings(client, bungieMembershipId)).rowCount,
     loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount,
-    tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount
+    tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount,
   };
 }

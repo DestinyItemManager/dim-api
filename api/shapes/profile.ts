@@ -18,6 +18,10 @@ export interface ProfileUpdateRequest {
   updates: ProfileUpdate[];
 }
 
+export interface ProfileUpdateResponse {
+  results: ProfileUpdateResult[];
+}
+
 export type ProfileUpdate =
   | TagUpdate
   | TagCleanupUpdate

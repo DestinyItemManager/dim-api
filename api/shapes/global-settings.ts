@@ -22,5 +22,9 @@ export const defaultGlobalSettings: GlobalSettings = {
   autoRefresh: true,
   refreshProfileOnVisible: true,
   bustProfileCacheOnHardRefresh: false,
-  dimProfileMinimumRefreshInterval: 300
+  dimProfileMinimumRefreshInterval: 300,
 };
+
+export interface PlatformInfoResponse {
+  settings: GlobalSettings;
+}

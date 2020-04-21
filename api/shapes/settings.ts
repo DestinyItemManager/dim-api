@@ -6,29 +6,29 @@ export type CharacterOrder =
   | 'fixed'
   | 'custom';
 
-export const enum InfuseDirection {
+export enum InfuseDirection {
   /** infuse something into the query (query = target) */
   INFUSE,
   /** infuse the query into the target (query = source) */
-  FUEL
+  FUEL,
 }
 
 /** The subset of DestinyActivityModeType that we use for game modes. */
-export const enum DtrD2ActivityModes {
+export enum DtrD2ActivityModes {
   notSpecified = 0,
   playerVersusEnemy = 7,
   playerVersusPlayer = 5,
   raid = 4,
   // trials = DestinyActivityModeType.TrialsOfTheNine
-  gambit = 63
+  gambit = 63,
 }
 
-export const enum DtrReviewPlatform {
+export enum DtrReviewPlatform {
   All = 0,
   Xbox = 1,
   Playstation = 2,
   AllConsoles = 101,
-  Pc = 3
+  Pc = 3,
 }
 
 export interface Settings {
@@ -142,5 +142,5 @@ export const defaultSettings: Settings = {
 
   colorA11y: '-',
   wishListSource:
-    'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt'
+    'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
 };

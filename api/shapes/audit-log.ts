@@ -2,6 +2,10 @@ import { Settings } from './settings';
 import { ItemAnnotation } from './item-annotations';
 import { DestinyVersion } from './general';
 
+export interface AuditLogResponse {
+  log: AuditLogEntry[];
+}
+
 /**
  * Audit logs keep track of actions made by a user. We save enough info to display some data.
  */

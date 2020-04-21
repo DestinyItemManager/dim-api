@@ -16,3 +16,7 @@ export interface ApiApp {
  * A request to register a new app with the DIM API.
  */
 export type CreateAppRequest = Pick<ApiApp, 'id' | 'bungieApiKey' | 'origin'>;
+
+export interface CreateAppResponse {
+  app: ApiApp;
+}

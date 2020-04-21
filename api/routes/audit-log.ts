@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db';
 import { getAuditLog } from '../db/audit-log-queries';
+import { AuditLogResponse } from '../shapes/audit-log';
 
 export const auditLogHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -8,8 +9,8 @@ export const auditLogHandler = asyncHandler(async (req, res) => {
   await readTransaction(async (client) => {
     const auditLog = await getAuditLog(client, bungieMembershipId);
 
-    const response = {
-      log: auditLog
+    const response: AuditLogResponse = {
+      log: auditLog,
     };
 
     // Instruct CF not to cache this
