@@ -66,6 +66,30 @@ const apiKeyCors = cors({
 });
 app.use(apiKeyCors);
 
+// Validate that the API key in the header is valid for this origin.
+app.use((req, res, next) => {
+  if (
+    req.dimApp &&
+    req.headers.origin &&
+    req.dimApp.origin !== req.headers.origin
+  ) {
+    console.warn(
+      'OriginMismatch',
+      req.dimApp?.id,
+      req.dimApp?.origin,
+      req.headers.origin
+    );
+    metrics.increment('apiKey.wrongOrigin.count');
+    res.status(401).send({
+      error: 'OriginMismatch',
+      message:
+        'The origin of this request and the origin registered to the provided API key do not match',
+    });
+  } else {
+    next();
+  }
+});
+
 // TODO: just explicitly use API key cors on everything so it shows up
 
 app.post('/auth/token', authTokenHandler);
@@ -103,23 +127,6 @@ app.use((req, res, next) => {
       error: 'ApiKeyMismatch',
       message:
         'The auth token was issued for a different app than the API key in X-API-Key indicates',
-    });
-  } else if (
-    req.dimApp &&
-    req.headers.origin &&
-    req.dimApp.origin !== req.headers.origin
-  ) {
-    console.warn(
-      'OriginMismatch',
-      req.dimApp?.id,
-      req.dimApp?.origin,
-      req.headers.origin
-    );
-    metrics.increment('apiKey.wrongOrigin.count');
-    res.status(401).send({
-      error: 'OriginMismatch',
-      message:
-        'The origin of this request and the origin registered to the provided API key do not match',
     });
   } else {
     next();
