@@ -16,7 +16,7 @@ export async function getItemAnnotationsForProfile(
     name: 'get_item_annotations',
     text:
       'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2  and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion]
+    values: [bungieMembershipId, platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertItemAnnotation);
 }
@@ -39,18 +39,18 @@ export async function getAllItemAnnotationsForUser(
     name: 'get_all_item_annotations',
     text:
       'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1',
-    values: [bungieMembershipId]
+    values: [bungieMembershipId],
   });
   return results.rows.map((row) => ({
     platformMembershipId: row.platform_membership_id,
-    destinyVersion: row.destinyVersion,
-    annotation: convertItemAnnotation(row)
+    destinyVersion: row.destiny_version,
+    annotation: convertItemAnnotation(row),
   }));
 }
 
 function convertItemAnnotation(row: any): ItemAnnotation {
   const result: ItemAnnotation = {
-    id: row.inventory_item_id
+    id: row.inventory_item_id,
   };
   if (row.tag) {
     result.tag = row.tag;
@@ -92,8 +92,8 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
       itemAnnotation.id,
       tagValue,
       notesValue,
-      appId
-    ]
+      appId,
+    ],
   });
 
   if (response.rowCount < 1) {
@@ -131,7 +131,7 @@ export async function deleteItemAnnotation(
   return client.query({
     name: 'delete_item_annotation',
     text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
-    values: [bungieMembershipId, inventoryItemId]
+    values: [bungieMembershipId, inventoryItemId],
   });
 }
 
@@ -146,7 +146,7 @@ export async function deleteItemAnnotationList(
   return client.query({
     name: 'delete_item_annotation_list',
     text: `delete from item_annotations where membership_id = $1 and inventory_item_id = ANY($2::text[])`,
-    values: [bungieMembershipId, inventoryItemIds]
+    values: [bungieMembershipId, inventoryItemIds],
   });
 }
 
@@ -160,6 +160,6 @@ export async function deleteAllItemAnnotations(
   return client.query({
     name: 'delete_all_item_annotations',
     text: `delete from item_annotations where membership_id = $1`,
-    values: [bungieMembershipId]
+    values: [bungieMembershipId],
   });
 }

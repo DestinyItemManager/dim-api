@@ -94,16 +94,16 @@ export const importHandler = asyncHandler(async (req, res) => {
       type: 'import',
       payload: {
         loadouts: loadouts.length,
-        tags: itemAnnotations.length
+        tags: itemAnnotations.length,
       },
-      createdBy: appId
+      createdBy: appId,
     });
   });
 
   // default 200 OK
   res.status(200).send({
     loadouts: loadouts.length,
-    tags: itemAnnotations.length
+    tags: itemAnnotations.length,
   });
 });
 
@@ -139,7 +139,7 @@ function extractLoadouts(
     return importData.loadouts.map((l) => ({
       ...l.loadout,
       platformMembershipId: l.platformMembershipId,
-      destinyVersion: l.destinyVersion
+      destinyVersion: l.destinyVersion,
     }));
   }
 
@@ -162,7 +162,7 @@ function extractLoadouts(
         .map((item) => ({ id: item.id, hash: item.hash, amount: item.amount })),
       unequipped: rawLoadout.items
         .filter((i) => !i.equipped)
-        .map((item) => ({ id: item.id, hash: item.hash, amount: item.amount }))
+        .map((item) => ({ id: item.id, hash: item.hash, amount: item.amount })),
     }));
 }
 
@@ -171,21 +171,21 @@ export enum LoadoutClass {
   any = -1,
   warlock = 0,
   titan = 1,
-  hunter = 2
+  hunter = 2,
 }
 
 export const loadoutClassToClassType = {
   [LoadoutClass.hunter]: 1,
   [LoadoutClass.titan]: 0,
   [LoadoutClass.warlock]: 2,
-  [LoadoutClass.any]: 3
+  [LoadoutClass.any]: 3,
 };
 
 export const classTypeToLoadoutClass = {
   1: LoadoutClass.hunter,
   0: LoadoutClass.titan,
   2: LoadoutClass.warlock,
-  3: LoadoutClass.any
+  3: LoadoutClass.any,
 };
 
 function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
@@ -204,7 +204,7 @@ function extractItemAnnotations(
     return importData.tags.map((t) => ({
       ...t.annotation,
       platformMembershipId: t.platformMembershipId,
-      destinyVersion: t.destinyVersion
+      destinyVersion: t.destinyVersion || 2,
     }));
   }
 
@@ -221,7 +221,7 @@ function extractItemAnnotations(
           destinyVersion,
           id,
           tag: value.tag,
-          notes: value.notes
+          notes: value.notes,
         });
       }
     }
