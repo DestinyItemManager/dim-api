@@ -23,7 +23,7 @@ app.set('x-powered-by', false);
 app.use(setRouteNameForStats); // fix path names for next middleware
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
 app.use(morgan('combined')); // logging
-app.use(express.json()); // for parsing application/json
+app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 /** CORS config that allows any origin to call */
 const permissiveCors = cors({
