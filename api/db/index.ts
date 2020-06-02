@@ -5,7 +5,8 @@ import { metrics } from '../metrics';
 // for connection information (from .env or a ConfigMap)
 export const pool = new Pool({
   max: 2, // We get 25 connections per 1GB of RAM, minus 3 connections for maintenance. We run a variable number of DIM services.
-  ssl: { rejectUnauthorized: false },
+  ssl:
+    process.env.PGHOST === 'localhost' ? false : { rejectUnauthorized: false },
 });
 
 pool.on('connect', () => {
