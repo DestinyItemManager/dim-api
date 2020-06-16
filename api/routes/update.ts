@@ -9,11 +9,11 @@ import { Loadout } from '../shapes/loadouts';
 import { setSetting as setSettingInDb } from '../db/settings-queries';
 import {
   updateLoadout as updateLoadoutInDb,
-  deleteLoadout as deleteLoadoutInDb
+  deleteLoadout as deleteLoadoutInDb,
 } from '../db/loadouts-queries';
 import {
   updateItemAnnotation as updateItemAnnotationInDb,
-  deleteItemAnnotationList
+  deleteItemAnnotationList,
 } from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
@@ -103,7 +103,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
   });
 
   res.send({
-    results
+    results,
   });
 });
 
@@ -120,7 +120,7 @@ async function updateSetting(
   await recordAuditLog(client, bungieMembershipId, {
     type: 'settings',
     payload: settings,
-    createdBy: appId
+    createdBy: appId,
   });
 
   return { status: 'Success' };
@@ -138,7 +138,7 @@ async function updateLoadout(
     metrics.increment('update.validation.platformMembershipIdMissing.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadouts require platform membership ID to be set'
+      message: 'Loadouts require platform membership ID to be set',
     };
   }
 
@@ -146,14 +146,14 @@ async function updateLoadout(
     metrics.increment('update.validation.loadoutNameMissing.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout name missing'
+      message: 'Loadout name missing',
     };
   }
   if (loadout.name && loadout.name.length > 120) {
     metrics.increment('update.validation.loadoutNameTooLong.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout names must be under 120 characters'
+      message: 'Loadout names must be under 120 characters',
     };
   }
 
@@ -161,14 +161,14 @@ async function updateLoadout(
     metrics.increment('update.loadoutIdMissing.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout id missing'
+      message: 'Loadout id missing',
     };
   }
   if (loadout.id && loadout.id.length > 120) {
     metrics.increment('update.validation.loadoutIdTooLong.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout ids must be under 120 characters'
+      message: 'Loadout ids must be under 120 characters',
     };
   }
 
@@ -176,14 +176,14 @@ async function updateLoadout(
     metrics.increment('update.validation.classTypeMissing.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout class type missing or malformed'
+      message: 'Loadout class type missing or malformed',
     };
   }
   if (loadout.classType < 0 || loadout.classType > 3) {
     metrics.increment('update.validation.classTypeOutOfRange.count');
     return {
       status: 'InvalidArgument',
-      message: 'Loadout class type out of range'
+      message: 'Loadout class type out of range',
     };
   }
 
@@ -201,9 +201,9 @@ async function updateLoadout(
     platformMembershipId,
     destinyVersion,
     payload: {
-      name: loadout.name
+      name: loadout.name,
     },
-    createdBy: appId
+    createdBy: appId,
   });
 
   return { status: 'Success' };
@@ -231,9 +231,9 @@ async function deleteLoadout(
     platformMembershipId,
     destinyVersion,
     payload: {
-      name: loadout.name
+      name: loadout.name,
     },
-    createdBy: appId
+    createdBy: appId,
   });
 
   return { status: 'Success' };
@@ -251,7 +251,7 @@ async function updateItemAnnotation(
     metrics.increment('update.validation.platformMembershipIdMissing.count');
     return {
       status: 'InvalidArgument',
-      message: 'Tags require platform membership ID to be set'
+      message: 'Tags require platform membership ID to be set',
     };
   }
 
@@ -264,14 +264,14 @@ async function updateItemAnnotation(
     metrics.increment('update.validation.tagNotRecognized.count');
     return {
       status: 'InvalidArgument',
-      message: `Tag value ${itemAnnotation.tag} is not recognized`
+      message: `Tag value ${itemAnnotation.tag} is not recognized`,
     };
   }
   if (itemAnnotation.notes && itemAnnotation.notes.length > 1024) {
     metrics.increment('update.validation.notesTooLong.count');
     return {
       status: 'InvalidArgument',
-      message: 'Notes must be under 1024 characters'
+      message: 'Notes must be under 1024 characters',
     };
   }
 
@@ -289,7 +289,7 @@ async function updateItemAnnotation(
     platformMembershipId,
     destinyVersion,
     payload: itemAnnotation,
-    createdBy: appId
+    createdBy: appId,
   });
 
   return { status: 'Success' };
@@ -303,14 +303,20 @@ async function tagCleanup(
   destinyVersion: DestinyVersion,
   inventoryItemIds: string[]
 ): Promise<ProfileUpdateResult> {
-  await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
+  const result = await deleteItemAnnotationList(
+    client,
+    bungieMembershipId,
+    inventoryItemIds
+  );
 
   await recordAuditLog(client, bungieMembershipId, {
     type: 'tag_cleanup',
     platformMembershipId,
     destinyVersion,
-    payload: {},
-    createdBy: appId
+    payload: {
+      deleted: result.rowCount,
+    },
+    createdBy: appId,
   });
 
   return { status: 'Success' };
