@@ -101,6 +101,15 @@ export interface Settings {
 
   /** The initial status of assume masterwork in the loadout optimizer. */
   readonly loAssumeMasterwork: boolean;
+
+  /** list of stat hashes of interest, keyed by class enum */
+  readonly customTotalStatsByClass: {
+    [key: number]: number[];
+  };
+
+  /** Selected columns for the Vault Organizer */
+  readonly organizerColumnsWeapons: string[];
+  readonly organizerColumnsArmor: string[];
 }
 
 export const defaultSettings: Settings = {
@@ -149,6 +158,7 @@ export const defaultSettings: Settings = {
   colorA11y: '-',
   wishListSource:
     'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
+
   loStatSortOrder: [
     2996146975, //Mobility
     392767087, //Resilience
@@ -158,4 +168,33 @@ export const defaultSettings: Settings = {
     4244567218, //Strength
   ],
   loAssumeMasterwork: false,
+
+  customTotalStatsByClass: {},
+  organizerColumnsWeapons: [
+    'icon',
+    'name',
+    'dmg',
+    'power',
+    'locked',
+    'tag',
+    'wishList',
+    'archetype',
+    'perks',
+    'notes',
+  ],
+  organizerColumnsArmor: [
+    'icon',
+    'name',
+    'power',
+    'dmg',
+    'energy',
+    'locked',
+    'tag',
+    'ghost',
+    'modslot',
+    'perks',
+    'stats',
+    'customstat',
+    'notes',
+  ],
 };
