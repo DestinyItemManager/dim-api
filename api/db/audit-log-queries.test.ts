@@ -9,7 +9,7 @@ const bungieMembershipId = 1234;
 beforeEach(async () => {
   await pool.query({
     text: 'delete from audit_log where membership_id = $1',
-    values: [bungieMembershipId]
+    values: [bungieMembershipId],
   });
 });
 
@@ -21,8 +21,10 @@ it('can insert audit logs', async () => {
       type: 'tag_cleanup',
       platformMembershipId,
       destinyVersion: 2,
-      payload: {},
-      createdBy: appId
+      payload: {
+        deleted: 1,
+      },
+      createdBy: appId,
     };
     await recordAuditLog(client, bungieMembershipId, entry);
 
