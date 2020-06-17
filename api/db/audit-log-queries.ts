@@ -11,8 +11,8 @@ export async function getAuditLog(
   const results = await client.query({
     name: 'get_audit_log',
     text:
-      'SELECT platform_membership_id, destiny_version, type, entry, created_at, created_by FROM audit_log WHERE membership_id = $1 ORDER BY created_by, id desc',
-    values: [bungieMembershipId]
+      'SELECT platform_membership_id, destiny_version, type, entry, created_at, created_by FROM audit_log WHERE membership_id = $1 ORDER BY created_at, id desc LIMIT 100',
+    values: [bungieMembershipId],
   });
   return results.rows.map(convertAuditLog);
 }
@@ -24,7 +24,7 @@ function convertAuditLog(row: any): AuditLogEntry {
     type: row.type,
     payload: row.entry,
     createdAt: row.created_at.getTime(),
-    createdBy: row.created_by
+    createdBy: row.created_by,
   };
   return entry;
 }
@@ -47,8 +47,8 @@ values ($1, $2, $3, $4, $5, $6)`,
       entry.destinyVersion || 2,
       entry.type,
       entry.payload,
-      entry.createdBy
-    ]
+      entry.createdBy,
+    ],
   });
 
   return response;

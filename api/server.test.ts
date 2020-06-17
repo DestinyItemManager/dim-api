@@ -181,9 +181,7 @@ describe('settings', () => {
       ],
     };
 
-    await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    await postRequestAuthed('/profile').send(request).expect(200);
 
     // Read settings back
     const response = await getRequestAuthed(
@@ -620,7 +618,7 @@ describe('audit', () => {
     const auditResult = await getRequestAuthed('/audit').expect(200);
 
     const matchingEntry = auditResult.body.log.find(
-      (e) => e.createdBy === 'test-app'
+      (e) => e.type === 'loadout'
     );
     const expectedEntry = {
       createdAt: matchingEntry.createdAt,
@@ -657,9 +655,7 @@ async function importData() {
     (await promisify(readFile)('./dim-data.json')).toString()
   );
 
-  await postRequestAuthed('/import')
-    .send(file)
-    .expect(200);
+  await postRequestAuthed('/import').send(file).expect(200);
 
   return file;
 }

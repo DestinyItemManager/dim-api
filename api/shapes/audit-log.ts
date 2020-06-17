@@ -72,5 +72,7 @@ export interface ItemAnnotationLogEntry {
 
 export interface CleanupItemAnnotationLogEntry {
   type: 'tag_cleanup';
-  payload: {};
+  payload: {
+    deleted: number;
+  };
 }
