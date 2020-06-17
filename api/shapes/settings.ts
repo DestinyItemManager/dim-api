@@ -95,6 +95,12 @@ export interface Settings {
    * Set to empty string to not use wishListSource.
    */
   readonly wishListSource: string;
+
+  /** The initial stat order in the loadout opimizer. */
+  readonly loStatSortOrder: number[];
+
+  /** The initial status of assume masterwork in the loadout optimizer. */
+  readonly loAssumeMasterwork: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -143,4 +149,13 @@ export const defaultSettings: Settings = {
   colorA11y: '-',
   wishListSource:
     'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
+  loStatSortOrder: [
+    2996146975, //Mobility
+    392767087, //Resilience
+    1943323491, //Recovery
+    1735777505, //Discipline
+    144602215, //Intellect
+    4244567218, //Strength
+  ],
+  loAssumeMasterwork: false,
 };
