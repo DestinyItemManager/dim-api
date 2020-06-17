@@ -11,7 +11,7 @@ export async function getAuditLog(
   const results = await client.query({
     name: 'get_audit_log',
     text:
-      'SELECT platform_membership_id, destiny_version, type, entry, created_at, created_by FROM audit_log WHERE membership_id = $1 ORDER BY created_at, id desc LIMIT 100',
+      'SELECT platform_membership_id, destiny_version, type, entry, created_at, created_by FROM audit_log WHERE membership_id = $1 ORDER BY created_at desc, id desc LIMIT 100',
     values: [bungieMembershipId],
   });
   return results.rows.map(convertAuditLog);
