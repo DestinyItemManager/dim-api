@@ -24,7 +24,9 @@ export const setRouteNameForStats: RequestHandler = (req, res, next) => {
 
     if (req.params) {
       Object.keys(req.params).forEach(function (key) {
-        if (req.params[key] === '') return;
+        if (req.params[key] === '') {
+          return;
+        }
         routeName = routeName.replace(req.params[key], ':' + key);
       });
     }
