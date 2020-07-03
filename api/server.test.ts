@@ -90,7 +90,7 @@ describe('profile', () => {
 
   it('can retrieve all profile data', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -104,7 +104,7 @@ describe('profile', () => {
     ]);
     expect(profileResponse.loadouts!.length).toBe(11);
     expect(profileResponse.tags!.length).toBe(51);
-    expect(profileResponse.triumphs!.length).toBe(2);
+    expect(profileResponse.triumphs!.length).toBe(0);
   });
 
   it('can retrieve only settings and triumphs, without needing a platform membership ID', async () => {
@@ -145,6 +145,7 @@ describe('profile', () => {
       settings: 1,
       loadouts: 12,
       tags: 51,
+      triumphs: 0,
     });
 
     // Now re-export and make sure it's all gone
@@ -630,8 +631,7 @@ describe('triumphs', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.triumphs?.length).toBe(1);
-    const resultTriumphs = profileResponse.triumphs![0];
-    expect(resultTriumphs).toEqual([1234]);
+    expect(profileResponse.triumphs!).toEqual([1234]);
   });
 
   it('can remove a tracked triumph', async () => {
@@ -738,8 +738,7 @@ describe('triumphs', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.triumphs?.length).toBe(1);
-    const resultTriumphs = profileResponse.triumphs![0];
-    expect(resultTriumphs).toEqual([1234]);
+    expect(profileResponse.triumphs!).toEqual([1234]);
   });
 });
 
