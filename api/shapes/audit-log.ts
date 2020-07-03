@@ -23,6 +23,7 @@ export type AuditLogEntry = {
   | DeleteLoadoutLogEntry
   | ItemAnnotationLogEntry
   | CleanupItemAnnotationLogEntry
+  | AuthLogEntry
 );
 
 export interface ImportAuditLogEntry {
@@ -74,5 +75,12 @@ export interface CleanupItemAnnotationLogEntry {
   type: 'tag_cleanup';
   payload: {
     deleted: number;
+  };
+}
+
+export interface AuthLogEntry {
+  type: 'auth';
+  payload: {
+    userAgent: string;
   };
 }
