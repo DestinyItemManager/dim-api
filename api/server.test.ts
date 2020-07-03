@@ -107,7 +107,7 @@ describe('profile', () => {
     expect(profileResponse.triumphs!.length).toBe(0);
   });
 
-  it('can retrieve only settings and triumphs, without needing a platform membership ID', async () => {
+  it('can retrieve only settings, without needing a platform membership ID', async () => {
     const response = await getRequestAuthed(
       '/profile?components=settings'
     ).expect(200);
