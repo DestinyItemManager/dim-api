@@ -13,6 +13,8 @@ export interface GlobalSettings {
   bustProfileCacheOnHardRefresh: boolean;
   /** Don't automatically refresh DIM profile info more often than this many seconds. */
   dimProfileMinimumRefreshInterval: number;
+  /** Display an issue banner, if there is one. */
+  showIssueBanner: boolean;
 }
 
 export const defaultGlobalSettings: GlobalSettings = {
@@ -23,6 +25,7 @@ export const defaultGlobalSettings: GlobalSettings = {
   refreshProfileOnVisible: true,
   bustProfileCacheOnHardRefresh: false,
   dimProfileMinimumRefreshInterval: 300,
+  showIssueBanner: false,
 };
 
 export interface PlatformInfoResponse {
