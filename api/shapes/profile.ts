@@ -61,7 +61,10 @@ export interface DeleteLoadoutUpdate {
 export interface TrackTriumphUpdate {
   action: 'track_triumph';
   /** true for tracked, false for untracked */
-  payload: boolean;
+  payload: {
+    recordHash: number;
+    tracked: boolean;
+  };
 }
 
 export interface ProfileUpdateResponse {
