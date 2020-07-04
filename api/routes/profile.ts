@@ -8,6 +8,7 @@ import { ProfileResponse } from '../shapes/profile';
 import { DestinyVersion } from '../shapes/general';
 import { defaultSettings } from '../shapes/settings';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
+import { getSearchesForProfile } from '../db/searches-queries';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -72,6 +73,14 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId,
         platformMembershipId
+      );
+    }
+
+    if (components.includes('searches')) {
+      response.searches = await getSearchesForProfile(
+        client,
+        bungieMembershipId,
+        destinyVersion
       );
     }
 

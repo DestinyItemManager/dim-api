@@ -5,6 +5,7 @@ import { getAllLoadoutsForUser } from '../db/loadouts-queries';
 import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
 import { ExportResponse } from '../shapes/export';
 import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries';
+import { getSearchesForUser } from '../db/searches-queries';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -20,12 +21,14 @@ export const exportHandler = asyncHandler(async (req, res) => {
       client,
       bungieMembershipId
     );
+    const searches = await getSearchesForUser(client, bungieMembershipId);
 
     const response: ExportResponse = {
       settings,
       loadouts,
       tags: itemAnnotations,
       triumphs,
+      searches,
     };
 
     // Instruct CF not to cache this

@@ -9,6 +9,7 @@ export interface ProfileResponse {
   tags?: ItemAnnotation[];
   /** Hashes of tracked triumphs */
   triumphs?: number[];
+  searches?: Search[];
 }
 
 /**
@@ -30,7 +31,9 @@ export type ProfileUpdate =
   | SettingUpdate
   | LoadoutUpdate
   | DeleteLoadoutUpdate
-  | TrackTriumphUpdate;
+  | TrackTriumphUpdate
+  | UsedSearchUpdate
+  | SavedSearchUpdate;
 
 export interface TagUpdate {
   action: 'tag';
@@ -64,6 +67,30 @@ export interface TrackTriumphUpdate {
   payload: {
     recordHash: number;
     tracked: boolean;
+  };
+}
+
+/**
+ * Record that a search was used.
+ */
+export interface UsedSearchUpdate {
+  action: 'search';
+  payload: {
+    query: string;
+  };
+}
+
+/**
+ * Save or unsave a search. This is separate from marking a search as used.
+ */
+export interface SavedSearchUpdate {
+  action: 'save_search';
+  payload: {
+    query: string;
+    /**
+     * Whether the search should be saved
+     */
+    saved: boolean;
   };
 }
 

@@ -4,5 +4,6 @@ export interface DeleteAllResponse {
     loadouts: number;
     tags: number;
     triumphs: number;
+    searches: number;
   };
 }

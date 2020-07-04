@@ -14,6 +14,7 @@ import { badRequest } from '../utils';
 import _ from 'lodash';
 import { ImportResponse } from '../shapes/import';
 import { trackTriumph } from '../db/triumphs-queries';
+import { importSearch } from '../db/searches-queries';
 
 export interface DimData {
   // The last selected platform membership ID
@@ -40,13 +41,15 @@ export const importHandler = asyncHandler(async (req, res) => {
   const settings = extractSettings(importData);
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
-  const triumphs = extractTriumphs(importData);
+  const triumphs = importData.triumphs || [];
+  const searches: ExportResponse['searches'] = importData.searches || [];
 
   if (
     _.isEmpty(settings) &&
     loadouts.length === 0 &&
     itemAnnotations.length === 0 &&
-    triumphs.length === 0
+    triumphs.length === 0 &&
+    searches.length === 0
   ) {
     badRequest(res, "Won't import empty data");
     return;
@@ -101,12 +104,26 @@ export const importHandler = asyncHandler(async (req, res) => {
       }
     }
 
+    for (const search of searches) {
+      importSearch(
+        client,
+        appId,
+        bungieMembershipId,
+        search.destinyVersion,
+        search.search.query,
+        search.search.saved,
+        search.search.lastUsage,
+        search.search.usageCount
+      );
+    }
+
     await recordAuditLog(client, bungieMembershipId, {
       type: 'import',
       payload: {
         loadouts: loadouts.length,
         tags: itemAnnotations.length,
         triumphs: numTriumphs,
+        searches: searches.length,
       },
       createdBy: appId,
     });
@@ -116,6 +133,7 @@ export const importHandler = asyncHandler(async (req, res) => {
     loadouts: loadouts.length,
     tags: itemAnnotations.length,
     triumphs: numTriumphs,
+    searches: searches.length,
   };
 
   // default 200 OK
@@ -242,10 +260,4 @@ function extractItemAnnotations(
     }
   }
   return annotations;
-}
-
-function extractTriumphs(
-  importData: DimData | ExportResponse
-): ExportResponse['triumphs'] {
-  return importData.triumphs || [];
 }
