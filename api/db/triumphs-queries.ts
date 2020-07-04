@@ -1,5 +1,4 @@
 import { ClientBase, QueryResult } from 'pg';
-import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
 
 /**
@@ -28,8 +27,7 @@ export async function getAllTrackedTriumphsForUser(
 ): Promise<
   {
     platformMembershipId: string;
-    destinyVersion: DestinyVersion;
-    triumph: number;
+    triumphs: number[];
   }[]
 > {
   const results = await client.query({
@@ -38,11 +36,21 @@ export async function getAllTrackedTriumphsForUser(
       'SELECT platform_membership_id, record_hash FROM tracked_triumphs WHERE membership_id = $1',
     values: [bungieMembershipId],
   });
-  return results.rows.map((row) => ({
-    platformMembershipId: row.platform_membership_id,
-    destinyVersion: row.destinyVersion,
-    triumph: row.record_hash,
-  }));
+
+  const triumphsByAccount: { [platformMembershipId: string]: number[] } = {};
+
+  for (const row of results.rows) {
+    triumphsByAccount[row.platform_membership_id] =
+      triumphsByAccount[row.platform_membership_id] || [];
+    triumphsByAccount[row.platform_membership_id].push(row.record_hash);
+  }
+
+  return Object.entries(triumphsByAccount).map(
+    ([platformMembershipId, triumphs]) => ({
+      platformMembershipId,
+      triumphs,
+    })
+  );
 }
 
 /**
@@ -62,11 +70,6 @@ values ($1, $2, $3, $4)
 on conflict do nothing`,
     values: [bungieMembershipId, platformMembershipId, recordHash, appId],
   });
-
-  if (response.rowCount < 1) {
-    // This should never happen but it's OK
-    metrics.increment('db.triumphs.noRowUpdated.count', 1);
-  }
 
   return response;
 }

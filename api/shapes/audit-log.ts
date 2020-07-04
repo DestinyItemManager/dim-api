@@ -34,6 +34,7 @@ export interface ImportAuditLogEntry {
   payload: {
     loadouts: number;
     tags: number;
+    triumphs: number;
   };
 }
 

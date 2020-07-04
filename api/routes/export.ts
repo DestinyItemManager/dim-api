@@ -4,6 +4,7 @@ import { getSettings } from '../db/settings-queries';
 import { getAllLoadoutsForUser } from '../db/loadouts-queries';
 import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
 import { ExportResponse } from '../shapes/export';
+import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -15,11 +16,16 @@ export const exportHandler = asyncHandler(async (req, res) => {
       client,
       bungieMembershipId
     );
+    const triumphs = await getAllTrackedTriumphsForUser(
+      client,
+      bungieMembershipId
+    );
 
     const response: ExportResponse = {
       settings,
       loadouts,
-      tags: itemAnnotations
+      tags: itemAnnotations,
+      triumphs,
     };
 
     // Instruct CF not to cache this
