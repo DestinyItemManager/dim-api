@@ -102,6 +102,12 @@ export interface Settings {
   /** The initial status of assume masterwork in the loadout optimizer. */
   readonly loAssumeMasterwork: boolean;
 
+  /** Thie minimum power for an armor set in the loadout optimizer. */
+  readonly loMinPower: number;
+
+  /**The minimum stat total for a single armor piece in the loadout optimizer. */
+  readonly loMinStatTotal: number;
+
   /** list of stat hashes of interest, keyed by class enum */
   readonly customTotalStatsByClass: {
     [key: number]: number[];
@@ -168,6 +174,8 @@ export const defaultSettings: Settings = {
     4244567218, //Strength
   ],
   loAssumeMasterwork: false,
+  loMinPower: 750,
+  loMinStatTotal: 55,
 
   customTotalStatsByClass: {},
   organizerColumnsWeapons: [

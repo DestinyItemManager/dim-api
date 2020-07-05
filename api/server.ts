@@ -97,7 +97,14 @@ app.post('/auth/token', authTokenHandler);
 /* ****** USER AUTH REQUIRED ****** */
 /* Any routes declared below this will require an auth token */
 
-app.all('*', jwt({ secret: process.env.JWT_SECRET!, userProperty: 'jwt' }));
+app.all(
+  '*',
+  jwt({
+    secret: process.env.JWT_SECRET!,
+    userProperty: 'jwt',
+    algorithms: ['HS256'],
+  })
+);
 
 // Copy info from the auth token into a "user" parameter on the request.
 app.use((req, _, next) => {

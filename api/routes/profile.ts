@@ -7,6 +7,7 @@ import { badRequest } from '../utils';
 import { ProfileResponse } from '../shapes/profile';
 import { DestinyVersion } from '../shapes/general';
 import { defaultSettings } from '../shapes/settings';
+import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -59,6 +60,18 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         platformMembershipId,
         destinyVersion
+      );
+    }
+
+    if (destinyVersion === 2 && components.includes('triumphs')) {
+      if (!platformMembershipId) {
+        badRequest(res, 'Need a platformMembershipId to return triumphs');
+        return;
+      }
+      response.triumphs = await getTrackedTriumphsForProfile(
+        client,
+        bungieMembershipId,
+        platformMembershipId
       );
     }
 

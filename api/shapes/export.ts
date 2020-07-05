@@ -15,4 +15,8 @@ export interface ExportResponse {
     destinyVersion: DestinyVersion;
     annotation: ItemAnnotation;
   }[];
+  triumphs: {
+    platformMembershipId: string;
+    triumphs: number[];
+  }[];
 }

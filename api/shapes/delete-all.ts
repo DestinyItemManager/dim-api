@@ -3,5 +3,6 @@ export interface DeleteAllResponse {
     settings: number;
     loadouts: number;
     tags: number;
+    triumphs: number;
   };
 }
