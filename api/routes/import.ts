@@ -12,14 +12,8 @@ import { ExportResponse } from '../shapes/export';
 import { recordAuditLog } from '../db/audit-log-queries';
 import { badRequest } from '../utils';
 import _ from 'lodash';
-
-// in a transaction:
-// 1. query all tags/loadouts (at least IDs)
-// 2. insert/upsert all items from imported file
-// 3. delete things not in imported file
-
-// TODO: new and old import formats (start with old)
-// TODO: backup! should it have a special set of indexes or just deal with occasional table scans?
+import { ImportResponse } from '../shapes/import';
+import { trackTriumph } from '../db/triumphs-queries';
 
 export interface DimData {
   // The last selected platform membership ID
@@ -46,15 +40,19 @@ export const importHandler = asyncHandler(async (req, res) => {
   const settings = extractSettings(importData);
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
+  const triumphs = extractTriumphs(importData);
 
   if (
     _.isEmpty(settings) &&
     loadouts.length === 0 &&
-    itemAnnotations.length === 0
+    itemAnnotations.length === 0 &&
+    triumphs.length === 0
   ) {
     badRequest(res, "Won't import empty data");
     return;
   }
+
+  let numTriumphs = 0;
 
   await transaction(async (client) => {
     await deleteAllData(client, bungieMembershipId);
@@ -90,21 +88,38 @@ export const importHandler = asyncHandler(async (req, res) => {
       );
     }
 
+    for (const triumphData of triumphs) {
+      for (const triumph of triumphData.triumphs) {
+        trackTriumph(
+          client,
+          appId,
+          bungieMembershipId,
+          triumphData.platformMembershipId,
+          triumph
+        );
+        numTriumphs++;
+      }
+    }
+
     await recordAuditLog(client, bungieMembershipId, {
       type: 'import',
       payload: {
         loadouts: loadouts.length,
         tags: itemAnnotations.length,
+        triumphs: numTriumphs,
       },
       createdBy: appId,
     });
   });
 
-  // default 200 OK
-  res.status(200).send({
+  const response: ImportResponse = {
     loadouts: loadouts.length,
     tags: itemAnnotations.length,
-  });
+    triumphs: numTriumphs,
+  };
+
+  // default 200 OK
+  res.status(200).send(response);
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
@@ -227,4 +242,10 @@ function extractItemAnnotations(
     }
   }
   return annotations;
+}
+
+function extractTriumphs(
+  importData: DimData | ExportResponse
+): ExportResponse['triumphs'] {
+  return importData.triumphs || [];
 }

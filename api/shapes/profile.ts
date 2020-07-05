@@ -7,6 +7,8 @@ export interface ProfileResponse {
   settings?: Settings;
   loadouts?: Loadout[];
   tags?: ItemAnnotation[];
+  /** Hashes of tracked triumphs */
+  triumphs?: number[];
 }
 
 /**
@@ -27,7 +29,8 @@ export type ProfileUpdate =
   | TagCleanupUpdate
   | SettingUpdate
   | LoadoutUpdate
-  | DeleteLoadoutUpdate;
+  | DeleteLoadoutUpdate
+  | TrackTriumphUpdate;
 
 export interface TagUpdate {
   action: 'tag';
@@ -53,6 +56,15 @@ export interface LoadoutUpdate {
 export interface DeleteLoadoutUpdate {
   action: 'delete_loadout';
   payload: string; // A loadout ID
+}
+
+export interface TrackTriumphUpdate {
+  action: 'track_triumph';
+  /** true for tracked, false for untracked */
+  payload: {
+    recordHash: number;
+    tracked: boolean;
+  };
 }
 
 export interface ProfileUpdateResponse {

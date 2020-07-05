@@ -90,7 +90,7 @@ describe('profile', () => {
 
   it('can retrieve all profile data', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -104,6 +104,7 @@ describe('profile', () => {
     ]);
     expect(profileResponse.loadouts!.length).toBe(11);
     expect(profileResponse.tags!.length).toBe(51);
+    expect(profileResponse.triumphs!.length).toBe(0);
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
@@ -122,6 +123,7 @@ describe('profile', () => {
     ]);
     expect(profileResponse.loadouts).toBeUndefined();
     expect(profileResponse.tags).toBeUndefined();
+    expect(profileResponse.triumphs).toBeUndefined();
   });
 
   it('can retrieve only loadouts', async () => {
@@ -143,6 +145,7 @@ describe('profile', () => {
       settings: 1,
       loadouts: 12,
       tags: 51,
+      triumphs: 0,
     });
 
     // Now re-export and make sure it's all gone
@@ -593,6 +596,149 @@ describe('tags', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(0);
+  });
+});
+
+describe('triumphs', () => {
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+
+  it('can add a tracked triumph', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'track_triumph',
+          payload: {
+            recordHash: 1234,
+            tracked: true,
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.triumphs?.length).toBe(1);
+    expect(profileResponse.triumphs!).toEqual([1234]);
+  });
+
+  it('can remove a tracked triumph', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'track_triumph',
+          payload: {
+            recordHash: 1234,
+            tracked: true,
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'track_triumph',
+          payload: {
+            recordHash: 1234,
+            tracked: false,
+          },
+        },
+      ],
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.triumphs?.length).toBe(0);
+  });
+
+  it('can set the same state twice', async () => {
+    const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'track_triumph',
+          payload: {
+            recordHash: 1234,
+            tracked: true,
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'track_triumph',
+          payload: {
+            recordHash: 1234,
+            tracked: true,
+          },
+        },
+      ],
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.triumphs?.length).toBe(1);
+    expect(profileResponse.triumphs!).toEqual([1234]);
   });
 });
 

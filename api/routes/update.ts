@@ -1,6 +1,10 @@
 import asyncHandler from 'express-async-handler';
 import { transaction } from '../db';
-import { ProfileUpdateRequest, ProfileUpdateResult } from '../shapes/profile';
+import {
+  ProfileUpdateRequest,
+  ProfileUpdateResult,
+  TrackTriumphUpdate,
+} from '../shapes/profile';
 import { badRequest } from '../utils';
 import { ClientBase } from 'pg';
 import { Settings } from '../shapes/settings';
@@ -18,6 +22,10 @@ import {
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
 import { recordAuditLog } from '../db/audit-log-queries';
+import {
+  trackTriumph as trackTriumphInDb,
+  unTrackTriumph,
+} from '../db/triumphs-queries';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -90,6 +98,16 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
+            update.payload
+          );
+          break;
+
+        case 'track_triumph':
+          result = await trackTriumph(
+            client,
+            appId,
+            bungieMembershipId,
+            platformMembershipId,
             update.payload
           );
           break;
@@ -316,6 +334,47 @@ async function tagCleanup(
     payload: {
       deleted: result.rowCount,
     },
+    createdBy: appId,
+  });
+
+  return { status: 'Success' };
+}
+
+async function trackTriumph(
+  client: ClientBase,
+  appId: string,
+  bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  payload: TrackTriumphUpdate['payload']
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Tracked triumphs require platform membership ID to be set',
+    };
+  }
+
+  payload.tracked
+    ? await trackTriumphInDb(
+        client,
+        appId,
+        bungieMembershipId,
+        platformMembershipId,
+        payload.recordHash
+      )
+    : await unTrackTriumph(
+        client,
+        bungieMembershipId,
+        platformMembershipId,
+        payload.recordHash
+      );
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'track_triumph',
+    platformMembershipId,
+    destinyVersion: 2,
+    payload,
     createdBy: appId,
   });
 
