@@ -26,6 +26,7 @@ export type AuditLogEntry = {
   | ItemAnnotationLogEntry
   | CleanupItemAnnotationLogEntry
   | TrackTriumphLogEntry
+  | AuthLogEntry
 );
 
 export interface ImportAuditLogEntry {
@@ -80,4 +81,11 @@ export interface CleanupItemAnnotationLogEntry {
 export interface TrackTriumphLogEntry {
   type: 'track_triumph';
   payload: TrackTriumphUpdate['payload'];
+}
+
+export interface AuthLogEntry {
+  type: 'auth';
+  payload: {
+    userAgent: string;
+  };
 }
