@@ -4,6 +4,25 @@ import { metrics } from '../metrics';
 import { ExportResponse } from '../shapes/export';
 
 /*
+ * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
+ */
+const cannedSearchesForD2: Search[] = [
+  'is:armor or is:weapon is:blue -is:maxpower',
+  'sunsetsafter:arrival -source:garden -source:lastwish',
+].map((query) => ({
+  query,
+  saved: false,
+  usageCount: 0,
+  lastUsage: 0,
+}));
+
+const cannedSearchesForD1: Search[] = [].map((query) => ({
+  query,
+  saved: false,
+  usageCount: 0,
+  lastUsage: 0,
+}));
+/*
  * Searches are stored in a single table, scoped by Bungie.net account and destiny version (D1 searches are separate from D2 searches).
  * Favorites and recent searches are stored the same - there's just a favorite flag for saved searches. There is also a usage count
  * and a last_updated_at time, so we can order by both frequency and recency (or a combination of both) and we can age out less-used
@@ -27,7 +46,9 @@ export async function getSearchesForProfile(
       'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC',
     values: [bungieMembershipId, destinyVersion],
   });
-  return results.rows.map(convertSearch);
+  return results.rows
+    .map(convertSearch)
+    .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1);
 }
 
 /**

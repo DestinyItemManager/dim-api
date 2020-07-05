@@ -42,7 +42,7 @@ export const importHandler = asyncHandler(async (req, res) => {
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
   const triumphs = importData.triumphs || [];
-  const searches: ExportResponse['searches'] = importData.searches || [];
+  const searches = extractSearches(importData);
 
   if (
     _.isEmpty(settings) &&
@@ -260,4 +260,13 @@ function extractItemAnnotations(
     }
   }
   return annotations;
+}
+
+function extractSearches(
+  importData: ExportResponse | DimData
+): ExportResponse['searches'] {
+  return ((importData.searches as ExportResponse['searches']) || []).filter(
+    // Filter out pre-filled searches that were never used
+    (s) => s.search.usageCount > 0
+  );
 }

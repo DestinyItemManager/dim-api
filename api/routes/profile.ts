@@ -9,6 +9,7 @@ import { DestinyVersion } from '../shapes/general';
 import { defaultSettings } from '../shapes/settings';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
 import { getSearchesForProfile } from '../db/searches-queries';
+import { metrics } from '../metrics';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -82,6 +83,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         destinyVersion
       );
+      metrics.histogram('searches.numReturned', response.searches.length);
     }
 
     // Instruct CF not to cache this
