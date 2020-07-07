@@ -1,5 +1,8 @@
 language: node_js
 node_js: 13
+branches:
+  only:
+  - master
 services:
   - postgresql
 script: build/travis_build.sh
