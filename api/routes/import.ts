@@ -107,19 +107,6 @@ export const importHandler = asyncHandler(async (req, res) => {
       }
     }
 
-    for (const triumphData of triumphs) {
-      for (const triumph of triumphData.triumphs) {
-        trackTriumph(
-          client,
-          appId,
-          bungieMembershipId,
-          triumphData.platformMembershipId,
-          triumph
-        );
-        numTriumphs++;
-      }
-    }
-
     await recordAuditLog(client, bungieMembershipId, {
       type: 'import',
       payload: {
