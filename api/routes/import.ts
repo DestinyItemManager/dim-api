@@ -14,6 +14,7 @@ import { badRequest } from '../utils';
 import _ from 'lodash';
 import { ImportResponse } from '../shapes/import';
 import { trackTriumph } from '../db/triumphs-queries';
+import { updateItemHashTag } from '../db/item-hash-tags-queries';
 
 export interface DimData {
   // The last selected platform membership ID
@@ -41,6 +42,7 @@ export const importHandler = asyncHandler(async (req, res) => {
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
   const triumphs = extractTriumphs(importData);
+  const itemHashTags = importData.itemHashTags || [];
 
   if (
     _.isEmpty(settings) &&
@@ -88,6 +90,23 @@ export const importHandler = asyncHandler(async (req, res) => {
       );
     }
 
+    for (const tag of itemHashTags) {
+      await updateItemHashTag(client, appId, bungieMembershipId, tag);
+    }
+
+    for (const triumphData of triumphs) {
+      for (const triumph of triumphData.triumphs) {
+        trackTriumph(
+          client,
+          appId,
+          bungieMembershipId,
+          triumphData.platformMembershipId,
+          triumph
+        );
+        numTriumphs++;
+      }
+    }
+
     for (const triumphData of triumphs) {
       for (const triumph of triumphData.triumphs) {
         trackTriumph(
@@ -107,6 +126,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         loadouts: loadouts.length,
         tags: itemAnnotations.length,
         triumphs: numTriumphs,
+        itemHashTags: itemHashTags.length,
       },
       createdBy: appId,
     });
@@ -116,6 +136,7 @@ export const importHandler = asyncHandler(async (req, res) => {
     loadouts: loadouts.length,
     tags: itemAnnotations.length,
     triumphs: numTriumphs,
+    itemHashTags: itemHashTags.length,
   };
 
   // default 200 OK

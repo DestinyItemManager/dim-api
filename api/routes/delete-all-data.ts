@@ -7,6 +7,7 @@ import { ClientBase } from 'pg';
 import { recordAuditLog } from '../db/audit-log-queries';
 import { DeleteAllResponse } from '../shapes/delete-all';
 import { deleteAllTrackedTriumphs } from '../db/triumphs-queries';
+import { deleteAllItemHashTags } from '../db/item-hash-tags-queries';
 
 /**
  * Delete My Data - this allows a user to wipe all their data from DIM storage.
@@ -39,6 +40,8 @@ export async function deleteAllData(
     settings: (await deleteSettings(client, bungieMembershipId)).rowCount,
     loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount,
     tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount,
+    itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId))
+      .rowCount,
     triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId))
       .rowCount,
   };

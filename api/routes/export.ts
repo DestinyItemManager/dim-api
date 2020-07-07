@@ -5,6 +5,7 @@ import { getAllLoadoutsForUser } from '../db/loadouts-queries';
 import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
 import { ExportResponse } from '../shapes/export';
 import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries';
+import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -13,6 +14,10 @@ export const exportHandler = asyncHandler(async (req, res) => {
     const settings = await getSettings(client, bungieMembershipId);
     const loadouts = await getAllLoadoutsForUser(client, bungieMembershipId);
     const itemAnnotations = await getAllItemAnnotationsForUser(
+      client,
+      bungieMembershipId
+    );
+    const itemHashTags = await getItemHashTagsForProfile(
       client,
       bungieMembershipId
     );
@@ -25,6 +30,7 @@ export const exportHandler = asyncHandler(async (req, res) => {
       settings,
       loadouts,
       tags: itemAnnotations,
+      itemHashTags,
       triumphs,
     };
 
