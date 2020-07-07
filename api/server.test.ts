@@ -772,7 +772,9 @@ describe('searches', () => {
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(profileResponse.searches?.length).toBe(1);
+    expect(
+      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
+    ).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].usageCount).toBe(1);
   });
@@ -810,7 +812,9 @@ describe('searches', () => {
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(profileResponse.searches?.length).toBe(1);
+    expect(
+      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
+    ).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].saved).toBe(true);
     expect(profileResponse.searches![0].usageCount).toBe(1);
