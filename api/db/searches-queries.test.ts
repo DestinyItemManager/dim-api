@@ -22,7 +22,9 @@ it('can record a used search where none was recorded before', async () => {
   await transaction(async (client) => {
     await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk');
 
-    const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches = (
+      await getSearchesForProfile(client, bungieMembershipId, 2)
+    ).filter((s) => s.usageCount > 0);
     expect(searches[0].query).toBe('tag:junk');
     expect(searches[0].saved).toBe(false);
     expect(searches[0].usageCount).toBe(1);
@@ -34,7 +36,9 @@ it('can track search multiple times', async () => {
     await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk');
     await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk');
 
-    const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches = (
+      await getSearchesForProfile(client, bungieMembershipId, 2)
+    ).filter((s) => s.usageCount > 0);
     expect(searches[0].query).toBe('tag:junk');
     expect(searches[0].saved).toBe(false);
     expect(searches[0].usageCount).toBe(2);
@@ -46,7 +50,9 @@ it('can mark a search as favorite', async () => {
     await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk');
     await saveSearch(client, appId, bungieMembershipId, 2, 'tag:junk', true);
 
-    const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches = (
+      await getSearchesForProfile(client, bungieMembershipId, 2)
+    ).filter((s) => s.usageCount > 0);
     expect(searches[0].query).toBe('tag:junk');
     expect(searches[0].saved).toBe(true);
     expect(searches[0].usageCount).toBe(1);

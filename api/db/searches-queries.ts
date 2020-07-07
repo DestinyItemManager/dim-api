@@ -7,8 +7,10 @@ import { ExportResponse } from '../shapes/export';
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
  */
 const cannedSearchesForD2: Search[] = [
-  'is:armor or is:weapon is:blue -is:maxpower',
-  'sunsetsafter:arrival -source:garden -source:lastwish',
+  'is:blue is:haspower -is:maxpower',
+  '-is:equipped is:haspower is:incurrentchar',
+  '-source:garden -source:lastwish sunsetsafter:arrival ',
+  '-is:exotic -is:locked -is:maxpower -is:tagged stat:total:<55',
 ].map((query) => ({
   query,
   saved: false,
@@ -16,7 +18,9 @@ const cannedSearchesForD2: Search[] = [
   lastUsage: 0,
 }));
 
-const cannedSearchesForD1: Search[] = [].map((query) => ({
+const cannedSearchesForD1: Search[] = [
+  '-is:equipped is:haslight is:incurrentchar',
+].map((query) => ({
   query,
   saved: false,
   usageCount: 0,
