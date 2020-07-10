@@ -2,6 +2,7 @@ import { ClientBase, QueryResult } from 'pg';
 import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
 import { ExportResponse } from '../shapes/export';
+import _ from 'lodash';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -50,9 +51,12 @@ export async function getSearchesForProfile(
       'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC',
     values: [bungieMembershipId, destinyVersion],
   });
-  return results.rows
-    .map(convertSearch)
-    .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1);
+  return _.uniqBy(
+    results.rows
+      .map(convertSearch)
+      .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
+    (s) => s.query
+  );
 }
 
 /**

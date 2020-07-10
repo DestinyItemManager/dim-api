@@ -80,3 +80,21 @@ it('can get all searches across profiles', async () => {
     expect(searches.length).toEqual(2);
   });
 });
+
+it('can increment usage for one of the built-in searches', async () => {
+  await transaction(async (client) => {
+    const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const query = searches[searches.length - 1].query;
+
+    await updateUsedSearch(client, appId, bungieMembershipId, 2, query);
+
+    const searches2 = await getSearchesForProfile(
+      client,
+      bungieMembershipId,
+      2
+    );
+    const search = searches2.find((s) => s.query === query);
+    expect(search?.usageCount).toBe(1);
+    expect(searches2.length).toBe(searches.length);
+  });
+});
