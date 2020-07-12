@@ -146,6 +146,7 @@ describe('profile', () => {
       loadouts: 12,
       tags: 51,
       triumphs: 0,
+      itemHashTags: 0,
     });
 
     // Now re-export and make sure it's all gone
@@ -578,6 +579,184 @@ describe('tags', () => {
         {
           action: 'tag_cleanup',
           payload: ['1234567', '7654321'],
+        },
+      ],
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.tags?.length).toBe(0);
+  });
+});
+
+describe('item hash tags', () => {
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+
+  it('can add an item hash tag', async () => {
+    const request: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: 'favorite',
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.itemHashTags?.length).toBe(1);
+    const resultTag = profileResponse.itemHashTags![0];
+    expect(resultTag).toEqual({
+      hash: 1234,
+      tag: 'favorite',
+    });
+  });
+
+  it('can update an item hash tag', async () => {
+    const request: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: 'favorite',
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Change tag and notes
+    const request2: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: 'junk',
+            notes: 'super junky',
+          },
+        },
+      ],
+    };
+
+    const updateResult2 = await postRequestAuthed('/profile')
+      .send(request2)
+      .expect(200);
+
+    expect(updateResult2.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(profileResponse.itemHashTags?.length).toBe(1);
+    const resultTag = profileResponse.itemHashTags![0];
+    expect(resultTag).toEqual({
+      hash: 1234,
+      tag: 'junk',
+      notes: 'super junky',
+    });
+
+    // Delete tag
+    const request3: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: null,
+          },
+        },
+      ],
+    };
+
+    const updateResult3 = await postRequestAuthed('/profile')
+      .send(request3)
+      .expect(200);
+
+    expect(updateResult3.body.results[0].status).toBe('Success');
+
+    // Read tags back after deleting the tag
+    const response2 = await getRequestAuthed(
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse2 = response2.body as ProfileResponse;
+
+    expect(profileResponse2.itemHashTags?.length).toBe(1);
+    const resultTag2 = profileResponse2.itemHashTags![0];
+    expect(resultTag2).toEqual({
+      hash: 1234,
+      notes: 'super junky',
+    });
+  });
+
+  it('can delete an item hash tag', async () => {
+    const request: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: 'favorite',
+            notes: 'the best',
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // delete tag and notes
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'item_hash_tag',
+          payload: {
+            hash: 1234,
+            tag: null,
+            notes: '',
+          },
         },
       ],
     };

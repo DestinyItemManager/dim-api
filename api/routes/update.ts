@@ -4,6 +4,7 @@ import {
   ProfileUpdateRequest,
   ProfileUpdateResult,
   TrackTriumphUpdate,
+  ItemHashTagUpdate,
 } from '../shapes/profile';
 import { badRequest } from '../utils';
 import { ClientBase } from 'pg';
@@ -26,6 +27,7 @@ import {
   trackTriumph as trackTriumphInDb,
   unTrackTriumph,
 } from '../db/triumphs-queries';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -98,6 +100,15 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
+            update.payload
+          );
+          break;
+
+        case 'item_hash_tag':
+          result = await updateItemHashTag(
+            client,
+            appId,
+            bungieMembershipId,
             update.payload
           );
           break;
@@ -374,6 +385,23 @@ async function trackTriumph(
     type: 'track_triumph',
     platformMembershipId,
     destinyVersion: 2,
+    payload,
+    createdBy: appId,
+  });
+
+  return { status: 'Success' };
+}
+
+async function updateItemHashTag(
+  client: ClientBase,
+  appId: string,
+  bungieMembershipId: number,
+  payload: ItemHashTagUpdate['payload']
+): Promise<ProfileUpdateResult> {
+  await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'item_hash_tag',
     payload,
     createdBy: appId,
   });
