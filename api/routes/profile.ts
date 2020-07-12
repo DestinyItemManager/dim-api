@@ -10,6 +10,7 @@ import { defaultSettings } from '../shapes/settings';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
 import { getSearchesForProfile } from '../db/searches-queries';
 import { metrics } from '../metrics';
+import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
@@ -62,6 +63,13 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         platformMembershipId,
         destinyVersion
+      );
+    }
+
+    if (components.includes('hashtags')) {
+      response.itemHashTags = await getItemHashTagsForProfile(
+        client,
+        bungieMembershipId
       );
     }
 

@@ -1,12 +1,14 @@
 import { Settings } from './settings';
 import { Loadout } from './loadouts';
-import { ItemAnnotation } from './item-annotations';
+import { ItemAnnotation, ItemHashTag } from './item-annotations';
 import { DestinyVersion } from './general';
 
 export interface ProfileResponse {
   settings?: Settings;
   loadouts?: Loadout[];
   tags?: ItemAnnotation[];
+  /** Tags for shaders and other uninstanced items */
+  itemHashTags?: ItemHashTag[];
   /** Hashes of tracked triumphs */
   triumphs?: number[];
   searches?: Search[];
@@ -27,6 +29,7 @@ export interface ProfileUpdateResponse {
 
 export type ProfileUpdate =
   | TagUpdate
+  | ItemHashTagUpdate
   | TagCleanupUpdate
   | SettingUpdate
   | LoadoutUpdate
@@ -38,6 +41,11 @@ export type ProfileUpdate =
 export interface TagUpdate {
   action: 'tag';
   payload: ItemAnnotation;
+}
+
+export interface ItemHashTagUpdate {
+  action: 'item_hash_tag';
+  payload: ItemHashTag;
 }
 
 export interface TagCleanupUpdate {

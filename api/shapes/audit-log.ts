@@ -1,5 +1,5 @@
 import { Settings } from './settings';
-import { ItemAnnotation } from './item-annotations';
+import { ItemAnnotation, ItemHashTag } from './item-annotations';
 import { DestinyVersion } from './general';
 import { DeleteAllResponse } from './delete-all';
 import {
@@ -29,6 +29,7 @@ export type AuditLogEntry = {
   | LoadoutLogEntry
   | DeleteLoadoutLogEntry
   | ItemAnnotationLogEntry
+  | ItemHashTagLogEntry
   | CleanupItemAnnotationLogEntry
   | TrackTriumphLogEntry
   | AuthLogEntry
@@ -72,6 +73,11 @@ export interface DeleteLoadoutLogEntry {
 export interface ItemAnnotationLogEntry {
   type: 'tag';
   payload: ItemAnnotation;
+}
+
+export interface ItemHashTagLogEntry {
+  type: 'item_hash_tag';
+  payload: ItemHashTag;
 }
 
 export interface CleanupItemAnnotationLogEntry {
