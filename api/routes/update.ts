@@ -24,7 +24,7 @@ import {
 } from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
-import { recordAuditLog } from '../db/audit-log-queries';
+import { recordAuditLog, trimAuditLog } from '../db/audit-log-queries';
 import {
   trackTriumph as trackTriumphInDb,
   unTrackTriumph,
@@ -155,6 +155,8 @@ export const updateHandler = asyncHandler(async (req, res) => {
       }
       results.push(result);
     }
+
+    await trimAuditLog(client, bungieMembershipId, 500);
   });
 
   res.send({
