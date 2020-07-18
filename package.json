@@ -55,7 +55,7 @@
     "express-async-handler": "^1.1.4",
     "express-jwt": "^6.0.0",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "morgan": "^1.9.1",
     "pg": "^8.0.0",
     "statsd-client": "^0.4.4",
