@@ -53,3 +53,20 @@ values ($1, $2, $3, $4, $5, $6)`,
 
   return response;
 }
+
+/**
+ * Trim old entries from the audit log, keeping only the numToKeep latest records.
+ */
+export async function trimAuditLog(
+  client: ClientBase,
+  bungieMembershipId: number,
+  numToKeep: number
+): Promise<QueryResult<any>> {
+  const response = await client.query({
+    name: 'trim_audit_log',
+    text: `DELETE FROM audit_log WHERE ctid IN (SELECT ctid FROM audit_log WHERE membership_id = $1 ORDER BY created_at DESC, id DESC OFFSET $2)`,
+    values: [bungieMembershipId, numToKeep],
+  });
+
+  return response;
+}
