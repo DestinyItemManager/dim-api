@@ -7,6 +7,7 @@ import { ClientBase } from 'pg';
 import { recordAuditLog } from '../db/audit-log-queries';
 import { DeleteAllResponse } from '../shapes/delete-all';
 import { deleteAllTrackedTriumphs } from '../db/triumphs-queries';
+import { deleteAllSearches } from '../db/searches-queries';
 import { deleteAllItemHashTags } from '../db/item-hash-tags-queries';
 
 /**
@@ -44,5 +45,6 @@ export async function deleteAllData(
       .rowCount,
     triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId))
       .rowCount,
+    searches: (await deleteAllSearches(client, bungieMembershipId)).rowCount,
   };
 }

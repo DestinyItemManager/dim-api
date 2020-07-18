@@ -14,6 +14,7 @@ import { badRequest } from '../utils';
 import _ from 'lodash';
 import { ImportResponse } from '../shapes/import';
 import { trackTriumph } from '../db/triumphs-queries';
+import { importSearch } from '../db/searches-queries';
 import { updateItemHashTag } from '../db/item-hash-tags-queries';
 
 export interface DimData {
@@ -41,14 +42,16 @@ export const importHandler = asyncHandler(async (req, res) => {
   const settings = extractSettings(importData);
   const loadouts = extractLoadouts(importData);
   const itemAnnotations = extractItemAnnotations(importData);
-  const triumphs = extractTriumphs(importData);
+  const triumphs = importData.triumphs || [];
+  const searches = extractSearches(importData);
   const itemHashTags = importData.itemHashTags || [];
 
   if (
     _.isEmpty(settings) &&
     loadouts.length === 0 &&
     itemAnnotations.length === 0 &&
-    triumphs.length === 0
+    triumphs.length === 0 &&
+    searches.length === 0
   ) {
     badRequest(res, "Won't import empty data");
     return;
@@ -107,12 +110,26 @@ export const importHandler = asyncHandler(async (req, res) => {
       }
     }
 
+    for (const search of searches) {
+      importSearch(
+        client,
+        appId,
+        bungieMembershipId,
+        search.destinyVersion,
+        search.search.query,
+        search.search.saved,
+        search.search.lastUsage,
+        search.search.usageCount
+      );
+    }
+
     await recordAuditLog(client, bungieMembershipId, {
       type: 'import',
       payload: {
         loadouts: loadouts.length,
         tags: itemAnnotations.length,
         triumphs: numTriumphs,
+        searches: searches.length,
         itemHashTags: itemHashTags.length,
       },
       createdBy: appId,
@@ -123,6 +140,7 @@ export const importHandler = asyncHandler(async (req, res) => {
     loadouts: loadouts.length,
     tags: itemAnnotations.length,
     triumphs: numTriumphs,
+    searches: searches.length,
     itemHashTags: itemHashTags.length,
   };
 
@@ -252,8 +270,11 @@ function extractItemAnnotations(
   return annotations;
 }
 
-function extractTriumphs(
-  importData: DimData | ExportResponse
-): ExportResponse['triumphs'] {
-  return importData.triumphs || [];
+function extractSearches(
+  importData: ExportResponse | DimData
+): ExportResponse['searches'] {
+  return (importData.searches || []).filter(
+    // Filter out pre-filled searches that were never used
+    (s) => s.search.usageCount > 0
+  );
 }

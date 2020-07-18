@@ -2,7 +2,12 @@ import { Settings } from './settings';
 import { ItemAnnotation, ItemHashTag } from './item-annotations';
 import { DestinyVersion } from './general';
 import { DeleteAllResponse } from './delete-all';
-import { TrackTriumphUpdate } from './profile';
+import {
+  TrackTriumphUpdate,
+  UsedSearchUpdate,
+  SavedSearchUpdate,
+} from './profile';
+import { ImportResponse } from './import';
 
 export interface AuditLogResponse {
   log: AuditLogEntry[];
@@ -28,17 +33,14 @@ export type AuditLogEntry = {
   | CleanupItemAnnotationLogEntry
   | TrackTriumphLogEntry
   | AuthLogEntry
+  | UsedSearchLogEntry
+  | SavedSearchLogEntry
 );
 
 export interface ImportAuditLogEntry {
   type: 'import';
   // How much was imported?
-  payload: {
-    loadouts: number;
-    tags: number;
-    triumphs: number;
-    itemHashTags: number;
-  };
+  payload: ImportResponse;
 }
 
 // This is all we'll record about a user once they've asked to delete all data.
@@ -95,4 +97,14 @@ export interface AuthLogEntry {
   payload: {
     userAgent: string;
   };
+}
+
+export interface UsedSearchLogEntry {
+  type: 'search';
+  payload: UsedSearchUpdate['payload'];
+}
+
+export interface SavedSearchLogEntry {
+  type: 'save_search';
+  payload: SavedSearchUpdate['payload'];
 }

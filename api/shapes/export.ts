@@ -20,4 +20,8 @@ export interface ExportResponse {
     platformMembershipId: string;
     triumphs: number[];
   }[];
+  searches: {
+    destinyVersion: DestinyVersion;
+    search: Search;
+  }[];
 }

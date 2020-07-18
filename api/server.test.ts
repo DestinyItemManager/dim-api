@@ -146,6 +146,7 @@ describe('profile', () => {
       loadouts: 12,
       tags: 51,
       triumphs: 0,
+      searches: 0,
       itemHashTags: 0,
     });
 
@@ -918,6 +919,84 @@ describe('triumphs', () => {
 
     expect(profileResponse.triumphs?.length).toBe(1);
     expect(profileResponse.triumphs!).toEqual([1234]);
+  });
+});
+
+describe('searches', () => {
+  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+
+  it('can add a recent search', async () => {
+    const request: ProfileUpdateRequest = {
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'search',
+          payload: {
+            query: 'tag:favorite',
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(
+      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
+    ).toBe(1);
+    expect(profileResponse.searches![0].query).toBe('tag:favorite');
+    expect(profileResponse.searches![0].usageCount).toBe(1);
+  });
+
+  it('can save a search', async () => {
+    const request: ProfileUpdateRequest = {
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'search',
+          payload: {
+            query: 'tag:favorite',
+          },
+        },
+        {
+          action: 'save_search',
+          payload: {
+            query: 'tag:favorite',
+            saved: true,
+          },
+        },
+      ],
+    };
+
+    const updateResult = await postRequestAuthed('/profile')
+      .send(request)
+      .expect(200);
+
+    expect(updateResult.body.results[0].status).toBe('Success');
+
+    // Read tags back
+    const response = await getRequestAuthed(
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+    ).expect(200);
+
+    const profileResponse = response.body as ProfileResponse;
+
+    expect(
+      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
+    ).toBe(1);
+    expect(profileResponse.searches![0].query).toBe('tag:favorite');
+    expect(profileResponse.searches![0].saved).toBe(true);
+    expect(profileResponse.searches![0].usageCount).toBe(1);
   });
 });
 

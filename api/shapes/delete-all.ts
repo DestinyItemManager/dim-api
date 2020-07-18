@@ -5,5 +5,6 @@ export interface DeleteAllResponse {
     tags: number;
     itemHashTags: number;
     triumphs: number;
+    searches: number;
   };
 }

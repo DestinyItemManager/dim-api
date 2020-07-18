@@ -4,6 +4,8 @@ import {
   ProfileUpdateRequest,
   ProfileUpdateResult,
   TrackTriumphUpdate,
+  UsedSearchUpdate,
+  SavedSearchUpdate,
   ItemHashTagUpdate,
 } from '../shapes/profile';
 import { badRequest } from '../utils';
@@ -27,6 +29,10 @@ import {
   trackTriumph as trackTriumphInDb,
   unTrackTriumph,
 } from '../db/triumphs-queries';
+import {
+  updateUsedSearch,
+  saveSearch as saveSearchInDb,
+} from '../db/searches-queries';
 import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
 
 /**
@@ -119,6 +125,26 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             platformMembershipId,
+            update.payload
+          );
+          break;
+
+        case 'search':
+          result = await recordSearch(
+            client,
+            appId,
+            bungieMembershipId,
+            destinyVersion,
+            update.payload
+          );
+          break;
+
+        case 'save_search':
+          result = await saveSearch(
+            client,
+            appId,
+            bungieMembershipId,
+            destinyVersion,
             update.payload
           );
           break;
@@ -385,6 +411,57 @@ async function trackTriumph(
     type: 'track_triumph',
     platformMembershipId,
     destinyVersion: 2,
+    payload,
+    createdBy: appId,
+  });
+
+  return { status: 'Success' };
+}
+
+async function recordSearch(
+  client: ClientBase,
+  appId: string,
+  bungieMembershipId: number,
+  destinyVersion: DestinyVersion,
+  payload: UsedSearchUpdate['payload']
+): Promise<ProfileUpdateResult> {
+  await updateUsedSearch(
+    client,
+    appId,
+    bungieMembershipId,
+    destinyVersion,
+    payload.query
+  );
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'search',
+    destinyVersion,
+    payload,
+    createdBy: appId,
+  });
+
+  return { status: 'Success' };
+}
+
+async function saveSearch(
+  client: ClientBase,
+  appId: string,
+  bungieMembershipId: number,
+  destinyVersion: DestinyVersion,
+  payload: SavedSearchUpdate['payload']
+): Promise<ProfileUpdateResult> {
+  await saveSearchInDb(
+    client,
+    appId,
+    bungieMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.saved
+  );
+
+  await recordAuditLog(client, bungieMembershipId, {
+    type: 'save_search',
+    destinyVersion,
     payload,
     createdBy: appId,
   });

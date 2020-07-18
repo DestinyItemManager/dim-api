@@ -3,4 +3,5 @@ export interface ImportResponse {
   tags: number;
   itemHashTags: number;
   triumphs: number;
+  searches: number;
 }

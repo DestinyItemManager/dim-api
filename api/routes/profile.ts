@@ -8,6 +8,8 @@ import { ProfileResponse } from '../shapes/profile';
 import { DestinyVersion } from '../shapes/general';
 import { defaultSettings } from '../shapes/settings';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
+import { getSearchesForProfile } from '../db/searches-queries';
+import { metrics } from '../metrics';
 import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
 
 export const profileHandler = asyncHandler(async (req, res) => {
@@ -81,6 +83,15 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         platformMembershipId
       );
+    }
+
+    if (components.includes('searches')) {
+      response.searches = await getSearchesForProfile(
+        client,
+        bungieMembershipId,
+        destinyVersion
+      );
+      metrics.histogram('searches.numReturned', response.searches.length);
     }
 
     // Instruct CF not to cache this
