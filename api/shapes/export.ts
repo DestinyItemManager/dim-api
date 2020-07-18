@@ -2,6 +2,7 @@ import { Settings } from './settings';
 import { ItemAnnotation, ItemHashTag } from './item-annotations';
 import { DestinyVersion } from './general';
 import { Loadout } from './loadouts';
+import { Search } from './search';
 
 export interface ExportResponse {
   settings: Partial<Settings>;

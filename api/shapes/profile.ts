@@ -2,6 +2,7 @@ import { Settings } from './settings';
 import { Loadout } from './loadouts';
 import { ItemAnnotation, ItemHashTag } from './item-annotations';
 import { DestinyVersion } from './general';
+import { Search } from './search';
 
 export interface ProfileResponse {
   settings?: Settings;

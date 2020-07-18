@@ -1,7 +1,7 @@
 /**
  * A search query. This can either be from history (recent searches), pinned (saved searches), or suggested.
  */
-interface Search {
+export interface Search {
   query: string;
   /**
    * A zero usage count means this is a suggested/preloaded search.
