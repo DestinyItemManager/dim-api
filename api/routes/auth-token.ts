@@ -8,7 +8,6 @@ import { sign, Secret, SignOptions } from 'jsonwebtoken';
 import { badRequest } from '../utils';
 import { metrics } from '../metrics';
 import { recordAuditLog } from '../db/audit-log-queries';
-import { request } from 'express';
 import { transaction } from '../db';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
@@ -64,7 +63,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
         await recordAuditLog(client, parseInt(membershipId, 10), {
           type: 'auth',
           payload: {
-            userAgent: request.header('user-agent') || 'unknown',
+            userAgent: req.header('user-agent') || 'unknown',
           },
           createdBy: apiApp.id,
         });
