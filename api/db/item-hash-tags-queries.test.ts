@@ -20,7 +20,7 @@ afterAll(() => pool.end());
 it('can insert item hash tags where none exist before', async () => {
   await transaction(async (client) => {
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
@@ -30,7 +30,7 @@ it('can insert item hash tags where none exist before', async () => {
       bungieMembershipId
     );
     expect(annotations[0]).toEqual({
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
@@ -40,13 +40,13 @@ it('can insert item hash tags where none exist before', async () => {
 it('can update item hash tags where none exist before', async () => {
   await transaction(async (client) => {
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
 
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'junk',
       notes: 'the worst',
     });
@@ -56,7 +56,7 @@ it('can update item hash tags where none exist before', async () => {
       bungieMembershipId
     );
     expect(annotations[0]).toEqual({
-      hash: 123456,
+      hash: 2926662838,
       tag: 'junk',
       notes: 'the worst',
     });
@@ -66,13 +66,13 @@ it('can update item hash tags where none exist before', async () => {
 it('can update item hash tags clearing value', async () => {
   await transaction(async (client) => {
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
 
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: null,
     });
 
@@ -81,7 +81,7 @@ it('can update item hash tags clearing value', async () => {
       bungieMembershipId
     );
     expect(annotations[0]).toEqual({
-      hash: 123456,
+      hash: 2926662838,
       notes: 'the best',
     });
   });
@@ -90,12 +90,12 @@ it('can update item hash tags clearing value', async () => {
 it('can delete item hash tags', async () => {
   await transaction(async (client) => {
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
 
-    await deleteItemHashTag(client, bungieMembershipId, 123456);
+    await deleteItemHashTag(client, bungieMembershipId, 2926662838);
 
     const annotations = await getItemHashTagsForProfile(
       client,
@@ -108,13 +108,13 @@ it('can delete item hash tags', async () => {
 it('can delete item hash tags by setting both values to null/empty', async () => {
   await transaction(async (client) => {
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
 
     await updateItemHashTag(client, appId, bungieMembershipId, {
-      hash: 123456,
+      hash: 2926662838,
       tag: null,
       notes: '',
     });

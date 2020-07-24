@@ -20,7 +20,7 @@ export async function getItemHashTagsForProfile(
 
 function convertItemHashTag(row: any): ItemHashTag {
   const result: ItemHashTag = {
-    hash: row.item_hash,
+    hash: parseInt(row.item_hash, 10),
   };
   if (row.tag) {
     result.tag = row.tag;

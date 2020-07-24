@@ -21,7 +21,7 @@ exports.up = function (db, callback) {
     `
     CREATE TABLE item_hash_tags (
       membership_id int NOT NULL,
-      item_hash int NOT NULL,
+      item_hash bigint NOT NULL,
       tag item_tag,
       notes text,
       created_at timestamp NOT NULL default current_timestamp,
@@ -32,14 +32,16 @@ exports.up = function (db, callback) {
       PRIMARY KEY(membership_id, item_hash)
     );
 
-    CREATE INDEX item_hash_tags_by_membership ON item_annotations (membership_id);
+    CREATE INDEX item_hash_tags_by_membership ON item_hash_tags (membership_id);
     `,
     callback
   );
 };
 
 exports.down = function (db, callback) {
-  db.dropTable('hash_tags', callback);
+  db.removeIndex('item_hash_tags_by_membership', () => {
+    db.dropTable('item_hash_tags', callback);
+  });
 };
 
 exports._meta = {
