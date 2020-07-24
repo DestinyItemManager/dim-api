@@ -3,6 +3,7 @@ import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
 import { ExportResponse } from '../shapes/export';
 import _ from 'lodash';
+import { Search } from '../shapes/search';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
