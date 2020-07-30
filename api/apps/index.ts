@@ -4,6 +4,7 @@ import { getAllApps } from '../db/apps-queries';
 import { metrics } from '../metrics';
 import _ from 'lodash';
 import { RequestHandler } from 'express';
+import * as Sentry from '@sentry/node';
 
 /**
  * Express middleware that requires an API key be provided in a header
@@ -83,6 +84,7 @@ export async function refreshApps() {
   } catch (e) {
     metrics.increment('apps.refresh.error.count');
     console.error('Error refreshing apps', e);
+    Sentry.captureException(e);
     throw e;
   } finally {
     client.release();
