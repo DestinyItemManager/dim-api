@@ -14,11 +14,17 @@ import { apiKey, isAppOrigin } from './apps';
 import { updateHandler } from './routes/update';
 import { auditLogHandler } from './routes/audit-log';
 import { setRouteNameForStats } from './metrics/express';
+import * as Sentry from '@sentry/node';
 
 export const app = express();
 
 app.set('trust proxy', true); // enable x-forwarded-for
 app.set('x-powered-by', false);
+
+// The request handler must be the first middleware on the app
+app.use(Sentry.Handlers.requestHandler());
+// The error handler must be before any other error middleware
+app.use(Sentry.Handlers.errorHandler());
 
 app.use(setRouteNameForStats); // fix path names for next middleware
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics

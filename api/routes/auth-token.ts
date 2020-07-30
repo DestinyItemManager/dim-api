@@ -3,6 +3,7 @@ import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
 import superagent from 'superagent';
 import asyncHandler from 'express-async-handler';
 import util from 'util';
+import * as Sentry from '@sentry/node';
 
 import { sign, Secret, SignOptions } from 'jsonwebtoken';
 import { badRequest } from '../utils';
@@ -86,6 +87,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
         message: `Bungie.net token is not valid`,
       });
     } else {
+      Sentry.captureException(e);
       console.error('Error issuing auth token', e);
       throw new Error(
         `Error from Bungie.net while verifying token: ${e.response.body.ErrorStatus}: ${e.response.body.Message}`

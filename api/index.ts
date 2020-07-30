@@ -4,10 +4,18 @@ import { metrics } from './metrics';
 import { createTerminus } from '@godaddy/terminus';
 import { pool } from './db';
 import { stopAppsRefresh, refreshApps } from './apps';
+import * as Sentry from '@sentry/node';
 
 const port = 3000;
 
 metrics.increment('startup.count', 1);
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    release: process.env.COMMITHASH,
+  });
+}
 
 const server = http.createServer(app);
 

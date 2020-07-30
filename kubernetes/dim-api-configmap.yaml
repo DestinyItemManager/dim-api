@@ -10,3 +10,4 @@ data:
   PGDATABASE: placeholder
   PGUSER: placeholder
   PGSSLMODE: require
+  SENTRY_DSN: placeholder
