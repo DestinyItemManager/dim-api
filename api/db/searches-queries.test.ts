@@ -98,6 +98,7 @@ it('can increment usage for one of the built-in searches', async () => {
     expect(search?.usageCount).toBe(1);
     expect(searches2.length).toBe(searches.length);
   });
+});
 
 it('can delete a search', async () => {
   await transaction(async (client) => {
