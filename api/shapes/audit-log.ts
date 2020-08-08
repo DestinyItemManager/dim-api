@@ -35,6 +35,7 @@ export type AuditLogEntry = {
   | AuthLogEntry
   | UsedSearchLogEntry
   | SavedSearchLogEntry
+  | DeletedSearchLogEntry
 );
 
 export interface ImportAuditLogEntry {
@@ -106,5 +107,10 @@ export interface UsedSearchLogEntry {
 
 export interface SavedSearchLogEntry {
   type: 'save_search';
+  payload: SavedSearchUpdate['payload'];
+}
+
+export interface DeletedSearchLogEntry {
+  type: 'delete_search';
   payload: SavedSearchUpdate['payload'];
 }

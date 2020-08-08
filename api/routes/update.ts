@@ -32,6 +32,7 @@ import {
 import {
   updateUsedSearch,
   saveSearch as saveSearchInDb,
+  deleteSearch as deleteSearchInDb,
 } from '../db/searches-queries';
 import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
 
@@ -146,6 +147,15 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             destinyVersion,
             update.payload
+          );
+          break;
+
+        case 'delete_search':
+          result = await deleteSearch(
+            client,
+            bungieMembershipId,
+            destinyVersion,
+            update.payload.query
           );
           break;
 
@@ -435,13 +445,6 @@ async function recordSearch(
     payload.query
   );
 
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'search',
-    destinyVersion,
-    payload,
-    createdBy: appId,
-  });
-
   return { status: 'Success' };
 }
 
@@ -467,6 +470,17 @@ async function saveSearch(
     payload,
     createdBy: appId,
   });
+
+  return { status: 'Success' };
+}
+
+async function deleteSearch(
+  client: ClientBase,
+  bungieMembershipId: number,
+  destinyVersion: DestinyVersion,
+  query: string
+): Promise<ProfileUpdateResult> {
+  await deleteSearchInDb(client, bungieMembershipId, destinyVersion, query);
 
   return { status: 'Success' };
 }
