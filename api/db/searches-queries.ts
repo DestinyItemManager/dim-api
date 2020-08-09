@@ -183,6 +183,22 @@ values ($1, $2, $3, $4, $5, $6, $7, $7)`,
 }
 
 /**
+ * Delete a single search
+ */
+export async function deleteSearch(
+  client: ClientBase,
+  bungieMembershipId: number,
+  destinyVersion: DestinyVersion,
+  query: string
+): Promise<QueryResult<any>> {
+  return client.query({
+    name: 'delete_search',
+    text: `delete from searches where membership_id = $1 and destiny_version = $2 and query = $3`,
+    values: [bungieMembershipId, destinyVersion, query],
+  });
+}
+
+/**
  * Delete all searches for a user (for all destiny versions).
  */
 export async function deleteAllSearches(

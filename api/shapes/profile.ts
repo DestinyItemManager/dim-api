@@ -37,7 +37,8 @@ export type ProfileUpdate =
   | DeleteLoadoutUpdate
   | TrackTriumphUpdate
   | UsedSearchUpdate
-  | SavedSearchUpdate;
+  | SavedSearchUpdate
+  | DeleteSearchUpdate;
 
 export interface TagUpdate {
   action: 'tag';
@@ -100,6 +101,16 @@ export interface SavedSearchUpdate {
      * Whether the search should be saved
      */
     saved: boolean;
+  };
+}
+
+/**
+ * Delete a search. This allows for "forgetting" a recent or saved search.
+ */
+export interface DeleteSearchUpdate {
+  action: 'delete_search';
+  payload: {
+    query: string;
   };
 }
 
