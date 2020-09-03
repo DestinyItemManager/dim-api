@@ -113,7 +113,7 @@ do update set (usage_count, last_used, last_updated_at, last_updated_by) = (sear
   if (response.rowCount < 1) {
     // This should never happen!
     metrics.increment('db.searches.noRowUpdated.count', 1);
-    throw new Error('No row was updated');
+    throw new Error('searches - No row was updated');
   }
 
   return response;
@@ -137,10 +137,15 @@ export async function saveSearch(
   });
 
   if (response.rowCount < 1) {
-    // This should never happen!
+    // Someone saved a search they haven't used!
     metrics.increment('db.searches.noRowUpdated.count', 1);
-    // TODO: this might be OK if we're expiring old searches
-    throw new Error('No row was updated');
+    const insertSavedResponse = await client.query({
+      name: 'insert_search_fallback',
+      text: `insert INTO searches (membership_id, destiny_version, query, saved, created_by, last_updated_by)
+  values ($1, $2, $3, true, $4, $4)`,
+      values: [bungieMembershipId, destinyVersion, query, appId],
+    });
+    return insertSavedResponse;
   }
 
   return response;
@@ -176,7 +181,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $7)`,
   if (response.rowCount < 1) {
     // This should never happen!
     metrics.increment('db.searches.noRowUpdated.count', 1);
-    throw new Error('No row was updated');
+    throw new Error('searches - No row was updated');
   }
 
   return response;

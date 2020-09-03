@@ -99,7 +99,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
   if (response.rowCount < 1) {
     // This should never happen!
     metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
-    throw new Error('No row was updated');
+    throw new Error('tags - No row was updated');
   }
 
   return response;

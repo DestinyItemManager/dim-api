@@ -72,6 +72,19 @@ it('can mark a search as favorite', async () => {
     expect(searches2[0].lastUsage).toBe(searches2[0].lastUsage);
   });
 });
+it('can mark a search as favorite even when it hasnt been used', async () => {
+  await transaction(async (client) => {
+    await saveSearch(client, appId, bungieMembershipId, 2, 'tag:junk', true);
+
+    const searches = (
+      await getSearchesForProfile(client, bungieMembershipId, 2)
+    ).filter((s) => s.usageCount > 0);
+    expect(searches[0].query).toBe('tag:junk');
+    expect(searches[0].saved).toBe(true);
+    expect(searches[0].usageCount).toBe(1);
+  });
+});
+
 it('can get all searches across profiles', async () => {
   await transaction(async (client) => {
     await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk');
