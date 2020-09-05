@@ -26,7 +26,7 @@ it('can track a triumph where none was tracked before', async () => {
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
 
     const triumphs = await getTrackedTriumphsForProfile(
@@ -34,7 +34,7 @@ it('can track a triumph where none was tracked before', async () => {
       bungieMembershipId,
       platformMembershipId
     );
-    expect(triumphs[0]).toEqual(666);
+    expect(triumphs[0]).toEqual(3851137658);
   });
 });
 
@@ -45,7 +45,7 @@ it('can track a triumph that was already tracked', async () => {
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
 
     await trackTriumph(
@@ -53,7 +53,7 @@ it('can track a triumph that was already tracked', async () => {
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
 
     const triumphs = await getTrackedTriumphsForProfile(
@@ -61,7 +61,7 @@ it('can track a triumph that was already tracked', async () => {
       bungieMembershipId,
       platformMembershipId
     );
-    expect(triumphs[0]).toEqual(666);
+    expect(triumphs[0]).toEqual(3851137658);
   });
 });
 
@@ -72,10 +72,15 @@ it('can untrack a triumph', async () => {
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
 
-    await unTrackTriumph(client, bungieMembershipId, platformMembershipId, 666);
+    await unTrackTriumph(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      3851137658
+    );
 
     const triumphs = await getTrackedTriumphsForProfile(
       client,
@@ -93,16 +98,16 @@ it('can get all tracked triumphs across profiles', async () => {
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
-    await trackTriumph(client, appId, bungieMembershipId, '54321', 666);
+    await trackTriumph(client, appId, bungieMembershipId, '54321', 3851137658);
 
     await trackTriumph(
       client,
       appId,
       bungieMembershipId,
       platformMembershipId,
-      666
+      3851137658
     );
 
     const triumphs = await getAllTrackedTriumphsForUser(

@@ -15,7 +15,7 @@ export async function getTrackedTriumphsForProfile(
       'SELECT record_hash FROM tracked_triumphs WHERE membership_id = $1 and platform_membership_id = $2',
     values: [bungieMembershipId, platformMembershipId],
   });
-  return results.rows.map((row) => row.record_hash);
+  return results.rows.map((row) => parseInt(row.record_hash, 10));
 }
 
 /**
@@ -42,7 +42,9 @@ export async function getAllTrackedTriumphsForUser(
   for (const row of results.rows) {
     triumphsByAccount[row.platform_membership_id] =
       triumphsByAccount[row.platform_membership_id] || [];
-    triumphsByAccount[row.platform_membership_id].push(row.record_hash);
+    triumphsByAccount[row.platform_membership_id].push(
+      parseInt(row.record_hash, 10)
+    );
   }
 
   return Object.entries(triumphsByAccount).map(

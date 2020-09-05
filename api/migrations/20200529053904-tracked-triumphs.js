@@ -25,7 +25,7 @@ exports.up = function (db, callback) {
       membership_id int NOT NULL,
       platform_membership_id text NOT NULL,
       /* triumphs are only for D2 so we don't need a destiny_version column */
-      record_hash int NOT NULL,
+      record_hash bigint NOT NULL,
       created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
       /* Tracked triumphs can be different for different profiles */
