@@ -15,7 +15,7 @@ export async function getLoadoutsForProfile(
   const results = await client.query<Loadout>({
     name: 'get_loadouts_for_platform_membership_id',
     text:
-      'SELECT id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
     values: [bungieMembershipId, platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertLoadout);
@@ -37,7 +37,7 @@ export async function getAllLoadoutsForUser(
   const results = await client.query({
     name: 'get_all_loadouts_for_user',
     text:
-      'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items FROM loadouts WHERE membership_id = $1',
+      'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1',
     values: [bungieMembershipId],
   });
   return results.rows.map((row) => {
@@ -62,6 +62,9 @@ function convertLoadout(row: any): Loadout {
   if (row.emblem_hash) {
     loadout.emblemHash = row.emblem_hash;
   }
+  if (row.parameters) {
+    loadout.parameters = row.parameters;
+  }
   return loadout;
 }
 
@@ -78,10 +81,10 @@ export async function updateLoadout(
 ): Promise<QueryResult<any>> {
   const response = await client.query({
     name: 'upsert_loadout',
-    text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, created_by, last_updated_by)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+    text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
 on conflict (membership_id, id)
-do update set (name, class_type, emblem_hash, clear_space, items, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, current_timestamp, $10)`,
+do update set (name, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, current_timestamp, $11)`,
     values: [
       loadout.id,
       bungieMembershipId,
@@ -95,6 +98,7 @@ do update set (name, class_type, emblem_hash, clear_space, items, last_updated_a
         equipped: loadout.equipped.map(cleanItem),
         unequipped: loadout.unequipped.map(cleanItem),
       },
+      loadout.parameters,
       appId,
     ],
   });
