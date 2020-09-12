@@ -54,6 +54,12 @@ export interface LoadoutParameters {
    * items that can be in the loadout.
    */
   query?: string[];
+
+  /**
+   * When generating the loadout, did we assume all items were at their masterworked stats, or did
+   * we use their current stats?
+   */
+  assumeMasterworked?: boolean;
 }
 
 /** A constraint on the values an armor stat can take */
