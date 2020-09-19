@@ -18,3 +18,6 @@ sed -i'' -e "s/\$COMMITHASH/$COMMITHASH/" "$ROOT/deployment/dim-api-deployment.y
 kubectl apply -f "$ROOT/deployment/dim-api-deployment.yaml"
 
 rm -rf "$ROOT/deployment"
+
+sentry-cli releases --org destiny-item-manager new "$COMMITHASH" -p dim-api --finalize
+sentry-cli releases --org destiny-item-manager set-commits "$COMMITHASH" -p dim-api --auto
