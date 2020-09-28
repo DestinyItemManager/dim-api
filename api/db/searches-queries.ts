@@ -173,7 +173,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $7)`,
       query,
       saved,
       usageCount,
-      lastUsage,
+      new Date(lastUsage),
       appId,
     ],
   });

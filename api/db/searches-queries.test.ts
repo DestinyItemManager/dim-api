@@ -6,6 +6,7 @@ import {
   updateUsedSearch,
   saveSearch,
   deleteSearch,
+  importSearch,
 } from './searches-queries';
 
 const appId = 'settings-queries-test-app';
@@ -122,5 +123,27 @@ it('can delete a search', async () => {
       await getSearchesForProfile(client, bungieMembershipId, 2)
     ).filter((s) => s.usageCount > 0);
     expect(searches.length).toBe(0);
+  });
+});
+
+it('can import a search', async () => {
+  await transaction(async (client) => {
+    await importSearch(
+      client,
+      appId,
+      bungieMembershipId,
+      2,
+      'tag:junk',
+      true,
+      1598199188576,
+      5
+    );
+
+    const searches = (
+      await getSearchesForProfile(client, bungieMembershipId, 2)
+    ).filter((s) => s.usageCount > 0);
+    expect(searches[0].query).toBe('tag:junk');
+    expect(searches[0].saved).toBe(true);
+    expect(searches[0].usageCount).toBe(5);
   });
 });
