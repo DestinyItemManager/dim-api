@@ -53,7 +53,7 @@ export interface LoadoutParameters {
    * A search filter applied while editing the loadout in Loadout Optimizer, which constrains the
    * items that can be in the loadout.
    */
-  query?: string[];
+  query?: string;
 
   /**
    * When generating the loadout, did we assume all items were at their masterworked stats, or did
