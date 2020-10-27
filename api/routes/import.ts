@@ -9,7 +9,6 @@ import { updateItemAnnotation } from '../db/item-annotations-queries';
 import { deleteAllData } from './delete-all-data';
 import { DestinyVersion } from '../shapes/general';
 import { ExportResponse } from '../shapes/export';
-import { recordAuditLog } from '../db/audit-log-queries';
 import { badRequest } from '../utils';
 import _ from 'lodash';
 import { ImportResponse } from '../shapes/import';
@@ -122,18 +121,6 @@ export const importHandler = asyncHandler(async (req, res) => {
         search.search.usageCount
       );
     }
-
-    await recordAuditLog(client, bungieMembershipId, {
-      type: 'import',
-      payload: {
-        loadouts: loadouts.length,
-        tags: itemAnnotations.length,
-        triumphs: numTriumphs,
-        searches: searches.length,
-        itemHashTags: itemHashTags.length,
-      },
-      createdBy: appId,
-    });
   });
 
   const response: ImportResponse = {

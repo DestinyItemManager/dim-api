@@ -1000,44 +1000,6 @@ describe('searches', () => {
   });
 });
 
-describe('audit', () => {
-  it('records info about a loadout', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'loadout',
-          payload: loadout,
-        },
-      ],
-    };
-
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
-
-    expect(updateResult.body.results[0].status).toBe('Success');
-
-    const auditResult = await getRequestAuthed('/audit').expect(200);
-
-    const matchingEntry = auditResult.body.log.find(
-      (e) => e.type === 'loadout'
-    );
-    const expectedEntry = {
-      createdAt: matchingEntry.createdAt,
-      createdBy: 'test-app',
-      destinyVersion: 2,
-      payload: {
-        name: loadout.name,
-      },
-      platformMembershipId,
-      type: 'loadout',
-    };
-    expect(matchingEntry).toEqual(expectedEntry);
-  });
-});
-
 async function createApp() {
   const response = await request
     .post('/new_app')

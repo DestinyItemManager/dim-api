@@ -24,7 +24,6 @@ import {
 } from '../db/item-annotations-queries';
 import { ItemAnnotation } from '../shapes/item-annotations';
 import { metrics } from '../metrics';
-import { recordAuditLog, trimAuditLog } from '../db/audit-log-queries';
 import {
   trackTriumph as trackTriumphInDb,
   unTrackTriumph,
@@ -81,10 +80,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
         case 'delete_loadout':
           result = await deleteLoadout(
             client,
-            appId,
             bungieMembershipId,
-            platformMembershipId,
-            destinyVersion,
             update.payload
           );
           break;
@@ -101,14 +97,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'tag_cleanup':
-          result = await tagCleanup(
-            client,
-            appId,
-            bungieMembershipId,
-            platformMembershipId,
-            destinyVersion,
-            update.payload
-          );
+          result = await tagCleanup(client, bungieMembershipId, update.payload);
           break;
 
         case 'item_hash_tag':
@@ -165,8 +154,6 @@ export const updateHandler = asyncHandler(async (req, res) => {
       }
       results.push(result);
     }
-
-    await trimAuditLog(client, bungieMembershipId, 500);
   });
 
   res.send({
@@ -183,12 +170,6 @@ async function updateSetting(
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
   await setSettingInDb(client, appId, bungieMembershipId, settings);
-
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'settings',
-    payload: settings,
-    createdBy: appId,
-  });
 
   return { status: 'Success' };
 }
@@ -263,25 +244,12 @@ async function updateLoadout(
     loadout
   );
 
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'loadout',
-    platformMembershipId,
-    destinyVersion,
-    payload: {
-      name: loadout.name,
-    },
-    createdBy: appId,
-  });
-
   return { status: 'Success' };
 }
 
 async function deleteLoadout(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
-  platformMembershipId: string | undefined,
-  destinyVersion: DestinyVersion,
   loadoutId: string
 ): Promise<ProfileUpdateResult> {
   const loadout = await deleteLoadoutInDb(
@@ -292,16 +260,6 @@ async function deleteLoadout(
   if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
   }
-
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'delete_loadout',
-    platformMembershipId,
-    destinyVersion,
-    payload: {
-      name: loadout.name,
-    },
-    createdBy: appId,
-  });
 
   return { status: 'Success' };
 }
@@ -351,40 +309,15 @@ async function updateItemAnnotation(
     itemAnnotation
   );
 
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'tag',
-    platformMembershipId,
-    destinyVersion,
-    payload: itemAnnotation,
-    createdBy: appId,
-  });
-
   return { status: 'Success' };
 }
 
 async function tagCleanup(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
-  platformMembershipId: string | undefined,
-  destinyVersion: DestinyVersion,
   inventoryItemIds: string[]
 ): Promise<ProfileUpdateResult> {
-  const result = await deleteItemAnnotationList(
-    client,
-    bungieMembershipId,
-    inventoryItemIds
-  );
-
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'tag_cleanup',
-    platformMembershipId,
-    destinyVersion,
-    payload: {
-      deleted: result.rowCount,
-    },
-    createdBy: appId,
-  });
+  await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
 
   return { status: 'Success' };
 }
@@ -418,14 +351,6 @@ async function trackTriumph(
         platformMembershipId,
         payload.recordHash
       );
-
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'track_triumph',
-    platformMembershipId,
-    destinyVersion: 2,
-    payload,
-    createdBy: appId,
-  });
 
   return { status: 'Success' };
 }
@@ -464,13 +389,6 @@ async function saveSearch(
     payload.saved
   );
 
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'save_search',
-    destinyVersion,
-    payload,
-    createdBy: appId,
-  });
-
   return { status: 'Success' };
 }
 
@@ -492,12 +410,6 @@ async function updateItemHashTag(
   payload: ItemHashTagUpdate['payload']
 ): Promise<ProfileUpdateResult> {
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
-
-  await recordAuditLog(client, bungieMembershipId, {
-    type: 'item_hash_tag',
-    payload,
-    createdBy: appId,
-  });
 
   return { status: 'Success' };
 }
