@@ -8,7 +8,6 @@ import * as Sentry from '@sentry/node';
 import { sign, Secret, SignOptions } from 'jsonwebtoken';
 import { badRequest } from '../utils';
 import { metrics } from '../metrics';
-import { transaction } from '../db';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
