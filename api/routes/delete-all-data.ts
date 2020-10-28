@@ -4,7 +4,6 @@ import { deleteSettings } from '../db/settings-queries';
 import { deleteAllLoadouts } from '../db/loadouts-queries';
 import { deleteAllItemAnnotations } from '../db/item-annotations-queries';
 import { ClientBase } from 'pg';
-import { recordAuditLog } from '../db/audit-log-queries';
 import { DeleteAllResponse } from '../shapes/delete-all';
 import { deleteAllTrackedTriumphs } from '../db/triumphs-queries';
 import { deleteAllSearches } from '../db/searches-queries';
@@ -15,15 +14,9 @@ import { deleteAllItemHashTags } from '../db/item-hash-tags-queries';
  */
 export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
 
   const result = await transaction(async (client) => {
     const deleted = await deleteAllData(client, bungieMembershipId);
-    await recordAuditLog(client, bungieMembershipId, {
-      type: 'delete_all',
-      payload: deleted,
-      createdBy: appId,
-    });
     return deleted;
   });
 

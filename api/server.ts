@@ -12,7 +12,6 @@ import { profileHandler } from './routes/profile';
 import { createAppHandler } from './routes/create-app';
 import { apiKey, isAppOrigin } from './apps';
 import { updateHandler } from './routes/update';
-import { auditLogHandler } from './routes/audit-log';
 import { setRouteNameForStats } from './metrics/express';
 import * as Sentry from '@sentry/node';
 
@@ -86,6 +85,7 @@ app.use((req, res, next) => {
       req.headers.origin
     );
     metrics.increment('apiKey.wrongOrigin.count');
+    // TODO: sentry
     res.status(401).send({
       error: 'OriginMismatch',
       message:
@@ -157,8 +157,6 @@ app.post('/import', importHandler);
 app.get('/export', exportHandler);
 // Delete all data for an account
 app.post('/delete_all_data', deleteAllDataHandler);
-// Audit log
-app.get('/audit', auditLogHandler);
 
 app.use((err: Error, req, res, _next) => {
   Sentry.captureException(err);
