@@ -98,7 +98,7 @@ export const importHandler = asyncHandler(async (req, res) => {
 
     if (Array.isArray(triumphs)) {
       for (const triumphData of triumphs) {
-        if (Array.isArray(triumphData.triumphs)) {
+        if (Array.isArray(triumphData?.triumphs)) {
           for (const triumph of triumphData.triumphs) {
             trackTriumph(
               client,
