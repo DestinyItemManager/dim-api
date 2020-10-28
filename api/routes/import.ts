@@ -1,20 +1,20 @@
-import asyncHandler from 'express-async-handler';
-import { Settings, defaultSettings } from '../shapes/settings';
-import { transaction } from '../db';
-import { Loadout } from '../shapes/loadouts';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { replaceSettings } from '../db/settings-queries';
-import { updateLoadout } from '../db/loadouts-queries';
-import { updateItemAnnotation } from '../db/item-annotations-queries';
-import { deleteAllData } from './delete-all-data';
-import { DestinyVersion } from '../shapes/general';
-import { ExportResponse } from '../shapes/export';
-import { badRequest } from '../utils';
-import _ from 'lodash';
-import { ImportResponse } from '../shapes/import';
-import { trackTriumph } from '../db/triumphs-queries';
-import { importSearch } from '../db/searches-queries';
-import { updateItemHashTag } from '../db/item-hash-tags-queries';
+import asyncHandler from "express-async-handler";
+import { Settings, defaultSettings } from "../shapes/settings";
+import { transaction } from "../db";
+import { Loadout } from "../shapes/loadouts";
+import { ItemAnnotation } from "../shapes/item-annotations";
+import { replaceSettings } from "../db/settings-queries";
+import { updateLoadout } from "../db/loadouts-queries";
+import { updateItemAnnotation } from "../db/item-annotations-queries";
+import { deleteAllData } from "./delete-all-data";
+import { DestinyVersion } from "../shapes/general";
+import { ExportResponse } from "../shapes/export";
+import { badRequest } from "../utils";
+import _ from "lodash";
+import { ImportResponse } from "../shapes/import";
+import { trackTriumph } from "../db/triumphs-queries";
+import { importSearch } from "../db/searches-queries";
+import { updateItemHashTag } from "../db/item-hash-tags-queries";
 
 export interface DimData {
   // The last selected platform membership ID
@@ -23,8 +23,8 @@ export interface DimData {
   // membership IDs of ignored DTR reviewers
   ignoredUsers?: readonly string[];
   // loadout ids
-  'loadouts-v3.0'?: readonly string[];
-  'settings-v1.0'?: Readonly<Partial<Settings>>; // settings
+  "loadouts-v3.0"?: readonly string[];
+  "settings-v1.0"?: Readonly<Partial<Settings>>; // settings
 
   // dimItemInfo-m${account.membershipId}-d${account.destinyVersion}
   // [`info.${id}`]
@@ -95,17 +95,20 @@ export const importHandler = asyncHandler(async (req, res) => {
     for (const tag of itemHashTags) {
       await updateItemHashTag(client, appId, bungieMembershipId, tag);
     }
-
-    for (const triumphData of triumphs) {
-      for (const triumph of triumphData.triumphs) {
-        trackTriumph(
-          client,
-          appId,
-          bungieMembershipId,
-          triumphData.platformMembershipId,
-          triumph
-        );
-        numTriumphs++;
+    if (Array.isArray(triumphs)) {
+      for (const triumphData of triumphs) {
+        if (Array.isArray(triumphData.triumphs)) {
+          for (const triumph of triumphData.triumphs) {
+            trackTriumph(
+              client,
+              appId,
+              bungieMembershipId,
+              triumphData.platformMembershipId,
+              triumph
+            );
+            numTriumphs++;
+          }
+        }
       }
     }
 
@@ -150,7 +153,7 @@ function subtractObject(obj: object | undefined, defaults: object) {
 
 function extractSettings(importData: DimData | ExportResponse): Settings {
   return subtractObject(
-    importData.settings || importData['settings-v1.0'],
+    importData.settings || importData["settings-v1.0"],
     defaultSettings
   ) as Settings;
 }
@@ -171,7 +174,7 @@ function extractLoadouts(
     }));
   }
 
-  const ids = importData['loadouts-v3.0'];
+  const ids = importData["loadouts-v3.0"];
   if (!ids) {
     return [];
   }
@@ -259,7 +262,7 @@ function extractItemAnnotations(
 
 function extractSearches(
   importData: ExportResponse | DimData
-): ExportResponse['searches'] {
+): ExportResponse["searches"] {
   return (importData.searches || []).filter(
     // Filter out pre-filled searches that were never used
     (s) => s.search.usageCount > 0
