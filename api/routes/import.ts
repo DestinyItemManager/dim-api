@@ -96,16 +96,20 @@ export const importHandler = asyncHandler(async (req, res) => {
       await updateItemHashTag(client, appId, bungieMembershipId, tag);
     }
 
-    for (const triumphData of triumphs) {
-      for (const triumph of triumphData.triumphs) {
-        trackTriumph(
-          client,
-          appId,
-          bungieMembershipId,
-          triumphData.platformMembershipId,
-          triumph
-        );
-        numTriumphs++;
+    if (Array.isArray(triumphs)) {
+      for (const triumphData of triumphs) {
+        if (Array.isArray(triumphData?.triumphs)) {
+          for (const triumph of triumphData.triumphs) {
+            trackTriumph(
+              client,
+              appId,
+              bungieMembershipId,
+              triumphData.platformMembershipId,
+              triumph
+            );
+            numTriumphs++;
+          }
+        }
       }
     }
 
