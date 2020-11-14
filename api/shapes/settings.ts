@@ -116,6 +116,12 @@ export interface Settings {
   /** Selected columns for the Vault Organizer */
   readonly organizerColumnsWeapons: string[];
   readonly organizerColumnsArmor: string[];
+  readonly organizerColumnsGhost: string[];
+
+  /** Compare base stats or actual stats in Compare */
+  compareBaseStats: boolean;
+  /** Item popup sidecar collapsed just shows icon and no character locations */
+  sidecarCollapsed: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -205,4 +211,8 @@ export const defaultSettings: Settings = {
     'customstat',
     'notes',
   ],
+  organizerColumnsGhost: ['icon', 'name', 'locked', 'tag', 'perks', 'notes'],
+
+  compareBaseStats: false,
+  sidecarCollapsed: false,
 };
