@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/DestinyItemManager/dim-api.svg?branch=master)](https://travis-ci.com/DestinyItemManager/dim-api)
-
 # Setup
 
 1. Go to hub.docker.com, sign up for an account, and download Docker Desktop.
