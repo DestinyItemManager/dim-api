@@ -64,7 +64,8 @@ const apiKeyCors = cors({
     if (!origin || isAppOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.warn('UnknownOrigin', origin);
+      callback(null, false);
     }
   },
   maxAge: 3600,
