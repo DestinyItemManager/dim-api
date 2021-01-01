@@ -116,6 +116,15 @@ export interface Settings {
   /** Selected columns for the Vault Organizer */
   readonly organizerColumnsWeapons: string[];
   readonly organizerColumnsArmor: string[];
+  readonly organizerColumnsGhost: string[];
+
+  /** Compare base stats or actual stats in Compare */
+  compareBaseStats: boolean;
+  /** Item popup sidecar collapsed just shows icon and no character locations */
+  sidecarCollapsed: boolean;
+
+  /** In "Single Character Mode" DIM pretends you only have one (active) character and all the other characters' items are in the vault. */
+  singleCharacter: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -205,4 +214,10 @@ export const defaultSettings: Settings = {
     'customstat',
     'notes',
   ],
+  organizerColumnsGhost: ['icon', 'name', 'locked', 'tag', 'perks', 'notes'],
+
+  compareBaseStats: false,
+  sidecarCollapsed: false,
+
+  singleCharacter: false,
 };
