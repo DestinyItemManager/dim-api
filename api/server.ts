@@ -162,13 +162,13 @@ app.post('/delete_all_data', deleteAllDataHandler);
 app.use((err: Error, req, res, _next) => {
   Sentry.captureException(err);
   if (err.name === 'UnauthorizedError') {
-    console.warn('Unauthorized', req.path, err);
+    console.warn('Unauthorized', req.path, req.dimApp?.id, err);
     res.status(401).send({
       error: err.name,
       message: err.message,
     });
   } else {
-    console.error('Error handling request', err);
+    console.error('ServerError', req.path, req.dimApp?.id, err);
     res.status(500).send({
       error: err.name,
       message: err.message,
