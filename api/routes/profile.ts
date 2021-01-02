@@ -31,10 +31,12 @@ export const profileHandler = asyncHandler(async (req, res) => {
     const response: ProfileResponse = {};
 
     if (components.includes('settings')) {
+      const start = new Date();
       response.settings = {
         ...defaultSettings,
         ...(await getSettings(client, bungieMembershipId)),
       };
+      metrics.timing('profile.settings', start);
     }
 
     if (components.includes('loadouts')) {
@@ -42,12 +44,14 @@ export const profileHandler = asyncHandler(async (req, res) => {
         badRequest(res, 'Need a platformMembershipId to return loadouts');
         return;
       }
+      const start = new Date();
       response.loadouts = await getLoadoutsForProfile(
         client,
         bungieMembershipId,
         platformMembershipId,
         destinyVersion
       );
+      metrics.timing('profile.loadouts', start);
     }
 
     if (components.includes('tags')) {
@@ -58,19 +62,23 @@ export const profileHandler = asyncHandler(async (req, res) => {
         );
         return;
       }
+      const start = new Date();
       response.tags = await getItemAnnotationsForProfile(
         client,
         bungieMembershipId,
         platformMembershipId,
         destinyVersion
       );
+      metrics.timing('profile.loadouts', start);
     }
 
     if (components.includes('hashtags')) {
+      const start = new Date();
       response.itemHashTags = await getItemHashTagsForProfile(
         client,
         bungieMembershipId
       );
+      metrics.timing('profile.loadouts', start);
     }
 
     if (destinyVersion === 2 && components.includes('triumphs')) {
@@ -78,20 +86,24 @@ export const profileHandler = asyncHandler(async (req, res) => {
         badRequest(res, 'Need a platformMembershipId to return triumphs');
         return;
       }
+      const start = new Date();
       response.triumphs = await getTrackedTriumphsForProfile(
         client,
         bungieMembershipId,
         platformMembershipId
       );
+      metrics.timing('profile.loadouts', start);
     }
 
     if (components.includes('searches')) {
+      const start = new Date();
       response.searches = await getSearchesForProfile(
         client,
         bungieMembershipId,
         destinyVersion
       );
       metrics.histogram('searches.numReturned', response.searches.length);
+      metrics.timing('profile.loadouts', start);
     }
 
     // Instruct CF not to cache this
