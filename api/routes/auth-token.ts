@@ -39,9 +39,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       .set('X-API-Key', apiApp.bungieApiKey)
       .set('Authorization', `Bearer ${bungieAccessToken}`);
 
-    const responseData = bungieResponse.body as ServerResponse<
-      UserMembershipData
-    >;
+    const responseData = bungieResponse.body as ServerResponse<UserMembershipData>;
 
     const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
     if (serverMembershipId === membershipId) {
@@ -77,7 +75,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       Sentry.captureException(e);
       console.error('Error issuing auth token', e);
       throw new Error(
-        `Error from Bungie.net while verifying token: ${e.response.body.ErrorStatus}: ${e.response.body.Message}`
+        `Error from Bungie.net while verifying token: ${e.response?.body.ErrorStatus}: ${e.response?.body.Message}`
       );
     }
   }

@@ -11,7 +11,6 @@ import { Search } from '../shapes/search';
 const cannedSearchesForD2: Search[] = [
   'is:blue is:haspower -is:maxpower',
   '-is:equipped is:haspower is:incurrentchar',
-  '-source:garden -source:lastwish sunsetsafter:arrival ',
   '-is:exotic -is:locked -is:maxpower -is:tagged stat:total:<55',
 ].map((query) => ({
   query,
@@ -45,19 +44,25 @@ export async function getSearchesForProfile(
   bungieMembershipId: number,
   destinyVersion: DestinyVersion
 ): Promise<Search[]> {
-  const results = await client.query({
-    name: 'get_searches',
-    // TODO: order by frecency
-    text:
-      'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC',
-    values: [bungieMembershipId, destinyVersion],
-  });
-  return _.uniqBy(
-    results.rows
-      .map(convertSearch)
-      .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
-    (s) => s.query
-  );
+  try {
+    const results = await client.query({
+      name: 'get_searches',
+      // TODO: order by frecency
+      text:
+        'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC',
+      values: [bungieMembershipId, destinyVersion],
+    });
+    return _.uniqBy(
+      results.rows
+        .map(convertSearch)
+        .concat(
+          destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1
+        ),
+      (s) => s.query
+    );
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -68,16 +73,20 @@ export async function getSearchesForUser(
   bungieMembershipId: number
 ): Promise<ExportResponse['searches']> {
   // TODO: this isn't indexed!
-  const results = await client.query({
-    name: 'get_all_searches',
-    text:
-      'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => ({
-    destinyVersion: row.destiny_version,
-    search: convertSearch(row),
-  }));
+  try {
+    const results = await client.query({
+      name: 'get_all_searches',
+      text:
+        'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
+      values: [bungieMembershipId],
+    });
+    return results.rows.map((row) => ({
+      destinyVersion: row.destiny_version,
+      search: convertSearch(row),
+    }));
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 function convertSearch(row: any): Search {
@@ -101,22 +110,26 @@ export async function updateUsedSearch(
   destinyVersion: DestinyVersion,
   query: string
 ): Promise<QueryResult<any>> {
-  const response = await client.query({
-    name: 'upsert_search',
-    text: `insert INTO searches (membership_id, destiny_version, query, created_by, last_updated_by)
+  try {
+    const response = await client.query({
+      name: 'upsert_search',
+      text: `insert INTO searches (membership_id, destiny_version, query, created_by, last_updated_by)
 values ($1, $2, $3, $4, $4)
 on conflict (membership_id, destiny_version, query)
 do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $4)`,
-    values: [bungieMembershipId, destinyVersion, query, appId],
-  });
+      values: [bungieMembershipId, destinyVersion, query, appId],
+    });
 
-  if (response.rowCount < 1) {
-    // This should never happen!
-    metrics.increment('db.searches.noRowUpdated.count', 1);
-    throw new Error('searches - No row was updated');
+    if (response.rowCount < 1) {
+      // This should never happen!
+      metrics.increment('db.searches.noRowUpdated.count', 1);
+      throw new Error('searches - No row was updated');
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return response;
 }
 
 /**
@@ -130,25 +143,29 @@ export async function saveSearch(
   query: string,
   saved?: boolean
 ): Promise<QueryResult<any>> {
-  const response = await client.query({
-    name: 'save_search',
-    text: `UPDATE searches SET (saved, last_updated_by) = ($4, $5) WHERE membership_id = $1 AND destiny_version = $2 AND query = $3`,
-    values: [bungieMembershipId, destinyVersion, query, saved, appId],
-  });
-
-  if (response.rowCount < 1) {
-    // Someone saved a search they haven't used!
-    metrics.increment('db.searches.noRowUpdated.count', 1);
-    const insertSavedResponse = await client.query({
-      name: 'insert_search_fallback',
-      text: `insert INTO searches (membership_id, destiny_version, query, saved, created_by, last_updated_by)
-  values ($1, $2, $3, true, $4, $4)`,
-      values: [bungieMembershipId, destinyVersion, query, appId],
+  try {
+    const response = await client.query({
+      name: 'save_search',
+      text: `UPDATE searches SET (saved, last_updated_by) = ($4, $5) WHERE membership_id = $1 AND destiny_version = $2 AND query = $3`,
+      values: [bungieMembershipId, destinyVersion, query, saved, appId],
     });
-    return insertSavedResponse;
-  }
 
-  return response;
+    if (response.rowCount < 1) {
+      // Someone saved a search they haven't used!
+      metrics.increment('db.searches.noRowUpdated.count', 1);
+      const insertSavedResponse = await client.query({
+        name: 'insert_search_fallback',
+        text: `insert INTO searches (membership_id, destiny_version, query, saved, created_by, last_updated_by)
+  values ($1, $2, $3, true, $4, $4)`,
+        values: [bungieMembershipId, destinyVersion, query, appId],
+      });
+      return insertSavedResponse;
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 /**
  * Insert a single search as part of an import.
@@ -163,28 +180,32 @@ export async function importSearch(
   lastUsage: number,
   usageCount: number
 ): Promise<QueryResult<any>> {
-  const response = await client.query({
-    name: 'insert_search',
-    text: `insert INTO searches (membership_id, destiny_version, query, saved, usage_count, last_used, created_by, last_updated_by)
+  try {
+    const response = await client.query({
+      name: 'insert_search',
+      text: `insert INTO searches (membership_id, destiny_version, query, saved, usage_count, last_used, created_by, last_updated_by)
 values ($1, $2, $3, $4, $5, $6, $7, $7)`,
-    values: [
-      bungieMembershipId,
-      destinyVersion,
-      query,
-      saved,
-      usageCount,
-      new Date(lastUsage),
-      appId,
-    ],
-  });
+      values: [
+        bungieMembershipId,
+        destinyVersion,
+        query,
+        saved,
+        usageCount,
+        new Date(lastUsage),
+        appId,
+      ],
+    });
 
-  if (response.rowCount < 1) {
-    // This should never happen!
-    metrics.increment('db.searches.noRowUpdated.count', 1);
-    throw new Error('searches - No row was updated');
+    if (response.rowCount < 1) {
+      // This should never happen!
+      metrics.increment('db.searches.noRowUpdated.count', 1);
+      throw new Error('searches - No row was updated');
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return response;
 }
 
 /**
@@ -196,11 +217,15 @@ export async function deleteSearch(
   destinyVersion: DestinyVersion,
   query: string
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_search',
-    text: `delete from searches where membership_id = $1 and destiny_version = $2 and query = $3`,
-    values: [bungieMembershipId, destinyVersion, query],
-  });
+  try {
+    return client.query({
+      name: 'delete_search',
+      text: `delete from searches where membership_id = $1 and destiny_version = $2 and query = $3`,
+      values: [bungieMembershipId, destinyVersion, query],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -210,9 +235,13 @@ export async function deleteAllSearches(
   client: ClientBase,
   bungieMembershipId: number
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_all_searches',
-    text: `delete from searches where membership_id = $1`,
-    values: [bungieMembershipId],
-  });
+  try {
+    return client.query({
+      name: 'delete_all_searches',
+      text: `delete from searches where membership_id = $1`,
+      values: [bungieMembershipId],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }

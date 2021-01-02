@@ -12,13 +12,17 @@ export async function getLoadoutsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion
 ): Promise<Loadout[]> {
-  const results = await client.query<Loadout>({
-    name: 'get_loadouts_for_platform_membership_id',
-    text:
-      'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion],
-  });
-  return results.rows.map(convertLoadout);
+  try {
+    const results = await client.query<Loadout>({
+      name: 'get_loadouts_for_platform_membership_id',
+      text:
+        'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      values: [bungieMembershipId, platformMembershipId, destinyVersion],
+    });
+    return results.rows.map(convertLoadout);
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -34,20 +38,24 @@ export async function getAllLoadoutsForUser(
     loadout: Loadout;
   }[]
 > {
-  const results = await client.query({
-    name: 'get_all_loadouts_for_user',
-    text:
-      'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => {
-    const loadout = convertLoadout(row);
-    return {
-      platformMembershipId: row.platform_membership_id,
-      destinyVersion: row.destiny_version,
-      loadout,
-    };
-  });
+  try {
+    const results = await client.query({
+      name: 'get_all_loadouts_for_user',
+      text:
+        'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1',
+      values: [bungieMembershipId],
+    });
+    return results.rows.map((row) => {
+      const loadout = convertLoadout(row);
+      return {
+        platformMembershipId: row.platform_membership_id,
+        destinyVersion: row.destiny_version,
+        loadout,
+      };
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 function convertLoadout(row: any): Loadout {
@@ -79,37 +87,41 @@ export async function updateLoadout(
   destinyVersion: DestinyVersion,
   loadout: Loadout
 ): Promise<QueryResult<any>> {
-  const response = await client.query({
-    name: 'upsert_loadout',
-    text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
+  try {
+    const response = await client.query({
+      name: 'upsert_loadout',
+      text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
 on conflict (membership_id, id)
 do update set (name, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, current_timestamp, $11)`,
-    values: [
-      loadout.id,
-      bungieMembershipId,
-      platformMembershipId,
-      destinyVersion,
-      loadout.name,
-      loadout.classType,
-      loadout.emblemHash || null,
-      loadout.clearSpace,
-      {
-        equipped: loadout.equipped.map(cleanItem),
-        unequipped: loadout.unequipped.map(cleanItem),
-      },
-      loadout.parameters,
-      appId,
-    ],
-  });
+      values: [
+        loadout.id,
+        bungieMembershipId,
+        platformMembershipId,
+        destinyVersion,
+        loadout.name,
+        loadout.classType,
+        loadout.emblemHash || null,
+        loadout.clearSpace,
+        {
+          equipped: loadout.equipped.map(cleanItem),
+          unequipped: loadout.unequipped.map(cleanItem),
+        },
+        loadout.parameters,
+        appId,
+      ],
+    });
 
-  if (response.rowCount < 1) {
-    // This should never happen!
-    metrics.increment('db.loadouts.noRowUpdated.count', 1);
-    throw new Error('loadouts - No row was updated');
+    if (response.rowCount < 1) {
+      // This should never happen!
+      metrics.increment('db.loadouts.noRowUpdated.count', 1);
+      throw new Error('loadouts - No row was updated');
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return response;
 }
 
 /**
@@ -147,17 +159,21 @@ export async function deleteLoadout(
   bungieMembershipId: number,
   loadoutId: string
 ): Promise<Loadout | null> {
-  const response = await client.query({
-    name: 'delete_loadout',
-    text: `delete from loadouts where membership_id = $1 and id = $2 returning *`,
-    values: [bungieMembershipId, loadoutId],
-  });
+  try {
+    const response = await client.query({
+      name: 'delete_loadout',
+      text: `delete from loadouts where membership_id = $1 and id = $2 returning *`,
+      values: [bungieMembershipId, loadoutId],
+    });
 
-  if (response.rowCount < 1) {
-    return null;
+    if (response.rowCount < 1) {
+      return null;
+    }
+
+    return convertLoadout(response.rows[0]);
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return convertLoadout(response.rows[0]);
 }
 
 /**
@@ -167,9 +183,13 @@ export async function deleteAllLoadouts(
   client: ClientBase,
   bungieMembershipId: number
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_all_loadouts',
-    text: `delete from loadouts where membership_id = $1`,
-    values: [bungieMembershipId],
-  });
+  try {
+    return client.query({
+      name: 'delete_all_loadouts',
+      text: `delete from loadouts where membership_id = $1`,
+      values: [bungieMembershipId],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }

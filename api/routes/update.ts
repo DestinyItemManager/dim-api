@@ -169,7 +169,9 @@ async function updateSetting(
 ): Promise<ProfileUpdateResult> {
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
+  const start = new Date();
   await setSettingInDb(client, appId, bungieMembershipId, settings);
+  metrics.timing('update.setting', start);
 
   return { status: 'Success' };
 }
@@ -235,6 +237,7 @@ async function updateLoadout(
     };
   }
 
+  const start = new Date();
   await updateLoadoutInDb(
     client,
     appId,
@@ -243,6 +246,7 @@ async function updateLoadout(
     destinyVersion,
     loadout
   );
+  metrics.timing('update.loadout', start);
 
   return { status: 'Success' };
 }
@@ -252,11 +256,13 @@ async function deleteLoadout(
   bungieMembershipId: number,
   loadoutId: string
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   const loadout = await deleteLoadoutInDb(
     client,
     bungieMembershipId,
     loadoutId
   );
+  metrics.timing('update.deleteLoadout', start);
   if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
   }
@@ -300,6 +306,7 @@ async function updateItemAnnotation(
     };
   }
 
+  const start = new Date();
   await updateItemAnnotationInDb(
     client,
     appId,
@@ -308,6 +315,7 @@ async function updateItemAnnotation(
     destinyVersion,
     itemAnnotation
   );
+  metrics.timing('update.tag', start);
 
   return { status: 'Success' };
 }
@@ -317,7 +325,9 @@ async function tagCleanup(
   bungieMembershipId: number,
   inventoryItemIds: string[]
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
+  metrics.timing('update.tagCleanup', start);
 
   return { status: 'Success' };
 }
@@ -337,6 +347,7 @@ async function trackTriumph(
     };
   }
 
+  const start = new Date();
   payload.tracked
     ? await trackTriumphInDb(
         client,
@@ -351,6 +362,7 @@ async function trackTriumph(
         platformMembershipId,
         payload.recordHash
       );
+  metrics.timing('update.trackTriumph', start);
 
   return { status: 'Success' };
 }
@@ -362,6 +374,7 @@ async function recordSearch(
   destinyVersion: DestinyVersion,
   payload: UsedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   await updateUsedSearch(
     client,
     appId,
@@ -369,6 +382,7 @@ async function recordSearch(
     destinyVersion,
     payload.query
   );
+  metrics.timing('update.recordSearch', start);
 
   return { status: 'Success' };
 }
@@ -380,6 +394,7 @@ async function saveSearch(
   destinyVersion: DestinyVersion,
   payload: SavedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   await saveSearchInDb(
     client,
     appId,
@@ -388,6 +403,7 @@ async function saveSearch(
     payload.query,
     payload.saved
   );
+  metrics.timing('update.saveSearch', start);
 
   return { status: 'Success' };
 }
@@ -398,7 +414,9 @@ async function deleteSearch(
   destinyVersion: DestinyVersion,
   query: string
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   await deleteSearchInDb(client, bungieMembershipId, destinyVersion, query);
+  metrics.timing('update.deleteSearch', start);
 
   return { status: 'Success' };
 }
@@ -409,7 +427,9 @@ async function updateItemHashTag(
   bungieMembershipId: number,
   payload: ItemHashTagUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
+  metrics.timing('update.updateItemHashTag', start);
 
   return { status: 'Success' };
 }
