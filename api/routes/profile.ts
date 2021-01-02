@@ -69,7 +69,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         platformMembershipId,
         destinyVersion
       );
-      metrics.timing('profile.loadouts', start);
+      metrics.timing('profile.tags', start);
     }
 
     if (components.includes('hashtags')) {
@@ -78,7 +78,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId
       );
-      metrics.timing('profile.loadouts', start);
+      metrics.timing('profile.hashtags', start);
     }
 
     if (destinyVersion === 2 && components.includes('triumphs')) {
@@ -92,7 +92,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         platformMembershipId
       );
-      metrics.timing('profile.loadouts', start);
+      metrics.timing('profile.triumphs', start);
     }
 
     if (components.includes('searches')) {
@@ -103,7 +103,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         destinyVersion
       );
       metrics.histogram('searches.numReturned', response.searches.length);
-      metrics.timing('profile.loadouts', start);
+      metrics.timing('profile.searches', start);
     }
 
     // Instruct CF not to cache this
