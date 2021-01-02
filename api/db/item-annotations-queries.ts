@@ -12,13 +12,17 @@ export async function getItemAnnotationsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion
 ): Promise<ItemAnnotation[]> {
-  const results = await client.query({
-    name: 'get_item_annotations',
-    text:
-      'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2  and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion],
-  });
-  return results.rows.map(convertItemAnnotation);
+  try {
+    const results = await client.query({
+      name: 'get_item_annotations',
+      text:
+        'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2  and destiny_version = $3',
+      values: [bungieMembershipId, platformMembershipId, destinyVersion],
+    });
+    return results.rows.map(convertItemAnnotation);
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -34,18 +38,22 @@ export async function getAllItemAnnotationsForUser(
     annotation: ItemAnnotation;
   }[]
 > {
-  // TODO: this isn't indexed!
-  const results = await client.query({
-    name: 'get_all_item_annotations',
-    text:
-      'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => ({
-    platformMembershipId: row.platform_membership_id,
-    destinyVersion: row.destiny_version,
-    annotation: convertItemAnnotation(row),
-  }));
+  try {
+    // TODO: this isn't indexed!
+    const results = await client.query({
+      name: 'get_all_item_annotations',
+      text:
+        'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1',
+      values: [bungieMembershipId],
+    });
+    return results.rows.map((row) => ({
+      platformMembershipId: row.platform_membership_id,
+      destinyVersion: row.destiny_version,
+      annotation: convertItemAnnotation(row),
+    }));
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 function convertItemAnnotation(row: any): ItemAnnotation {
@@ -79,30 +87,34 @@ export async function updateItemAnnotation(
     return deleteItemAnnotation(client, bungieMembershipId, itemAnnotation.id);
   }
 
-  const response = await client.query({
-    name: 'upsert_item_annotation',
-    text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, created_by, last_updated_by)
+  try {
+    const response = await client.query({
+      name: 'upsert_item_annotation',
+      text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, created_by, last_updated_by)
 values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7, $7)
 on conflict (membership_id, inventory_item_id)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), current_timestamp, $7)`,
-    values: [
-      bungieMembershipId,
-      platformMembershipId,
-      destinyVersion,
-      itemAnnotation.id,
-      tagValue,
-      notesValue,
-      appId,
-    ],
-  });
+      values: [
+        bungieMembershipId,
+        platformMembershipId,
+        destinyVersion,
+        itemAnnotation.id,
+        tagValue,
+        notesValue,
+        appId,
+      ],
+    });
 
-  if (response.rowCount < 1) {
-    // This should never happen!
-    metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
-    throw new Error('tags - No row was updated');
+    if (response.rowCount < 1) {
+      // This should never happen!
+      metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
+      throw new Error('tags - No row was updated');
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return response;
 }
 
 /**
@@ -128,11 +140,15 @@ export async function deleteItemAnnotation(
   bungieMembershipId: number,
   inventoryItemId: string
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_item_annotation',
-    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
-    values: [bungieMembershipId, inventoryItemId],
-  });
+  try {
+    return client.query({
+      name: 'delete_item_annotation',
+      text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
+      values: [bungieMembershipId, inventoryItemId],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -143,11 +159,15 @@ export async function deleteItemAnnotationList(
   bungieMembershipId: number,
   inventoryItemIds: string[]
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_item_annotation_list',
-    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = ANY($2::text[])`,
-    values: [bungieMembershipId, inventoryItemIds],
-  });
+  try {
+    return client.query({
+      name: 'delete_item_annotation_list',
+      text: `delete from item_annotations where membership_id = $1 and inventory_item_id = ANY($2::text[])`,
+      values: [bungieMembershipId, inventoryItemIds],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -157,9 +177,13 @@ export async function deleteAllItemAnnotations(
   client: ClientBase,
   bungieMembershipId: number
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_all_item_annotations',
-    text: `delete from item_annotations where membership_id = $1`,
-    values: [bungieMembershipId],
-  });
+  try {
+    return client.query({
+      name: 'delete_all_item_annotations',
+      text: `delete from item_annotations where membership_id = $1`,
+      values: [bungieMembershipId],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }

@@ -9,13 +9,17 @@ export async function getItemHashTagsForProfile(
   client: ClientBase,
   bungieMembershipId: number
 ): Promise<ItemHashTag[]> {
-  const results = await client.query({
-    name: 'get_item_hash_tags',
-    text:
-      'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map(convertItemHashTag);
+  try {
+    const results = await client.query({
+      name: 'get_item_hash_tags',
+      text:
+        'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
+      values: [bungieMembershipId],
+    });
+    return results.rows.map(convertItemHashTag);
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 function convertItemHashTag(row: any): ItemHashTag {
@@ -47,22 +51,32 @@ export async function updateItemHashTag(
     return deleteItemHashTag(client, bungieMembershipId, itemHashTag.hash);
   }
 
-  const response = await client.query({
-    name: 'upsert_hash_tag',
-    text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes, created_by, last_updated_by)
+  try {
+    const response = await client.query({
+      name: 'upsert_hash_tag',
+      text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes, created_by, last_updated_by)
 values ($1, $2, (CASE WHEN $3 = 'clear'::item_tag THEN NULL ELSE $3 END)::item_tag, (CASE WHEN $4 = 'clear' THEN NULL ELSE $4 END), $5, $5)
 on conflict (membership_id, item_hash)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 'clear' THEN NULL WHEN $3 IS NULL THEN item_hash_tags.tag ELSE $3 END), (CASE WHEN $4 = 'clear' THEN NULL WHEN $4 IS NULL THEN item_hash_tags.notes ELSE $4 END), current_timestamp, $5)`,
-    values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
-  });
+      values: [
+        bungieMembershipId,
+        itemHashTag.hash,
+        tagValue,
+        notesValue,
+        appId,
+      ],
+    });
 
-  if (response.rowCount < 1) {
-    // This should never happen!
-    metrics.increment('db.itemHashTags.noRowUpdated.count', 1);
-    throw new Error('hash tags - No row was updated');
+    if (response.rowCount < 1) {
+      // This should never happen!
+      metrics.increment('db.itemHashTags.noRowUpdated.count', 1);
+      throw new Error('hash tags - No row was updated');
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
   }
-
-  return response;
 }
 
 /**
@@ -88,11 +102,15 @@ export async function deleteItemHashTag(
   bungieMembershipId: number,
   itemHash: number
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_item_hash_tag',
-    text: `delete from item_hash_tags where membership_id = $1 and item_hash = $2`,
-    values: [bungieMembershipId, itemHash],
-  });
+  try {
+    return client.query({
+      name: 'delete_item_hash_tag',
+      text: `delete from item_hash_tags where membership_id = $1 and item_hash = $2`,
+      values: [bungieMembershipId, itemHash],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
 
 /**
@@ -102,9 +120,13 @@ export async function deleteAllItemHashTags(
   client: ClientBase,
   bungieMembershipId: number
 ): Promise<QueryResult<any>> {
-  return client.query({
-    name: 'delete_all_item_hash_tags',
-    text: `delete from item_hash_tags where membership_id = $1`,
-    values: [bungieMembershipId],
-  });
+  try {
+    return client.query({
+      name: 'delete_all_item_hash_tags',
+      text: `delete from item_hash_tags where membership_id = $1`,
+      values: [bungieMembershipId],
+    });
+  } catch (e) {
+    throw new Error(e.name + ': ' + e.message);
+  }
 }
