@@ -10,7 +10,7 @@ export const pool = new Pool({
     : { rejectUnauthorized: false },
   connectionTimeoutMillis: 250,
   statement_timeout: 150,
-  query_timeout: 150,
+  query_timeout: 500,
 });
 
 pool.on('connect', () => {
