@@ -2,7 +2,7 @@
   "test": {
     "driver": "pg",
     "user": "postgres",
-    "password": "",
+    "password": "postgres",
     "host": "localhost",
     "database": "travis_ci_test"
   },
