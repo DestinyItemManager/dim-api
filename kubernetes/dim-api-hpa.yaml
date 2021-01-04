@@ -7,10 +7,10 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dim-api
-  minReplicas: 2
+  minReplicas: 3
   maxReplicas: 10
   metrics:
     - type: Resource
       resource:
         name: cpu
-        targetAverageUtilization: 70
+        targetAverageUtilization: 60
