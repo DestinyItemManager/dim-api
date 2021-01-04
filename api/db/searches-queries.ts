@@ -49,7 +49,7 @@ export async function getSearchesForProfile(
       name: 'get_searches',
       // TODO: order by frecency
       text:
-        'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC',
+        'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
       values: [bungieMembershipId, destinyVersion],
     });
     return _.uniqBy(
