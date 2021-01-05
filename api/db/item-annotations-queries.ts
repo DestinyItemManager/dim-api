@@ -162,7 +162,7 @@ export async function deleteItemAnnotationList(
   try {
     return client.query({
       name: 'delete_item_annotation_list',
-      text: `delete from item_annotations where membership_id = $1 and inventory_item_id = ANY($2::bigint[])`,
+      text: `delete from item_annotations where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
       values: [bungieMembershipId, inventoryItemIds],
     });
   } catch (e) {
