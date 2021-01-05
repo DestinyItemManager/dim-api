@@ -9,8 +9,10 @@ export const pool = new Pool({
     ? process.env.PGSSL === 'true'
     : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,
-  statement_timeout: 500,
-  query_timeout: 750,
+  // Statement query is at the Postgres side, times out any individual query
+  statement_timeout: 750,
+  // Query timeout is on the NodeJS side, it times out the an operation on the client
+  query_timeout: 1000,
 });
 
 pool.on('connect', () => {
