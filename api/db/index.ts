@@ -62,10 +62,11 @@ export async function readTransaction<T>(
 ) {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    // We used to wrap multiple reads in a transaction but I'm not sure it matters all that much.
+    //await client.query('BEGIN');
     return await fn(client);
   } finally {
-    await client.query('ROLLBACK');
+    //await client.query('ROLLBACK');
     client.release();
   }
 }
