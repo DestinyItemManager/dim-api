@@ -50,6 +50,7 @@
   "dependencies": {
     "@godaddy/terminus": "^4.3.1",
     "@sentry/node": "^5.29.2",
+    "@sentry/tracing": "^6.0.2",
     "bungie-api-ts": "^4.2.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
