@@ -21,7 +21,11 @@ app.set('trust proxy', true); // enable x-forwarded-for
 app.set('x-powered-by', false);
 
 // The request handler must be the first middleware on the app
-app.use(Sentry.Handlers.requestHandler());
+app.use(
+  Sentry.Handlers.requestHandler({
+    user: ['bungieMembershipId'],
+  })
+);
 // TracingHandler creates a trace for every incoming request
 app.use(Sentry.Handlers.tracingHandler());
 // The error handler must be before any other error middleware

@@ -27,7 +27,7 @@ if (process.env.SENTRY_DSN) {
       }),
       new Tracing.Integrations.Postgres(),
     ],
-    tracesSampleRate: 0.1,
+    tracesSampleRate: 0.001,
   });
 }
 
