@@ -8,7 +8,7 @@ spec:
     kind: Deployment
     name: dim-api
   minReplicas: 3
-  maxReplicas: 10
+  maxReplicas: 18
   metrics:
     - type: Resource
       resource:
