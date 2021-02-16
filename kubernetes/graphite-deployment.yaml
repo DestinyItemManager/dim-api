@@ -29,13 +29,14 @@ spec:
       storage: 8Gi
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: graphite
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
+  serviceName: graphite
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: graphite

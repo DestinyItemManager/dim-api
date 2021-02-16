@@ -25,13 +25,14 @@ spec:
       storage: 1Gi
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: grafana
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
+  serviceName: grafana
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: grafana
