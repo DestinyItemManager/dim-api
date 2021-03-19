@@ -286,6 +286,14 @@ async function updateItemAnnotation(
     };
   }
 
+  if (itemAnnotation.id.includes('E+')) {
+    metrics.increment('update.validation.badItemId.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'item ID is in scientific notation',
+    };
+  }
+
   if (
     itemAnnotation.tag &&
     !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(
