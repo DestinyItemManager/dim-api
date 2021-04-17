@@ -67,26 +67,30 @@ export function isAppOrigin(origin: string) {
 
 export async function refreshApps() {
   stopAppsRefresh();
-  const client = await pool.connect();
+
   try {
-    apps = await getAllApps(client);
-    appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
-    origins = new Set<string>();
-    for (const app of apps) {
-      origins.add(app.origin);
+    const client = await pool.connect();
+    try {
+      apps = await getAllApps(client);
+      appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+      origins = new Set<string>();
+      for (const app of apps) {
+        origins.add(app.origin);
+      }
+      metrics.increment('apps.refresh.success.count');
+      return apps;
+    } catch (e) {
+      metrics.increment('apps.refresh.error.count');
+      console.error('Error refreshing apps', e);
+      Sentry.captureException(e);
+      throw e;
+    } finally {
+      client.release();
     }
-    metrics.increment('apps.refresh.success.count');
+  } finally {
     // Refresh again every minute or so
     if (!appsInterval) {
       appsInterval = setTimeout(refreshApps, 60000 + Math.random() * 10000);
     }
-    return apps;
-  } catch (e) {
-    metrics.increment('apps.refresh.error.count');
-    console.error('Error refreshing apps', e);
-    Sentry.captureException(e);
-    throw e;
-  } finally {
-    client.release();
   }
 }

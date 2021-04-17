@@ -286,11 +286,14 @@ async function updateItemAnnotation(
     };
   }
 
-  if (itemAnnotation.id.includes('E+')) {
+  if (
+    itemAnnotation.id.includes('E+') ||
+    itemAnnotation.id.startsWith('vendor-')
+  ) {
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
-      message: 'item ID is in scientific notation',
+      message: 'item ID is not in the right format',
     };
   }
 
@@ -334,7 +337,13 @@ async function tagCleanup(
   inventoryItemIds: string[]
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  await deleteItemAnnotationList(client, bungieMembershipId, inventoryItemIds);
+  await deleteItemAnnotationList(
+    client,
+    bungieMembershipId,
+    inventoryItemIds.filter(
+      (i) => !i.startsWith('vendor-') && !i.includes('E+')
+    )
+  );
   metrics.timing('update.tagCleanup', start);
 
   return { status: 'Success' };
