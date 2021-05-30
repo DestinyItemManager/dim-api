@@ -38,6 +38,7 @@ export enum UpgradeSpendTier {
   AscendantShardsNotExotic,
   AscendantShards,
 }
+
 export interface Settings {
   /** Show full details in item popup */
   readonly itemDetails: boolean;
