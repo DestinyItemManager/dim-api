@@ -31,6 +31,13 @@ export enum DtrReviewPlatform {
   Pc = 3,
 }
 
+export enum UpgradeSpendTier {
+  Nothing,
+  LegendaryShards,
+  EnhancementPrisms,
+  AscendantShardsNotExotic,
+  AscendantShards,
+}
 export interface Settings {
   /** Show full details in item popup */
   readonly itemDetails: boolean;
@@ -103,7 +110,7 @@ export interface Settings {
   readonly loAssumeMasterwork: boolean;
 
   /** The optimizers material spend tier, effects armors maximum energy when calcuating sets. */
-  readonly loUpgradeSpendTier: number;
+  readonly loUpgradeSpendTier: UpgradeSpendTier;
 
   /** Thie minimum power for an armor set in the loadout optimizer. */
   readonly loMinPower: number;
