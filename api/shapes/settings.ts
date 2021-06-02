@@ -31,6 +31,14 @@ export enum DtrReviewPlatform {
   Pc = 3,
 }
 
+export enum UpgradeSpendTier {
+  Nothing,
+  LegendaryShards,
+  EnhancementPrisms,
+  AscendantShardsNotExotic,
+  AscendantShards,
+}
+
 export interface Settings {
   /** Show full details in item popup */
   readonly itemDetails: boolean;
@@ -101,6 +109,9 @@ export interface Settings {
 
   /** The initial status of assume masterwork in the loadout optimizer. */
   readonly loAssumeMasterwork: boolean;
+
+  /** The optimizers material spend tier, effects armors maximum energy when calcuating sets. */
+  readonly loUpgradeSpendTier: UpgradeSpendTier;
 
   /** Thie minimum power for an armor set in the loadout optimizer. */
   readonly loMinPower: number;
@@ -183,6 +194,7 @@ export const defaultSettings: Settings = {
     4244567218, //Strength
   ],
   loAssumeMasterwork: false,
+  loUpgradeSpendTier: 0,
   loMinPower: 750,
   loMinStatTotal: 55,
 
