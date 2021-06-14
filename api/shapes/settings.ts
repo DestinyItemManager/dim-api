@@ -194,7 +194,7 @@ export const defaultSettings: Settings = {
     4244567218, //Strength
   ],
   loAssumeMasterwork: false,
-  loUpgradeSpendTier: 0,
+  loUpgradeSpendTier: UpgradeSpendTier.Nothing,
   loMinPower: 750,
   loMinStatTotal: 55,
 
