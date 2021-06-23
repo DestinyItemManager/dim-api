@@ -71,6 +71,7 @@ const apiKeyCors = cors({
       callback(null, true);
     } else {
       console.warn('UnknownOrigin', origin);
+      metrics.increment('apiKey.unknownOrigin.count');
       callback(null, false);
     }
   },
@@ -105,6 +106,7 @@ app.use((req, res, next) => {
 
 // TODO: just explicitly use API key cors on everything so it shows up
 
+app.options('/auth/token', (_req, res) => res.send(200)); // explicitly here so it doesn't get caught by JWT
 app.post('/auth/token', authTokenHandler);
 
 /* ****** USER AUTH REQUIRED ****** */
