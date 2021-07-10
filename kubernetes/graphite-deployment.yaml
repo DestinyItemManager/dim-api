@@ -26,7 +26,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 8Gi
+      storage: 12Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
