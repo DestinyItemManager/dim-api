@@ -14,6 +14,8 @@ import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
+  const { id: appId } = req.dimApp!;
+  metrics.counter('profile.app.' + appId, 1);
 
   const platformMembershipId = req.query.platformMembershipId as string;
   const destinyVersion: DestinyVersion = req.query.destinyVersion
@@ -51,6 +53,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         platformMembershipId,
         destinyVersion
       );
+      metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
       metrics.timing('profile.loadouts', start);
     }
 
@@ -69,6 +72,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         platformMembershipId,
         destinyVersion
       );
+      metrics.timing('profile.tags.numReturned', response.tags.length);
       metrics.timing('profile.tags', start);
     }
 
@@ -77,6 +81,10 @@ export const profileHandler = asyncHandler(async (req, res) => {
       response.itemHashTags = await getItemHashTagsForProfile(
         client,
         bungieMembershipId
+      );
+      metrics.timing(
+        'profile.hashtags.numReturned',
+        response.itemHashTags.length
       );
       metrics.timing('profile.hashtags', start);
     }
@@ -92,6 +100,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         platformMembershipId
       );
+      metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
       metrics.timing('profile.triumphs', start);
     }
 
@@ -102,7 +111,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         destinyVersion
       );
-      metrics.histogram('searches.numReturned', response.searches.length);
+      metrics.timing('profile.searches.numReturned', response.searches.length);
       metrics.timing('profile.searches', start);
     }
 

@@ -44,6 +44,7 @@ import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags
 export const updateHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
+  metrics.counter('update.app.' + appId, 1);
   const request = req.body as ProfileUpdateRequest;
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
