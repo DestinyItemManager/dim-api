@@ -14,3 +14,4 @@ data:
   enable-modsecurity: "true"
   enable-owasp-modsecurity-crs: "false"
   proxy-body-size: "2m"
+  use-gzip: "true"
