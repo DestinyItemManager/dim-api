@@ -38,6 +38,10 @@ export enum UpgradeSpendTier {
   AscendantShardsNotExotic,
   AscendantShards,
   AscendantShardsNotMasterworked,
+  /**
+   * @deprecated
+   * No longer needed with the lock energy toggle, treat this as if it was the Nothing option.
+   */
   AscendantShardsLockEnergyType,
 }
 
