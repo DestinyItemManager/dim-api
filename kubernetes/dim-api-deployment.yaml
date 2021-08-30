@@ -36,6 +36,8 @@ spec:
     metadata:
       labels:
         app: dim-api
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
     spec:
       containers:
         - name: dim-api
