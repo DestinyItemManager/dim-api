@@ -9,7 +9,7 @@ afterAll(() => pool.end());
 it('can insert settings where none exist before', async () => {
   await transaction(async (client) => {
     await setSetting(client, appId, bungieMembershipId, {
-      showNewItems: true
+      showNewItems: true,
     });
 
     const settings = await getSettings(client, bungieMembershipId);
@@ -20,17 +20,35 @@ it('can insert settings where none exist before', async () => {
 it('can update settings', async () => {
   await transaction(async (client) => {
     await setSetting(client, appId, bungieMembershipId, {
-      showNewItems: true
+      showNewItems: true,
     });
 
     const settings = await getSettings(client, bungieMembershipId);
     expect(settings.showNewItems).toBe(true);
 
     await setSetting(client, appId, bungieMembershipId, {
-      showNewItems: false
+      showNewItems: false,
     });
 
     const settings2 = await getSettings(client, bungieMembershipId);
     expect(settings2.showNewItems).toBe(false);
+  });
+});
+
+it('can partially update settings', async () => {
+  await transaction(async (client) => {
+    await setSetting(client, appId, bungieMembershipId, {
+      showNewItems: true,
+    });
+
+    const settings = await getSettings(client, bungieMembershipId);
+    expect(settings.showNewItems).toBe(true);
+
+    await setSetting(client, appId, bungieMembershipId, {
+      singleCharacter: true,
+    });
+
+    const settings2 = await getSettings(client, bungieMembershipId);
+    expect(settings2.showNewItems).toBe(true);
   });
 });

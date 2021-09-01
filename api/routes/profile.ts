@@ -34,9 +34,10 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('settings')) {
       const start = new Date();
+      const storedSettings = await getSettings(client, bungieMembershipId);
       response.settings = {
         ...defaultSettings,
-        ...(await getSettings(client, bungieMembershipId)),
+        ...storedSettings,
       };
       metrics.timing('profile.settings', start);
     }

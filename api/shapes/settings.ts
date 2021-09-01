@@ -1,5 +1,7 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
+import { LoadoutParameters, UpgradeSpendTier } from './loadouts';
+
 export type CharacterOrder =
   | 'mostRecent'
   | 'mostRecentReverse'
@@ -31,30 +33,25 @@ export enum DtrReviewPlatform {
   Pc = 3,
 }
 
-export enum UpgradeSpendTier {
-  Nothing,
-  LegendaryShards,
-  EnhancementPrisms,
-  AscendantShardsNotExotic,
-  AscendantShards,
-  AscendantShardsNotMasterworked,
-  /**
-   * @deprecated
-   * No longer needed with the lock energy toggle, treat this as if it was the Nothing option.
-   */
-  AscendantShardsLockEnergyType,
-}
-
 export interface Settings {
-  /** Show full details in item popup */
+  /**
+   * Show full details in item popup
+   * @deprecated
+   */
   readonly itemDetails: boolean;
   /** Show item quality percentages */
   readonly itemQuality: boolean;
   /** Show new items with an overlay */
   readonly showNewItems: boolean;
-  /** Show item reviews */
+  /**
+   * Show item reviews
+   * @deprecated
+   */
   readonly showReviews: boolean;
-  /** Can we post identifying information to DTR? */
+  /**
+   * Can we post identifying information to DTR?
+   * @deprecated
+   */
   readonly allowIdPostToDtr: boolean;
   /** Sort characters (mostRecent, mostRecentReverse, fixed) */
   readonly characterOrder: CharacterOrder;
@@ -62,6 +59,7 @@ export interface Settings {
    * Sort items in buckets (primaryStat, rarityThenPrimary, quality).
    * This used to let you set a preset but now it's always "custom"
    * unless loaded from an older settings.
+   * @deprecated
    */
   readonly itemSort: string;
   readonly itemSortOrderCustom: string[];
@@ -79,9 +77,15 @@ export interface Settings {
   readonly redactedRecordsRevealed: boolean;
   /** Whether to keep one slot per item type open */
   readonly farmingMakeRoomForItems: boolean;
-  /** Destiny 2 platform selection for ratings + reviews */
+  /**
+   * Destiny 2 platform selection for ratings + reviews
+   * @deprecated
+   */
   readonly reviewsPlatformSelectionV2: DtrReviewPlatform;
-  /** Destiny 2 play mode selection for ratings + reviews - see DestinyActivityModeType for values */
+  /**
+   * Destiny 2 play mode selection for ratings + reviews - see DestinyActivityModeType for values
+   * @deprecated
+   */
   readonly reviewsModeSelection: DtrD2ActivityModes;
 
   /** Hide completed Destiny 1 records */
@@ -93,13 +97,19 @@ export interface Settings {
   /** The last direction the infusion fuel finder was set to. */
   readonly infusionDirection: InfuseDirection;
 
-  /** Whether the item picker should equip or store. */
+  /**
+   * Whether the item picker should equip or store.
+   * @deprecated
+   */
   readonly itemPickerEquip: boolean;
 
   /** The user's preferred language. */
   readonly language: string;
 
-  /** Colorblind modes. */
+  /**
+   * Colorblind modes.
+   * @deprecated
+   */
   readonly colorA11y: string;
 
   /**
@@ -110,20 +120,46 @@ export interface Settings {
    */
   readonly wishListSource: string;
 
-  /** The initial stat order in the loadout opimizer. */
+  /**
+   * The last used settings for the Loadout Optimizer.
+   */
+  readonly loParameters: LoadoutParameters;
+
+  /**
+   * The initial stat order in the loadout optimizer.
+   * @deprecated use loParameters
+   */
   readonly loStatSortOrder: number[];
 
-  /** The initial status of assume masterwork in the loadout optimizer. */
+  /**
+   * The initial status of assume masterwork in the loadout optimizer.
+   * @deprecated use loParameters
+   */
   readonly loAssumeMasterwork: boolean;
 
-  /** The optimizers material spend tier, effects armors maximum energy when calcuating sets. */
+  /**
+   * The optimizers material spend tier, effects armors maximum energy when calcuating sets.
+   * @deprecated use loParameters
+   */
   readonly loUpgradeSpendTier: UpgradeSpendTier;
 
-  /** Thie minimum power for an armor set in the loadout optimizer. */
+  /**
+   * The minimum power for an armor set in the loadout optimizer.
+   * @deprecated
+   */
   readonly loMinPower: number;
 
-  /**The minimum stat total for a single armor piece in the loadout optimizer. */
+  /**
+   * The minimum stat total for a single armor piece in the loadout optimizer.
+   * @deprecated
+   */
   readonly loMinStatTotal: number;
+
+  /**
+   * Don't change energy type of armor in order to fit mods.
+   * @deprecated use loParameters
+   */
+  readonly loLockItemEnergyType: boolean;
 
   /** list of stat hashes of interest, keyed by class enum */
   readonly customTotalStatsByClass: {
@@ -136,12 +172,15 @@ export interface Settings {
   readonly organizerColumnsGhost: string[];
 
   /** Compare base stats or actual stats in Compare */
-  compareBaseStats: boolean;
+  readonly compareBaseStats: boolean;
   /** Item popup sidecar collapsed just shows icon and no character locations */
-  sidecarCollapsed: boolean;
+  readonly sidecarCollapsed: boolean;
 
   /** In "Single Character Mode" DIM pretends you only have one (active) character and all the other characters' items are in the vault. */
-  singleCharacter: boolean;
+  readonly singleCharacter: boolean;
+
+  /** Badge the app icon with the number of postmaster items on the current character */
+  readonly badgePostmaster: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -191,6 +230,7 @@ export const defaultSettings: Settings = {
   wishListSource:
     'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
 
+  loParameters: {}, // Uses the defaults from defaultLoadoutParameters
   loStatSortOrder: [
     2996146975, //Mobility
     392767087, //Resilience
@@ -203,6 +243,7 @@ export const defaultSettings: Settings = {
   loUpgradeSpendTier: UpgradeSpendTier.Nothing,
   loMinPower: 750,
   loMinStatTotal: 55,
+  loLockItemEnergyType: false,
 
   customTotalStatsByClass: {},
   organizerColumnsWeapons: [
@@ -238,4 +279,5 @@ export const defaultSettings: Settings = {
   sidecarCollapsed: false,
 
   singleCharacter: false,
+  badgePostmaster: true,
 };
