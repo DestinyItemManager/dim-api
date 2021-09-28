@@ -123,7 +123,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
 /** A constraint on the values an armor stat can take */
 export interface StatConstraint {
   /** The stat definition hash of the stat */
-  statHash?: number;
+  statHash: number;
   /** The minimum tier value for the stat. 0 if unset. */
   minTier?: number;
   /** The maximum tier value for the stat. 10 if unset. */

@@ -1,6 +1,10 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
-import { LoadoutParameters, UpgradeSpendTier } from './loadouts';
+import {
+  LoadoutParameters,
+  StatConstraint,
+  UpgradeSpendTier,
+} from './loadouts';
 
 export type CharacterOrder =
   | 'mostRecent'
@@ -121,9 +125,19 @@ export interface Settings {
   readonly wishListSource: string;
 
   /**
-   * The last used settings for the Loadout Optimizer.
+   * The last used settings for the Loadout Optimizer. These apply to all classes.
    */
-  readonly loParameters: LoadoutParameters;
+  readonly loParameters: Exclude<
+    LoadoutParameters,
+    'mods' | 'query' | 'exoticArmorHash'
+  >;
+
+  /**
+   * Stat order, enablement, etc. Stored per class.
+   */
+  readonly loStatConstraintsByClass: {
+    [key: number]: StatConstraint[];
+  };
 
   /**
    * The initial stat order in the loadout optimizer.
@@ -231,6 +245,8 @@ export const defaultSettings: Settings = {
     'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
 
   loParameters: {}, // Uses the defaults from defaultLoadoutParameters
+  loStatConstraintsByClass: {}, // Uses the defaults from defaultLoadoutParameters
+
   loStatSortOrder: [
     2996146975, //Mobility
     392767087, //Resilience
