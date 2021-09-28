@@ -35,6 +35,23 @@ export const profileHandler = asyncHandler(async (req, res) => {
     if (components.includes('settings')) {
       const start = new Date();
       const storedSettings = await getSettings(client, bungieMembershipId);
+
+      // Clean out deprecated settings (TODO purge from DB)
+      delete storedSettings['allowIdPostToDtr'];
+      delete storedSettings['colorA11y'];
+      delete storedSettings['itemDetails'];
+      delete storedSettings['itemPickerEquip'];
+      delete storedSettings['itemSort'];
+      delete storedSettings['loAssumeMasterwork'];
+      delete storedSettings['loLockItemEnergyType'];
+      delete storedSettings['loMinPower'];
+      delete storedSettings['loMinStatTotal'];
+      delete storedSettings['loStatSortOrder'];
+      delete storedSettings['loUpgradeSpendTier'];
+      delete storedSettings['reviewsModeSelection'];
+      delete storedSettings['reviewsPlatformSelectionV2'];
+      delete storedSettings['showReviews'];
+
       response.settings = {
         ...defaultSettings,
         ...storedSettings,
