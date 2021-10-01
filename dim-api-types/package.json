@@ -1,6 +1,6 @@
 {
   "name": "@destinyitemmanager/dim-api-types",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "TypeScript types for the DIM API",
   "main": "./index.js",
   "types": "./index.d.ts",
@@ -24,7 +24,7 @@
   "homepage": "https://github.com/DestinyItemManager/dim-api",
   "devDependencies": {
     "@types/node": "^10.14.8",
-    "typescript": "^3.5.1"
+    "typescript": "^4.1.3"
   },
   "dependencies": {}
 }
