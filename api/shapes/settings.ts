@@ -38,6 +38,8 @@ export interface Settings {
   readonly redactedRecordsRevealed: boolean;
   /** Whether to keep one slot per item type open */
   readonly farmingMakeRoomForItems: boolean;
+  /** How many spaces to clear when using Farming Mode(make space). */
+  readonly inventoryClearSpaces: number;
 
   /** Hide completed Destiny 1 records */
   readonly hideCompletedRecords: boolean;
