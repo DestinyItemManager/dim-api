@@ -287,10 +287,7 @@ async function updateItemAnnotation(
     };
   }
 
-  if (
-    itemAnnotation.id.includes('E+') ||
-    itemAnnotation.id.startsWith('vendor-')
-  ) {
+  if (itemAnnotation.id.includes('E+') || itemAnnotation.id.includes('-')) {
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
