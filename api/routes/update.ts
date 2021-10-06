@@ -338,9 +338,7 @@ async function tagCleanup(
   await deleteItemAnnotationList(
     client,
     bungieMembershipId,
-    inventoryItemIds.filter(
-      (i) => !i.startsWith('vendor-') && !i.includes('E+')
-    )
+    inventoryItemIds.filter((i) => !i.includes('-') && !i.includes('E+'))
   );
   metrics.timing('update.tagCleanup', start);
 
