@@ -27,6 +27,10 @@ export interface Loadout {
   unequipped: LoadoutItem[];
   /** Information about the desired properties of this loadout - used to drive the Loadout Optimizer or apply Mod Loadouts */
   parameters?: LoadoutParameters;
+  /** When was this Loadout initially created? Tracked automatically by the API - when saving a loadout this field is ignored. */
+  createdAt?: number;
+  /** When was this Loadout last changed? Tracked automatically by the API - when saving a loadout this field is ignored. */
+  lastUpdatedAt?: number;
 }
 
 /** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */

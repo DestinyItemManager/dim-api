@@ -15,8 +15,7 @@ export async function getLoadoutsForProfile(
   try {
     const results = await client.query<Loadout>({
       name: 'get_loadouts_for_platform_membership_id',
-      text:
-        'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      text: 'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
       values: [bungieMembershipId, platformMembershipId, destinyVersion],
     });
     return results.rows.map(convertLoadout);
@@ -41,8 +40,7 @@ export async function getAllLoadoutsForUser(
   try {
     const results = await client.query({
       name: 'get_all_loadouts_for_user',
-      text:
-        'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters FROM loadouts WHERE membership_id = $1',
+      text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => {
@@ -66,6 +64,8 @@ function convertLoadout(row: any): Loadout {
     clearSpace: row.clear_space,
     equipped: row.items.equipped || [],
     unequipped: row.items.unequipped || [],
+    createdAt: row.created_at,
+    lastUpdatedAt: row.last_updated_at,
   };
   if (row.emblem_hash) {
     loadout.emblemHash = row.emblem_hash;
