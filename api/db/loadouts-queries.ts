@@ -67,6 +67,9 @@ function convertLoadout(row: any): Loadout {
     createdAt: row.created_at,
     lastUpdatedAt: row.last_updated_at,
   };
+  if (row.notes) {
+    loadout.notes = row.notes;
+  }
   if (row.emblem_hash) {
     loadout.emblemHash = row.emblem_hash;
   }
@@ -90,16 +93,17 @@ export async function updateLoadout(
   try {
     const response = await client.query({
       name: 'upsert_loadout',
-      text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
+      text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
 on conflict (membership_id, id)
-do update set (name, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, current_timestamp, $11)`,
+do update set (name, notes, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, $11, current_timestamp, $12)`,
       values: [
         loadout.id,
         bungieMembershipId,
         platformMembershipId,
         destinyVersion,
         loadout.name,
+        loadout.notes,
         loadout.classType,
         loadout.emblemHash || null,
         loadout.clearSpace,
