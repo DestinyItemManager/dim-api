@@ -120,6 +120,7 @@ export const defaultSettings: Settings = {
   redactedRecordsRevealed: false,
   // Whether to keep one slot per item type open
   farmingMakeRoomForItems: true,
+  inventoryClearSpaces: 1,
   hideCompletedRecords: false,
 
   customCharacterSort: [],
