@@ -15,7 +15,7 @@ export async function getLoadoutsForProfile(
   try {
     const results = await client.query<Loadout>({
       name: 'get_loadouts_for_platform_membership_id',
-      text: 'SELECT id, name, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      text: 'SELECT id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
       values: [bungieMembershipId, platformMembershipId, destinyVersion],
     });
     return results.rows.map(convertLoadout);
@@ -40,7 +40,7 @@ export async function getAllLoadoutsForUser(
   try {
     const results = await client.query({
       name: 'get_all_loadouts_for_user',
-      text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
+      text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => {
@@ -94,7 +94,7 @@ export async function updateLoadout(
     const response = await client.query({
       name: 'upsert_loadout',
       text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
 on conflict (membership_id, id)
 do update set (name, notes, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, $11, current_timestamp, $12)`,
       values: [
