@@ -7,6 +7,11 @@ export interface LoadoutItem {
   hash: number;
   /** Optional amount (for consumables), default to zero */
   amount?: number;
+  /**
+   * The socket overrides for the item. These signal what DestinyInventoryItemDefinition
+   * (by it's hash) is supposed to be socketed into the given socket index.
+   */
+  socketOverrides?: { [socketIndex: number]: number };
 }
 
 export interface Loadout {
@@ -87,7 +92,6 @@ export interface LoadoutParameters {
    * which constrains the items that can be in the loadout.
    */
   query?: string;
-
   /**
    * When generating the loadout, did we assume all items were at their
    * masterworked stats, or did we use their current stats?
