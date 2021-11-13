@@ -149,6 +149,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
   assumeMasterworked: false,
   upgradeSpendTier: UpgradeSpendTier.Nothing,
   lockItemEnergyType: false,
+  maxStatMods: 5,
 };
 
 /** A constraint on the values an armor stat can take */
