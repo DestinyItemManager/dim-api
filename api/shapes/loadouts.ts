@@ -44,6 +44,14 @@ export interface Loadout {
   createdAt?: number;
   /** When was this Loadout last changed? Tracked automatically by the API - when saving a loadout this field is ignored. */
   lastUpdatedAt?: number;
+  /**
+   * Automatically added stat mods. These are separate from the manually chosen
+   * mods in parameters.mods, and are saved here to avoid having to figure them
+   * out all over again every time (especially since our algorithm might
+   * change). Combine this list and parameters.mods when displaying or actually
+   * applying the loadout.
+   */
+  autoStatMods?: number[];
 }
 
 /** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */
@@ -87,6 +95,12 @@ export interface LoadoutParameters {
    * changes required to match the desired mods.
    */
   mods?: number[];
+
+  /**
+   * Whether to automatically add stat mods.
+   */
+  autoStatMods?: boolean;
+
   /**
    * A search filter applied while editing the loadout in Loadout Optimizer,
    * which constrains the items that can be in the loadout.
@@ -134,6 +148,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
   assumeMasterworked: false,
   upgradeSpendTier: UpgradeSpendTier.Nothing,
   lockItemEnergyType: false,
+  autoStatMods: true,
 };
 
 /** A constraint on the values an armor stat can take */
