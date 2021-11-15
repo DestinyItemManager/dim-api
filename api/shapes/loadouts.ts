@@ -97,10 +97,9 @@ export interface LoadoutParameters {
   mods?: number[];
 
   /**
-   * The maximum number of stat mods that can be automatically added to hit stat
-   * maxes.
+   * Whether to automatically add stat mods.
    */
-  maxStatMods?: number;
+  autoStatMods?: boolean;
 
   /**
    * A search filter applied while editing the loadout in Loadout Optimizer,
@@ -149,7 +148,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
   assumeMasterworked: false,
   upgradeSpendTier: UpgradeSpendTier.Nothing,
   lockItemEnergyType: false,
-  maxStatMods: 5,
+  autoStatMods: true,
 };
 
 /** A constraint on the values an armor stat can take */
