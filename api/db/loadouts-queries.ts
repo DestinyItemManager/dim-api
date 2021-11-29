@@ -1,7 +1,7 @@
-import { Loadout, LoadoutItem } from '../shapes/loadouts';
-import { ClientBase, QueryResult } from 'pg';
-import { DestinyVersion } from '../shapes/general';
-import { metrics } from '../metrics';
+import { Loadout, LoadoutItem } from "../shapes/loadouts";
+import { ClientBase, QueryResult } from "pg";
+import { DestinyVersion } from "../shapes/general";
+import { metrics } from "../metrics";
 
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.
@@ -14,13 +14,13 @@ export async function getLoadoutsForProfile(
 ): Promise<Loadout[]> {
   try {
     const results = await client.query<Loadout>({
-      name: 'get_loadouts_for_platform_membership_id',
-      text: 'SELECT id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      name: "get_loadouts_for_platform_membership_id",
+      text: "SELECT id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3",
       values: [bungieMembershipId, platformMembershipId, destinyVersion],
     });
     return results.rows.map(convertLoadout);
   } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+    throw new Error(e.name + ": " + e.message);
   }
 }
 
@@ -39,8 +39,8 @@ export async function getAllLoadoutsForUser(
 > {
   try {
     const results = await client.query({
-      name: 'get_all_loadouts_for_user',
-      text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
+      name: "get_all_loadouts_for_user",
+      text: "SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1",
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => {
@@ -52,7 +52,7 @@ export async function getAllLoadoutsForUser(
       };
     });
   } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+    throw new Error(e.name + ": " + e.message);
   }
 }
 
@@ -92,7 +92,7 @@ export async function updateLoadout(
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
-      name: 'upsert_loadout',
+      name: "upsert_loadout",
       text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
 on conflict (membership_id, id)
@@ -118,13 +118,13 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
 
     if (response.rowCount < 1) {
       // This should never happen!
-      metrics.increment('db.loadouts.noRowUpdated.count', 1);
-      throw new Error('loadouts - No row was updated');
+      metrics.increment("db.loadouts.noRowUpdated.count", 1);
+      throw new Error("loadouts - No row was updated");
     }
 
     return response;
   } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+    throw new Error(e.name + ": " + e.message);
   }
 }
 
@@ -134,7 +134,7 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
 function cleanItem(item: LoadoutItem): LoadoutItem {
   const hash = item.hash;
   if (!Number.isFinite(hash)) {
-    throw new Error('hash must be a number');
+    throw new Error("hash must be a number");
   }
 
   const result: LoadoutItem = {
@@ -152,6 +152,10 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
     result.id = item.id;
   }
 
+  if (item.socketOverrides) {
+    result.socketOverrides = item.socketOverrides;
+  }
+
   return result;
 }
 
@@ -165,7 +169,7 @@ export async function deleteLoadout(
 ): Promise<Loadout | null> {
   try {
     const response = await client.query({
-      name: 'delete_loadout',
+      name: "delete_loadout",
       text: `delete from loadouts where membership_id = $1 and id = $2 returning *`,
       values: [bungieMembershipId, loadoutId],
     });
@@ -176,7 +180,7 @@ export async function deleteLoadout(
 
     return convertLoadout(response.rows[0]);
   } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+    throw new Error(e.name + ": " + e.message);
   }
 }
 
@@ -189,11 +193,11 @@ export async function deleteAllLoadouts(
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
-      name: 'delete_all_loadouts',
+      name: "delete_all_loadouts",
       text: `delete from loadouts where membership_id = $1`,
       values: [bungieMembershipId],
     });
   } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+    throw new Error(e.name + ": " + e.message);
   }
 }
