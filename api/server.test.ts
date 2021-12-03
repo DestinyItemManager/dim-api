@@ -208,16 +208,17 @@ const loadout: Loadout = {
     {
       hash: 100,
       id: '1234',
+      socketOverrides: { 7: 9 },
     },
   ],
   unequipped: [
     // This item has an extra property which shouldn't be saved
-    ({
+    {
       hash: 200,
       id: '5678',
       amount: 10,
       fizbuzz: 11,
-    } as any) as LoadoutItem,
+    } as any as LoadoutItem,
   ],
 };
 

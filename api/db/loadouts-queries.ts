@@ -152,6 +152,10 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
     result.id = item.id;
   }
 
+  if (item.socketOverrides) {
+    result.socketOverrides = item.socketOverrides;
+  }
+
   return result;
 }
 
