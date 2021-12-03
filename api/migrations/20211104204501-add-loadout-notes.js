@@ -15,7 +15,7 @@ exports.setup = function (options, seedLink) {
 };
 
 exports.up = function (db, callback) {
-  db.runSql(`ALTER TABLE loadouts ADD COLUMN notes jsonb;`, callback);
+  db.runSql(`ALTER TABLE loadouts ADD COLUMN notes text;`, callback);
 };
 
 exports.down = function (db, callback) {
