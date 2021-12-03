@@ -92,9 +92,21 @@ export interface LoadoutParameters {
    * item hash representing the mod item. Hashes may appear multiple times.
    * These are not associated with any specific item in the loadout - when
    * applying the loadout we should automatically determine the minimum of
-   * changes required to match the desired mods.
+   * changes required to match the desired mods, and apply these mods to the
+   * equipped items.
    */
   mods?: number[];
+
+  /**
+   * Mods that must be applied to a specific bucket hash. In general, prefer to
+   * use the flat mods list above, and rely on the loadout function to assign
+   * mods automatically. However there are some mods like shaders which can't
+   * be automatically assigned to the right piece. These only apply to the equipped
+   * item.
+   */
+  modsByBucket?: {
+    [bucketHash: number]: number[];
+  };
 
   /**
    * Whether to automatically add stat mods.
