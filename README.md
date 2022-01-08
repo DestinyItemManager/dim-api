@@ -1,21 +1,25 @@
 # The Destiny Item Manager API (DIM Sync)
 
-[Destiny Item Manager (DIM)](https://destinyitemmanager.com) primarily uses the [Bungie.net API](https://github.com/Bungie-net/api) to read information about Destiny game state, and to move or change items. However, DIM offers features beyond what Bungie.net's API does - tags and notes for items, saved loadouts, etc. To allow users to save this data and sync it between different applications (mobile, desktop, etc), we built our own API, which is branded as "DIM Sync" in our application. While this API was developed with DIM in mind, *it is not exclusive to DIM* - we designed it to be used by other Destiny community tools, and we welcome them to use it. Today, these other applications make use of DIM Sync:
+[Destiny Item Manager (DIM)](https://destinyitemmanager.com) primarily uses the [Bungie.net API](https://github.com/Bungie-net/api) to read information about Destiny game state, and to move or change items. However, DIM offers features beyond what Bungie.net's API does: tags and notes for items, saved loadouts, etc. To allow users to save this data and sync it between different clients (mobile, desktop, etc), we built our own API, which is branded as "DIM Sync" in our application. While this API was developed with DIM in mind, *it is not exclusive to DIM*. We designed it to be used by other Destiny community tools, and we welcome them to use it. Today, these other applications make use of DIM Sync:
 
 * [D2Checklist](https://d2checklist.com) - You can sync your notes and tags between DIM and D2Checklist.
 
 ### API Types
 
-The types for all API requests and responses are written out as TypeScript in [the `api/shapes` folder](https://github.com/DestinyItemManager/dim-api/tree/master/api/shapes). You can use the NPM package `@destinyitemmanager/dim-api-types` to reference these types in your own code. [This file](https://github.com/DestinyItemManager/DIM/blob/master/src/app/dim-api/dim-api.ts) in the DIM source also lists out all the APIs and shows examples of how to call them.
+The types for all API requests and responses are written out as TypeScript in [the `api/shapes` folder](https://github.com/DestinyItemManager/dim-api/tree/master/api/shapes). You can use the npm package `@destinyitemmanager/dim-api-types` to reference these types in your own code. [This file](https://github.com/DestinyItemManager/DIM/blob/master/src/app/dim-api/dim-api.ts) in DIM's source code also lists out all the API endpoints, and shows examples of how to call them.
 
 ### Get an API key
 
-To use the DIM API, you will need an API key. Anyone can get an API key for localhost development - to get a production development token, join the [DIM Discord](https://t.co/70AKGCbEM5) and message `bhollis`. 
+To use the DIM API, you will need a DIM API key. Anyone can get an API key for localhost development — to get a production development token, join the [DIM Discord](https://t.co/70AKGCbEM5) and message `bhollis`.
 
-Before starting, it's assumed you have already set up your application to talk to the Bungie.net API. DIM's API piggybacks on Bungie.net's authentication, so you will need to have your information for your development Bungie.net application.
+Before interacting with the DIM API: This document assumes you have already set up your application to talk to the Bungie.net API. DIM's API piggybacks on Bungie.net's authentication: information is passed along, through the DIM API, to the Bungie.net API. So you will need to be ready with the [Bungie.net API information](https://www.bungie.net/en/Application) for your development application.
 
-Then, using your preferred method of making HTTP calls, you can request an API key for development. The payload is JSON, and requires three bits of information - an id for your app (please use the format `username-dev`), your Bungie.net API key, and the full address of your local development server:
+Once your application is set up at Bungie.net, you can request a DIM API key for development. The payload is JSON, and requires three pieces of information:
+- an id for your app (please use the format `username-dev`)
+- your Bungie.net API key
+- the full address of your local development server.
 
+Using your preferred method of making HTTP calls, perform a request to the DIM API's `new_app` endpoint:
 ```
 curl 'https://api.destinyitemmanager.com/new_app' \
 -X 'POST' \
@@ -25,13 +29,15 @@ curl 'https://api.destinyitemmanager.com/new_app' \
 
 The response will contain a `dimApiKey` field - that's your DIM API key. If you ever forget it, make the request above again, and the same key will be returned to you.
 
-Alternatively, you can [set up DIM for local development](https://github.com/DestinyItemManager/DIM/blob/master/docs/CONTRIBUTING.md) - the "Enter API Credentials" step brings you to a developer page that will have a button to fetch a DIM API Key as well.
+Alternatively, you can [set up DIM for local development](https://github.com/DestinyItemManager/DIM/blob/master/docs/CONTRIBUTING.md) — the "Enter API Credentials" step brings you to a developer page, which will have a button to fetch a DIM API key as well.
 
 ### Authenticating
 
-To authenticate a user of your application with the DIM Sync API, you will exchange their Bungie.net auth token for a DIM auth token. Just like the Bungie.net authentication system, the DIM auth token has an expiration time, after which you'll have to get a new one. Unlike the Bungie.net API, there's no refresh token - you just make the same request you made for the initial token. [Here's how DIM does it.](https://github.com/DestinyItemManager/DIM/blob/master/src/app/dim-api/dim-api-helper.ts#L141-L192)
+As mentioned above, DIM's API piggybacks on Bungie.net's authentication: it knows a user is who they claim to be, because DIM confirms that their credentials check out with Bungie.net.
 
-To get the intial token, you'll need your user's Bungie.net membership ID, an unexpired Bungie.net access token, and your DIM API key. The DIM API will call Bungie.net using the Bungie.net access token to verify that it belongs to the given membership ID - we don't store the token or use it for anything else.
+To authenticate a user of your application with the DIM Sync API, you will exchange their Bungie.net auth token for a DIM auth token. Just like the Bungie.net authentication system, the DIM auth token has an expiration time, after which you'll have to get a new one. Unlike the Bungie.net API, there's no refresh token — you just make the same request you made for the initial token. [Here's how DIM does it.](https://github.com/DestinyItemManager/DIM/blob/master/src/app/dim-api/dim-api-helper.ts#L141-L192)
+
+To issue or reissue the DIM API token, you'll need your user's Bungie.net membership ID, an unexpired and valid Bungie.net access token, and your DIM API key. The DIM API will query the Bungie.net API using the user's access token, to verify that it belongs to the given membership ID — we don't store the token or use it for anything else.
 
 ```
 curl 'https://api.destinyitemmanager.com/auth/token'
@@ -44,13 +50,20 @@ curl 'https://api.destinyitemmanager.com/auth/token'
 }
 ```
 
-The returned token has an expiration - do not use the token after that expiration. Include the token as a header with all subsequent calls (along with the `X-API-Key` header), like `Authentication: Bearer ${accessToken}`.
+The returned token has an expiration - do not use the token after that expiration. For all subsequent DIM API calls, you'll include the DIM API token and the DIM API key as HTTP headers, like so:
+```
+Authentication: Bearer xxxThisUsersDimAccesTokenxxx
+X-API-Key: xxxYourDimApiKeyxxx
+```
 
 ### Reading profile data
 
-The DIM API is meant to be familiar to users of the Bungie.net API. There is one read API - `GET https://api.destinyitemmanager.com/profile?platformMembershipId=1234&components=tags,loadouts`. The platform membership ID is required and should correspond to the Bungie.net platform you're loading for. DIM API data is stored per-platform. You can also specify different components to have them returned in the result. The current list of components are:
+The DIM API is meant to be familiar to users of the Bungie.net API — there is a single, central read API:
+`GET https://api.destinyitemmanager.com/profile?platformMembershipId=1234&components=tags,loadouts`
 
-* `tags`: Tags and notes on items, by DestinyInventoryItemDefinition item instance ID. These are returned as a list of [ItemAnnotation](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/item-annotations.ts) objects.
+The platform membership ID is required and should correspond to the Bungie.net platform you're loading for. DIM API data is stored per-platform. You should specify which components you want returned in the result. The current available components are:
+
+* `tags`: Tags and notes on items, corresponding to `DestinyItemComponent.itemInstanceId`. These are returned as a list of [ItemAnnotation](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/item-annotations.ts) objects.
 * `loadouts`: Saved loadouts. These are a list of [Loadout](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/loadouts.ts) objects.
 * `hashtags`: Tags and notes by DestinyInventoryItemDefinition hash. These are like `tags` but meant for uninstanced items like shaders and mods.
 * `triumphs`: A simple list of DestinyRecordDefinition hashes for tracked triumphs. This allows for tracking more triumphs than allowed in the game.
@@ -58,13 +71,16 @@ The DIM API is meant to be familiar to users of the Bungie.net API. There is one
 
 ### Updating profile data
 
-DIM Sync is meant to be usable offline, by collecting a sequence of changes as deltas and then bulk-applying them when the client can reach the API. By sending deltas in this way, the DIM API can effectively keep synchronized between different clients even if they're out of date, since you only send updates for waht has changed.
+DIM Sync is meant to be usable offline, by collecting a sequence of changes as deltas and then bulk-applying them when the client can reach the API. By sending deltas in this way, the DIM API can effectively keep synchronized between different clients even if they're out of date, since you only send updates for what has changed.
 
-As such, there's only a single update API: `POST https://api.destinyitemmanager.com/profile`. The body is a JSON object containing the `destinyVersion` (DIM supports D1 still!), the `platformMembershipId`, and a list of `updates`. Each update is one of the [update types](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/profile.ts#L31). So you could flush a queue consisting of different tag updates, loadouts, etc - all interleaved together.
+As such, there's only a single update API:
+`POST https://api.destinyitemmanager.com/profile`
+
+The body is a JSON object containing the `destinyVersion` (DIM supports D1 still!), the `platformMembershipId`, and a list of `updates`. Each update is one of the [update types](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/profile.ts#L31). So you could flush a queue of changes, consisting of different tag updates, loadouts, etc. — all interleaved together.
 
 # Cloud Architecture
 
-The DIM API is a NodeJS server application that is deployed in the DigitalOcean cloud via Kubernetes. 
+The DIM API is a NodeJS server application that is deployed in the DigitalOcean cloud via Kubernetes.
 
 * Requests to `api.destinyitemmanager.com` are routed to CloudFlare, a CDN which helps to cache data and provide traffic management. Most of the API calls are not cached, but the server application can return [Cache-Control headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) to customize what CloudFlare will cache, which can save both bandwidth and server costs.
 * CloudFlare is configured to forward requests to a [DigitalOcean Load Balancer](https://docs.digitalocean.com/products/networking/load-balancers/). This is a TCP load balancer (L4) that simply forwards traffic to our Kubernetes Cluster's nodes. The LB is configured automatically by Kubernetes via a Service ([`ingress-nginx/ingress-nginx`](https://github.com/DestinyItemManager/dim-api/blob/master/kubernetes/ingress-nginx-service.yaml)) with type LoadBalancer.
