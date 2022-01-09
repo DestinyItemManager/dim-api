@@ -71,12 +71,13 @@ The platform membership ID is required and should correspond to the Bungie.net p
 
 ### Updating profile data
 
-DIM Sync is meant to be usable offline, by collecting a sequence of changes as deltas and then bulk-applying them when the client can reach the API. By sending deltas in this way, the DIM API can effectively keep synchronized between different clients even if they're out of date, since you only send updates for what has changed.
+DIM API is meant to be usable "offline". A client can collect a sequence of change operations called `updates`, and then send them to be applied them in bulk, when the client is ready to make a request to the DIM API.
+By sending deltas in this way, the DIM API can effectively keep synchronized between different clients even if they're out of date, since you only send updates for what has changed.
 
-As such, there's only a single update API:
+As such, there's a single, central update endpoint:
 `POST https://api.destinyitemmanager.com/profile`
 
-The body is a JSON object containing the `destinyVersion` (DIM supports D1 still!), the `platformMembershipId`, and a list of `updates`. Each update is one of the [update types](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/profile.ts#L31). So you could flush a queue of changes, consisting of different tag updates, loadouts, etc. — all interleaved together.
+The body is a JSON object containing the `destinyVersion` (DIM supports D1 still!), the `platformMembershipId`, and a list of `updates`. Each update is one of the [update types](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/profile.ts#L31). So you can flush the local queue, and apply a series of changes consisting of different tag updates, loadouts, etc. — all interleaved together.
 
 # Cloud Architecture
 
@@ -106,7 +107,7 @@ You can now connect to postgres on port 31744 with the username and password fro
 
 ### DB Migrations
 
-We use [`db-migrate`](https://db-migrate.readthedocs.io/en/latest/) to manage the schema in the database. Migrations allow you to make versioned changes to the schema and then apply them, first locally and then to the production database.
+We use [`db-migrate`](https://db-migrate.readthedocs.io/en/latest/) to manage the schema in the database. Migrations allow you to make versioned changes to the schema and then apply them — first locally, and then to the production database.
 
 - Run `cd api && npx db-migrate up` to update the database to the current version.
 - Run `cd api && npx db-migrate create settings_table` to create a new migration file in the `migrations` folder, where you can use the db-migrate API to modify the database. Check in all migrations.
