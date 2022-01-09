@@ -9,10 +9,10 @@ COPY yarn.lock ./
 USER node
 RUN yarn install --frozen-lockfile --production && yarn cache clean
 COPY --chown=node:node run.sh .
-COPY --chown=node:node dist dist
+COPY --chown=node:node dist .
+COPY --chown=node:node api/dim-gg/views api/dim-gg/views
+COPY --chown=node:node dim-gg-static dim-gg-static
 
 EXPOSE 3000
-
-# TODO: make a dev docker image that hot-reloads?
 
 CMD [ "./run.sh" ]

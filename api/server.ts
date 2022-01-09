@@ -1,5 +1,4 @@
 import express from 'express';
-import morgan from 'morgan';
 import cors from 'cors';
 import jwt from 'express-jwt';
 import { authTokenHandler } from './routes/auth-token';
@@ -17,23 +16,8 @@ import * as Sentry from '@sentry/node';
 
 export const app = express();
 
-app.set('trust proxy', true); // enable x-forwarded-for
-app.set('x-powered-by', false);
-
-// The request handler must be the first middleware on the app
-app.use(
-  Sentry.Handlers.requestHandler({
-    user: ['bungieMembershipId'],
-  })
-);
-// TracingHandler creates a trace for every incoming request
-app.use(Sentry.Handlers.tracingHandler());
-// The error handler must be before any other error middleware
-app.use(Sentry.Handlers.errorHandler());
-
 app.use(setRouteNameForStats); // fix path names for next middleware
 app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
-app.use(morgan('combined')); // logging
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 /** CORS config that allows any origin to call */
