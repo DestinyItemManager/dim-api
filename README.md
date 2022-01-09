@@ -116,7 +116,9 @@ We use [`db-migrate`](https://db-migrate.readthedocs.io/en/latest/) to manage th
 ### Running the server
 
 1. Run `yarn` to install packages.
-2. Run `yarn start` to run a development server that will reload when you change files. It'll need a Postgres server running on port 31744 that has been migrated to the latest schema for the server to work.
+2. Run `yarn start` to run a development server. It'll need a Postgres server running on port 31744 that has been migrated to the latest schema for the server to work.
+
+If you want to develop on `dim.gg` instead of `api.destinyitemmanager.com`, edit `.env` and set `VHOST=dim.gg`.
 
 ### Running tests
 
