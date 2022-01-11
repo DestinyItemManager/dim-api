@@ -401,10 +401,10 @@ async function recordSearch(
   // surgery to fix that, but we should probably just generally refuse to save
   // long queries.
   if (payload.query.length > 2048) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    metrics.increment('update.validation.searchTooLong.count');
     return {
       status: 'InvalidArgument',
-      message: 'Tracked triumphs require platform membership ID to be set',
+      message: 'Search query must be under 2048 characters',
     };
   }
 
@@ -434,10 +434,10 @@ async function saveSearch(
   // surgery to fix that, but we should probably just generally refuse to save
   // long queries.
   if (payload.query.length > 2048) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    metrics.increment('update.validation.searchTooLong.count');
     return {
       status: 'InvalidArgument',
-      message: 'Tracked triumphs require platform membership ID to be set',
+      message: 'Search query must be under 2048 characters',
     };
   }
 
