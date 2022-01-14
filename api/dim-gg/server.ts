@@ -18,7 +18,7 @@ app.use(express.json({ limit: '2mb' })); // for parsing application/json
 app.get('/', (_req, res) => res.redirect('https://destinyitemmanager.com/'));
 
 // Loadout share preview/landing pages
-app.get('/:shareId([a-zA-Z0-9-_]{6})/:titleSlug?', loadoutShareViewHandler);
+app.get('/:shareId([a-z0-9]{7})/:titleSlug?', loadoutShareViewHandler);
 
 // A test path, just to demonstrate templates
 app.get('/test', (_req, res) => {

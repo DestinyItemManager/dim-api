@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
+import base32 from 'hi-base32';
 import slugify from 'slugify';
 import { transaction } from '../db';
 import { addLoadoutShare } from '../db/loadout-share-queries';
@@ -89,11 +90,11 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
 });
 
 /**
- * Generate 4 random bytes (32 bits) and encode to base64url, which will yield 6 characters.
+ * Generate 4 random bytes (32 bits) and encode to base32url, which will yield 7 characters.
  *
  * Is this a particularly smart algorithm? No. Will it probably work until a
  * large number of accumulated loadouts forces us to do something better? Yes.
  */
 function generateRandomShareId() {
-  return crypto.randomBytes(4).toString('base64url');
+  return base32.encode(crypto.randomBytes(4)).replace(/=/g, '').toLowerCase();
 }

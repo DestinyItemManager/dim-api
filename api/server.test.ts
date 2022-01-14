@@ -1015,7 +1015,7 @@ describe('loadouts', () => {
 
     console.log(updateResult.body.shareUrl);
     expect(updateResult.body.shareUrl).toMatch(
-      /https:\/\/dim.gg\/[\w]{6}\/Test-Loadout/
+      /https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/
     );
   });
 });

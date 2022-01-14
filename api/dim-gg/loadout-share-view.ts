@@ -10,7 +10,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
   const { shareId } = req.params;
 
   await readTransaction(async (client) => {
-    const loadout = getLoadoutShare(client, shareId);
+    const loadout = await getLoadoutShare(client, shareId);
 
     if (!loadout) {
       res.status(404).sendFile(path.join(__dirname + '/views/loadout404.html'));
