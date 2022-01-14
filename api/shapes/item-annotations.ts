@@ -1,4 +1,4 @@
-export type TagValue = "favorite" | "keep" | "infuse" | "junk" | "archive";
+export type TagValue = 'favorite' | 'keep' | 'infuse' | 'junk' | 'archive';
 
 enum TagVariant {
   PVP = 1,
@@ -24,4 +24,11 @@ export interface ItemAnnotation {
 }
 
 /** Any extra info added by the user to item hashes (shaders and mods) */
-export type ItemHashTag = Omit<ItemAnnotation, "id">;
+export type ItemHashTag = {
+  /** The inventory item hash for an item */
+  hash: number;
+  /** Optional tag for the item. */
+  tag?: TagValue | null;
+  /** Optional text notes on the item. */
+  notes?: string | null;
+};
