@@ -56,7 +56,7 @@ export async function getAllLoadoutsForUser(
   }
 }
 
-function convertLoadout(row: any): Loadout {
+export function convertLoadout(row: any): Loadout {
   const loadout: Loadout = {
     id: row.id,
     name: row.name,
@@ -131,7 +131,7 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
 /**
  * Make sure items are stored minimally and extra properties don't sneak in
  */
-function cleanItem(item: LoadoutItem): LoadoutItem {
+export function cleanItem(item: LoadoutItem): LoadoutItem {
   const hash = item.hash;
   if (!Number.isFinite(hash)) {
     throw new Error('hash must be a number');

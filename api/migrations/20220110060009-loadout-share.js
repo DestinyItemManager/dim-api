@@ -31,7 +31,8 @@ exports.up = function (db, callback) {
       parameters jsonb,
       created_at timestamp NOT NULL default current_timestamp,
       created_by text NOT NULL,
-      last_accessed_at timestamp NOT NULL default current_timestamp,
+      last_accessed_at timestamp,
+      visits integer NOT NULL default 0,
       PRIMARY KEY (id)
     );
     `,
