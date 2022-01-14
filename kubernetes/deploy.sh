@@ -4,10 +4,7 @@ ROOT=$(git rev-parse --show-toplevel)
 COMMITHASH=$(git rev-parse HEAD)
 IMAGE="destinyitemmanager/dim-api:$COMMITHASH"
 
-if [[ "$(docker images -q "$IMAGE" 2> /dev/null)" == "" ]]; then
-  rm -rf dist && yarn build:api && docker build -t "$IMAGE" "$ROOT"
-  docker push "$IMAGE"
-fi
+rm -rf dist && yarn build:api && docker buildx build --platform linux/amd64 --push -t "$IMAGE" "$ROOT"
 
 mkdir -p "$ROOT/deployment"
 
