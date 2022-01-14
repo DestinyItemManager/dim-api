@@ -208,6 +208,14 @@ async function updateLoadout(
     };
   }
 
+  if (loadout.notes && loadout.notes.length > 2048) {
+    metrics.increment('update.validation.loadoutNotesTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout notes must be under 2048 characters',
+    };
+  }
+
   if (!loadout.id) {
     metrics.increment('update.loadoutIdMissing.count');
     return {
@@ -387,6 +395,19 @@ async function recordSearch(
   destinyVersion: DestinyVersion,
   payload: UsedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
   await updateUsedSearch(
     client,
@@ -407,6 +428,19 @@ async function saveSearch(
   destinyVersion: DestinyVersion,
   payload: SavedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
   await saveSearchInDb(
     client,
