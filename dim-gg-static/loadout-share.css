@@ -1,0 +1,25 @@
+body {
+  background-color: #313233;
+  color: white;
+}
+
+#browser-warning {
+  padding: 1em;
+  display: none;
+  font-family: sans-serif;
+}
+
+.notloaded {
+  padding: 1em;
+  font-family: sans-serif;
+  font-size: 16px;
+  opacity: 0;
+  margin: 2em;
+  animation: 1s linear 3s forwards fade-in;
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
