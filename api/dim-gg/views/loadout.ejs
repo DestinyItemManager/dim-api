@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <title><%= loadout.name %> | DIM Loadout</title>
-    <meta name="description" content="" />
+    <% if (loadout.notes) { %><meta name="description" content="<%= loadout.notes %>" /><% } %>
+    <meta property="og:title" content="<%= loadout.name %>" />
+    <% if (loadout.notes) { %><meta name="og:description" content="<%= loadout.notes %>" /><% } %>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
