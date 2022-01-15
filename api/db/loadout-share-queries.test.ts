@@ -11,11 +11,11 @@ const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 const platformMembershipId = '213512057';
 
-const shareID = 'ABCDEF';
+const shareID = 'ABCDEFG';
 
 beforeEach(() =>
   transaction(async (client) => {
-    await client.query("delete from loadout_shares where id = 'ABCDEF'");
+    await client.query("delete from loadout_shares where id = 'ABCDEFG'");
   })
 );
 

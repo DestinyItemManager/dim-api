@@ -15,6 +15,7 @@ app.use(metrics.helpers.getExpressMiddleware('dimgg', { timeByUrl: true })); // 
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 // Redirect the root request to DIM's brochure page
+// TODO: add some cache headers!
 app.get('/', (_req, res) => res.redirect('https://destinyitemmanager.com/'));
 
 // Loadout share preview/landing pages

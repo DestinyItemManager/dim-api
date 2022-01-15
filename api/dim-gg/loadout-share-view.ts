@@ -14,11 +14,29 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
 
     if (!loadout) {
       res.status(404).sendFile(path.join(__dirname + '/views/loadout404.html'));
+      return;
     }
 
     // TODO: how to localize??
     // TODO: cache control
     // TODO: vary on lang?
-    res.render('loadout', { loadout });
+
+    // TODO: generate loadout URLs here
+    // TODO: generate preview SVG!
+    // TODO: download manifest and images in order to generate preview SVG
+
+    const p: Record<string, string> = {
+      class: loadout.classType.toString(),
+    };
+    if (loadout.parameters) {
+      p.p = JSON.stringify(loadout.parameters);
+    }
+    if (loadout.notes) {
+      p.n = loadout.notes;
+    }
+    const urlParams = new URLSearchParams(p);
+    const shareUrl = `https://app.destinyitemmanager.com/optimizer?${urlParams}`;
+
+    res.render('loadout', { loadout, shareUrl });
   });
 });
