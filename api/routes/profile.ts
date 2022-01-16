@@ -1,23 +1,25 @@
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db';
-import { getSettings } from '../db/settings-queries';
-import { getLoadoutsForProfile } from '../db/loadouts-queries';
 import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
-import { badRequest } from '../utils';
-import { ProfileResponse } from '../shapes/profile';
-import { DestinyVersion } from '../shapes/general';
-import { defaultSettings } from '../shapes/settings';
-import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
-import { getSearchesForProfile } from '../db/searches-queries';
-import { metrics } from '../metrics';
 import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
+import { getLoadoutsForProfile } from '../db/loadouts-queries';
+import { getSearchesForProfile } from '../db/searches-queries';
+import { getSettings } from '../db/settings-queries';
+import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
+import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { ProfileResponse } from '../shapes/profile';
+import { defaultSettings } from '../shapes/settings';
+import { badRequest } from '../utils';
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
   metrics.counter('profile.app.' + appId, 1);
 
-  const platformMembershipId = req.query.platformMembershipId as string;
+  const platformMembershipId = req.query.platformMembershipId as
+    | string
+    | undefined;
   const destinyVersion: DestinyVersion = req.query.destinyVersion
     ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
     : 2;
@@ -25,6 +27,11 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
   if (!components) {
     badRequest(res, 'No components provided');
+    return;
+  }
+
+  if (platformMembershipId && !/^\d+$/.test(platformMembershipId)) {
+    badRequest(res, 'Platform membership ID should be a number');
     return;
   }
 

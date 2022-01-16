@@ -153,6 +153,8 @@ app.post('/delete_all_data', deleteAllDataHandler);
 
 app.use((err: Error, req, res, _next) => {
   Sentry.captureException(err);
+  // Allow any origin to see the response
+  res.header('Access-Control-Allow-Origin', '*');
   if (err.name === 'UnauthorizedError') {
     console.warn('Unauthorized', req.dimApp?.id, req.originalUrl, err);
     res.status(401).send({
