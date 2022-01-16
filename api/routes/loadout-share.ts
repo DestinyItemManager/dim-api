@@ -46,7 +46,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     while (attempts < 4) {
       const shareId = generateRandomShareId();
       try {
-        addLoadoutShare(
+        await addLoadoutShare(
           client,
           appId,
           bungieMembershipId,
