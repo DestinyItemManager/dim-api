@@ -16,7 +16,7 @@ export async function getItemAnnotationsForProfile(
     const results = await client.query({
       name: 'get_item_annotations',
       text:
-        'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2  and destiny_version = $3',
+        'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
       values: [bungieMembershipId, platformMembershipId, destinyVersion],
     });
     return results.rows.map(convertItemAnnotation);

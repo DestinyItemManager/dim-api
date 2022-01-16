@@ -12,16 +12,31 @@ import { getSearchesForProfile } from '../db/searches-queries';
 import { metrics } from '../metrics';
 import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
 
+const validComponents = new Set(['settings', 'loadouts', 'tags', 'hashtags', 'triumphs', 'searches']);
+
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
   metrics.counter('profile.app.' + appId, 1);
 
-  const platformMembershipId = req.query.platformMembershipId as string;
+  const platformMembershipId =
+    (req.query.platformMembershipId as string) || undefined;
+
+  if (platformMembershipId && !/^\d{1,32}$/.test(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+  }
+
   const destinyVersion: DestinyVersion = req.query.destinyVersion
     ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
     : 2;
-  const components = ((req.query.components as string) || '').split(/\s*,\s*/);
+
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+  }
+
+  const components = ((req.query.components as string) || '')
+    .split(/\s*,\s*/)
+    .filter((c) => validComponents.has(c));
 
   if (!components) {
     badRequest(res, 'No components provided');
