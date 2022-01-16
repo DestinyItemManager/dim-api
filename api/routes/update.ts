@@ -8,7 +8,6 @@ import {
   SavedSearchUpdate,
   ItemHashTagUpdate,
 } from '../shapes/profile';
-import { badRequest } from '../utils';
 import { ClientBase } from 'pg';
 import { Settings } from '../shapes/settings';
 import { DestinyVersion } from '../shapes/general';
@@ -148,10 +147,6 @@ export const updateHandler = asyncHandler(async (req, res) => {
             update.payload.query
           );
           break;
-
-        default:
-          badRequest(res, `Unknown action type ${(update as any).action}`);
-          return;
       }
       results.push(result);
     }
