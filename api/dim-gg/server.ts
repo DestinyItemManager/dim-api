@@ -1,6 +1,7 @@
 import express from 'express';
 import { metrics } from '../metrics';
 import { setRouteNameForStats } from '../metrics/express';
+import { loadoutShareViewHandler } from './loadout-share-view';
 
 /** dim.gg - DIM share links server */
 
@@ -14,9 +15,11 @@ app.use(metrics.helpers.getExpressMiddleware('dimgg', { timeByUrl: true })); // 
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 // Redirect the root request to DIM's brochure page
+// TODO: add some cache headers!
 app.get('/', (_req, res) => res.redirect('https://destinyitemmanager.com/'));
 
-// TODO: This is where we can put special loadout link pages!
+// Loadout share preview/landing pages
+app.get('/:shareId([a-z0-9]{7})/:titleSlug?', loadoutShareViewHandler);
 
 // A test path, just to demonstrate templates
 app.get('/test', (_req, res) => {

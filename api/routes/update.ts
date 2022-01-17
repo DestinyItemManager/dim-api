@@ -177,57 +177,9 @@ async function updateLoadout(
     };
   }
 
-  if (!loadout.name) {
-    metrics.increment('update.validation.loadoutNameMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout name missing',
-    };
-  }
-  if (loadout.name && loadout.name.length > 120) {
-    metrics.increment('update.validation.loadoutNameTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout names must be under 120 characters',
-    };
-  }
-
-  if (loadout.notes && loadout.notes.length > 2048) {
-    metrics.increment('update.validation.loadoutNotesTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout notes must be under 2048 characters',
-    };
-  }
-
-  if (!loadout.id) {
-    metrics.increment('update.loadoutIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout id missing',
-    };
-  }
-  if (loadout.id && loadout.id.length > 120) {
-    metrics.increment('update.validation.loadoutIdTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout ids must be under 120 characters',
-    };
-  }
-
-  if (!Number.isFinite(loadout.classType)) {
-    metrics.increment('update.validation.classTypeMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type missing or malformed',
-    };
-  }
-  if (loadout.classType < 0 || loadout.classType > 3) {
-    metrics.increment('update.validation.classTypeOutOfRange.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type out of range',
-    };
+  const validationResult = validateLoadout('update', loadout);
+  if (validationResult) {
+    return validationResult;
   }
 
   const start = new Date();
@@ -242,6 +194,63 @@ async function updateLoadout(
   metrics.timing('update.loadout', start);
 
   return { status: 'Success' };
+}
+
+export function validateLoadout(metricPrefix: string, loadout: Loadout) {
+  if (!loadout.name) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout name missing',
+    };
+  }
+  if (loadout.name.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout names must be under 120 characters',
+    };
+  }
+
+  if (loadout.notes && loadout.notes.length > 2048) {
+    metrics.increment(metricPrefix + '.validation.loadoutNotesTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout notes must be under 2048 characters',
+    };
+  }
+
+  if (!loadout.id) {
+    metrics.increment(metricPrefix + '.loadoutIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout id missing',
+    };
+  }
+  if (loadout.id && loadout.id.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutIdTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout ids must be under 120 characters',
+    };
+  }
+
+  if (!Number.isFinite(loadout.classType)) {
+    metrics.increment(metricPrefix + '.validation.classTypeMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type missing or malformed',
+    };
+  }
+  if (loadout.classType < 0 || loadout.classType > 3) {
+    metrics.increment(metricPrefix + '.validation.classTypeOutOfRange.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type out of range',
+    };
+  }
+
+  return undefined;
 }
 
 async function deleteLoadout(

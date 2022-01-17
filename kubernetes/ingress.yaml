@@ -48,7 +48,7 @@ spec:
         - www.dim.gg
         - app.dim.gg
         - beta.dim.gg
-      secretName: dim-api-tls
+      secretName: dim-gg-tls
   rules:
     - host: dim.gg
       http:

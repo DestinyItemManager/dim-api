@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= loadout.name %> | DIM Loadout</title>
+    <% if (loadout.notes) { %><meta name="description" content="<%= loadout.notes %>" /><% } %>
+    <meta property="og:title" content="<%= loadout.name %>" />
+    <% if (loadout.notes) { %><meta name="og:description" content="<%= loadout.notes %>" /><% } %>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:200,400,700"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="/loadout-share.css" />
+  </head>
+  <body>
+    <div class="dim-page">
+      <h1><%= loadout.name %></h1>
+      <% if (loadout.notes) { %>
+      <p><%= loadout.notes %></p>
+      <% } %>
+      <p>
+        These build settings contain:
+        <ul>
+          <% if (numMods > 0) { %><li><%= numMods %> mods</li><% } %>
+          <% if (hasFashion) { %><li>Fashion (shaders &amp; ornaments)</li><% } %>
+          <% if (hasSubclass) { %><li>Stasis subclass settings</li><% } %>
+          <% if (hasLoParams) { %><li>Loadout Optimizer settings</li><% } %>
+        </ul>
+      </p>
+      <a class="dim-button" href="<%= appShareUrl %>">Load in DIM</a>
+      <a class="dim-button" href="<%= betaShareUrl %>">Load in DIM Beta</a>
+    </div>
+  </body>
+</html>

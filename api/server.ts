@@ -1,18 +1,19 @@
-import express from 'express';
+import * as Sentry from '@sentry/node';
 import cors from 'cors';
+import express from 'express';
 import jwt from 'express-jwt';
-import { authTokenHandler } from './routes/auth-token';
-import { platformInfoHandler } from './routes/platform-info';
+import { apiKey, isAppOrigin } from './apps';
 import { metrics } from './metrics';
-import { importHandler } from './routes/import';
+import { setRouteNameForStats } from './metrics/express';
+import { authTokenHandler } from './routes/auth-token';
+import { createAppHandler } from './routes/create-app';
 import { deleteAllDataHandler } from './routes/delete-all-data';
 import { exportHandler } from './routes/export';
+import { importHandler } from './routes/import';
+import { loadoutShareHandler } from './routes/loadout-share';
+import { platformInfoHandler } from './routes/platform-info';
 import { profileHandler } from './routes/profile';
-import { createAppHandler } from './routes/create-app';
-import { apiKey, isAppOrigin } from './apps';
 import { updateHandler } from './routes/update';
-import { setRouteNameForStats } from './metrics/express';
-import * as Sentry from '@sentry/node';
 
 export const app = express();
 
@@ -150,6 +151,8 @@ app.post('/import', importHandler);
 app.get('/export', exportHandler);
 // Delete all data for an account
 app.post('/delete_all_data', deleteAllDataHandler);
+// Share a loadout
+app.post('/loadout_share', loadoutShareHandler);
 
 app.use((err: Error, req, res, _next) => {
   Sentry.captureException(err);

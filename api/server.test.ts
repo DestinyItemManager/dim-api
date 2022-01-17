@@ -1,17 +1,18 @@
-import { app } from './server';
 import { readFile } from 'fs';
-import { promisify } from 'util';
-import supertest from 'supertest';
 import { sign } from 'jsonwebtoken';
-import { ExportResponse } from './shapes/export';
-import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
 import _ from 'lodash';
-import { defaultSettings } from './shapes/settings';
+import supertest from 'supertest';
+import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
-import { LoadoutItem, Loadout } from './shapes/loadouts';
-import { GlobalSettings } from './shapes/global-settings';
-import { pool } from './db';
 import { refreshApps } from './apps';
+import { pool } from './db';
+import { app } from './server';
+import { ExportResponse } from './shapes/export';
+import { GlobalSettings } from './shapes/global-settings';
+import { LoadoutShareRequest } from './shapes/loadout-share';
+import { Loadout, LoadoutItem } from './shapes/loadouts';
+import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
+import { defaultSettings } from './shapes/settings';
 
 const request = supertest(app);
 
@@ -998,6 +999,24 @@ describe('searches', () => {
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].saved).toBe(true);
     expect(profileResponse.searches![0].usageCount).toBe(1);
+  });
+});
+
+describe('loadouts', () => {
+  it('can share a loadout', async () => {
+    const request: LoadoutShareRequest = {
+      platformMembershipId,
+      loadout,
+    };
+
+    const updateResult = await postRequestAuthed('/loadout_share')
+      .send(request)
+      .expect(200);
+
+    console.log(updateResult.body.shareUrl);
+    expect(updateResult.body.shareUrl).toMatch(
+      /https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/
+    );
   });
 });
 
