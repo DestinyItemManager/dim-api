@@ -56,6 +56,12 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
         (s) => s.maxTier !== undefined || s.minTier !== undefined
       ));
 
+  const description = loadout.notes
+    ? loadout.notes.length > 197
+      ? loadout.notes.substring(0, 197) + '...'
+      : loadout.notes
+    : 'Destiny 2 loadout settings shared from DIM';
+
   res.render('loadout', {
     loadout,
     appShareUrl,
@@ -64,5 +70,6 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
     hasFashion,
     hasSubclass,
     hasLoParams,
+    description,
   });
 });
