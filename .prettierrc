@@ -1,0 +1,13 @@
+{
+  "printWidth": 100,
+  "singleQuote": true,
+  "arrowParens": "always",
+  "overrides": [
+    {
+      "files": "*.html"
+    },
+    {
+      "files": "*.ejs"
+    }
+  ]
+}
