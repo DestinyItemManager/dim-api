@@ -11,7 +11,15 @@
     "typescript",
     "typescriptreact"
   ],
-  "jest.pathToConfig": "jest.config.js",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": false
+    }
+  },
+  "jest.jestCommandLine": "yarn test",
   "cSpell.enabledLanguageIds": ["jsonc", "json", "markdown"],
   "cSpell.allowCompoundWords": true,
   "cSpell.ignorePaths": [

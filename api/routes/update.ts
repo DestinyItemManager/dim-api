@@ -30,6 +30,7 @@ import {
   UsedSearchUpdate,
 } from '../shapes/profile';
 import { Settings } from '../shapes/settings';
+import { badRequest } from '../utils';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -45,9 +46,24 @@ export const updateHandler = asyncHandler(async (req, res) => {
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
 
-  const results: ProfileUpdateResult[] = [];
+  if (platformMembershipId && !/^\d{1,32}$/.test(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+    return;
+  }
 
-  await transaction(async (client) => {
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    return;
+  }
+
+  if (!Array.isArray(updates)) {
+    badRequest(res, `updates must be an array`);
+    return;
+  }
+
+  const results = await transaction(async (client) => {
+    const results: ProfileUpdateResult[] = [];
+
     for (const update of updates) {
       let result: ProfileUpdateResult;
 
@@ -132,6 +148,11 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         default:
+          console.warn(
+            `Unknown action type: ${(update as any).action} from ${appId}, ${req.header(
+              'User-Agent'
+            )}, ${req.header('Referer')}`
+          );
           result = {
             status: 'InvalidArgument',
             message: `Unknown action type: ${(update as any).action}`,
@@ -139,6 +160,8 @@ export const updateHandler = asyncHandler(async (req, res) => {
       }
       results.push(result);
     }
+
+    return results;
   });
 
   res.send({
