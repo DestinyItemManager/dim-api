@@ -1,20 +1,20 @@
 import asyncHandler from 'express-async-handler';
-import { Settings, defaultSettings } from '../shapes/settings';
-import { transaction } from '../db';
-import { Loadout } from '../shapes/loadouts';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { replaceSettings } from '../db/settings-queries';
-import { updateLoadout } from '../db/loadouts-queries';
-import { updateItemAnnotation } from '../db/item-annotations-queries';
-import { deleteAllData } from './delete-all-data';
-import { DestinyVersion } from '../shapes/general';
-import { ExportResponse } from '../shapes/export';
-import { badRequest } from '../utils';
 import _ from 'lodash';
-import { ImportResponse } from '../shapes/import';
-import { trackTriumph } from '../db/triumphs-queries';
-import { importSearch } from '../db/searches-queries';
+import { transaction } from '../db';
+import { updateItemAnnotation } from '../db/item-annotations-queries';
 import { updateItemHashTag } from '../db/item-hash-tags-queries';
+import { updateLoadout } from '../db/loadouts-queries';
+import { importSearch } from '../db/searches-queries';
+import { replaceSettings } from '../db/settings-queries';
+import { trackTriumph } from '../db/triumphs-queries';
+import { ExportResponse } from '../shapes/export';
+import { DestinyVersion } from '../shapes/general';
+import { ImportResponse } from '../shapes/import';
+import { ItemAnnotation } from '../shapes/item-annotations';
+import { Loadout } from '../shapes/loadouts';
+import { defaultSettings, Settings } from '../shapes/settings';
+import { badRequest } from '../utils';
+import { deleteAllData } from './delete-all-data';
 
 export interface DimData {
   // The last selected platform membership ID
@@ -164,9 +164,7 @@ type PlatformLoadout = Loadout & {
   destinyVersion: DestinyVersion;
 };
 
-function extractLoadouts(
-  importData: DimData | ExportResponse
-): PlatformLoadout[] {
+function extractLoadouts(importData: DimData | ExportResponse): PlatformLoadout[] {
   if (importData.loadouts) {
     return importData.loadouts.map((l) => ({
       ...l.loadout,
@@ -229,9 +227,7 @@ type PlatformItemAnnotation = ItemAnnotation & {
   destinyVersion: DestinyVersion;
 };
 
-function extractItemAnnotations(
-  importData: DimData | ExportResponse
-): PlatformItemAnnotation[] {
+function extractItemAnnotations(importData: DimData | ExportResponse): PlatformItemAnnotation[] {
   if (importData.tags) {
     return importData.tags.map((t) => ({
       ...t.annotation,
@@ -261,9 +257,7 @@ function extractItemAnnotations(
   return annotations;
 }
 
-function extractSearches(
-  importData: ExportResponse | DimData
-): ExportResponse['searches'] {
+function extractSearches(importData: ExportResponse | DimData): ExportResponse['searches'] {
   return (importData.searches || []).filter(
     // Filter out pre-filled searches that were never used
     (s) => s.search.usageCount > 0
