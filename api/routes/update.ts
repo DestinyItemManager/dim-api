@@ -1,39 +1,35 @@
 import asyncHandler from 'express-async-handler';
+import { ClientBase } from 'pg';
 import { transaction } from '../db';
 import {
-  ProfileUpdateRequest,
-  ProfileUpdateResult,
-  TrackTriumphUpdate,
-  UsedSearchUpdate,
-  SavedSearchUpdate,
-  ItemHashTagUpdate,
-} from '../shapes/profile';
-import { badRequest } from '../utils';
-import { ClientBase } from 'pg';
-import { Settings } from '../shapes/settings';
-import { DestinyVersion } from '../shapes/general';
-import { Loadout } from '../shapes/loadouts';
-import { setSetting as setSettingInDb } from '../db/settings-queries';
+  deleteItemAnnotationList,
+  updateItemAnnotation as updateItemAnnotationInDb,
+} from '../db/item-annotations-queries';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
 import {
-  updateLoadout as updateLoadoutInDb,
   deleteLoadout as deleteLoadoutInDb,
+  updateLoadout as updateLoadoutInDb,
 } from '../db/loadouts-queries';
 import {
-  updateItemAnnotation as updateItemAnnotationInDb,
-  deleteItemAnnotationList,
-} from '../db/item-annotations-queries';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { metrics } from '../metrics';
-import {
-  trackTriumph as trackTriumphInDb,
-  unTrackTriumph,
-} from '../db/triumphs-queries';
-import {
-  updateUsedSearch,
-  saveSearch as saveSearchInDb,
   deleteSearch as deleteSearchInDb,
+  saveSearch as saveSearchInDb,
+  updateUsedSearch,
 } from '../db/searches-queries';
-import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
+import { setSetting as setSettingInDb } from '../db/settings-queries';
+import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries';
+import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { ItemAnnotation } from '../shapes/item-annotations';
+import { Loadout } from '../shapes/loadouts';
+import {
+  ItemHashTagUpdate,
+  ProfileUpdateRequest,
+  ProfileUpdateResult,
+  SavedSearchUpdate,
+  TrackTriumphUpdate,
+  UsedSearchUpdate,
+} from '../shapes/profile';
+import { Settings } from '../shapes/settings';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -59,12 +55,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
 
       switch (update.action) {
         case 'setting':
-          result = await updateSetting(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateSetting(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'loadout':
@@ -79,11 +70,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'delete_loadout':
-          result = await deleteLoadout(
-            client,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await deleteLoadout(client, bungieMembershipId, update.payload);
           break;
 
         case 'tag':
@@ -102,12 +89,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'item_hash_tag':
-          result = await updateItemHashTag(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateItemHashTag(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'track_triumph':
@@ -150,8 +132,10 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         default:
-          badRequest(res, `Unknown action type ${(update as any).action}`);
-          return;
+          result = {
+            status: 'InvalidArgument',
+            message: `Unknown action type: ${(update as any).action}`,
+          };
       }
       results.push(result);
     }
@@ -266,11 +250,7 @@ async function deleteLoadout(
   loadoutId: string
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  const loadout = await deleteLoadoutInDb(
-    client,
-    bungieMembershipId,
-    loadoutId
-  );
+  const loadout = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
   metrics.timing('update.deleteLoadout', start);
   if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
@@ -305,9 +285,7 @@ async function updateItemAnnotation(
 
   if (
     itemAnnotation.tag &&
-    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(
-      itemAnnotation.tag
-    )
+    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(itemAnnotation.tag)
   ) {
     metrics.increment('update.validation.tagNotRecognized.count');
     return {
@@ -377,12 +355,7 @@ async function trackTriumph(
         platformMembershipId,
         payload.recordHash
       )
-    : await unTrackTriumph(
-        client,
-        bungieMembershipId,
-        platformMembershipId,
-        payload.recordHash
-      );
+    : await unTrackTriumph(client, bungieMembershipId, platformMembershipId, payload.recordHash);
   metrics.timing('update.trackTriumph', start);
 
   return { status: 'Success' };
@@ -409,13 +382,7 @@ async function recordSearch(
   }
 
   const start = new Date();
-  await updateUsedSearch(
-    client,
-    appId,
-    bungieMembershipId,
-    destinyVersion,
-    payload.query
-  );
+  await updateUsedSearch(client, appId, bungieMembershipId, destinyVersion, payload.query);
   metrics.timing('update.recordSearch', start);
 
   return { status: 'Success' };
