@@ -3,9 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <title><%= loadout.name %> | DIM Loadout</title>
-    <% if (loadout.notes) { %><meta name="description" content="<%= loadout.notes %>" /><% } %>
+    <meta name="description" content="<%= description %>" />
     <meta property="og:title" content="<%= loadout.name %>" />
-    <% if (loadout.notes) { %><meta name="og:description" content="<%= loadout.notes %>" /><% } %>
+    <meta name="og:description" content="<%= description %>" />
+    <meta name="og:image" content="https://dim.gg/loadout-share-image-wide.png" />
+    <meta name="og:type" content="object" />
+    <meta name="og:site_name" content="DIM" />
+    <meta name="twitter:image" content="https://dim.gg/loadout-share-image.png" />
+    <meta name="twitter:site" content="@ThisIsDim" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="<%= loadout.name %>" />
+    <meta name="twitter:description" content="<%= description %>" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
