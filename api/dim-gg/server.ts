@@ -16,16 +16,15 @@ app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 // Redirect the root request to DIM's brochure page
 // TODO: add some cache headers!
-app.get('/', (_req, res) => res.redirect('https://destinyitemmanager.com/'));
+app.get('/', (_req, res) => {
+  // Instruct CF to cache for 15 minutes
+  res.set('Cache-Control', 'max-age=900');
+  res.redirect('https://destinyitemmanager.com/');
+});
 
 // Loadout share preview/landing pages
 app.get('/:shareId([a-z0-9]{7})/:titleSlug?', loadoutShareViewHandler);
 
-// A test path, just to demonstrate templates
-app.get('/test', (_req, res) => {
-  // TODO: we could get fancy and use server-side react here, or we could just use simple templates
-  res.render('test', { now: Date.now() });
-});
-
 // Serve static files (images, JS, etc from the dim-gg-static folder
-app.use(express.static('dim-gg-static'));
+// TODO: uniquely name these and then serve them with Cache-Control: Immutable
+app.use(express.static('dim-gg-static', { maxAge: 900 }));

@@ -1,15 +1,15 @@
 const http = require('http');
-import { app as dimApiApp } from './server';
-import { app as dimGgApp } from './dim-gg/server';
-import { metrics } from './metrics';
 import { createTerminus } from '@godaddy/terminus';
-import { pool } from './db';
-import { stopAppsRefresh, refreshApps } from './apps';
 import * as Sentry from '@sentry/node';
 import * as Tracing from '@sentry/tracing';
 import express from 'express';
-import vhost from 'vhost';
 import morgan from 'morgan';
+import vhost from 'vhost';
+import { refreshApps, stopAppsRefresh } from './apps';
+import { pool } from './db';
+import { app as dimGgApp } from './dim-gg/server';
+import { metrics } from './metrics';
+import { app as dimApiApp } from './server';
 
 const port = 3000;
 
@@ -50,14 +50,18 @@ switch (process.env.VHOST) {
       app.use(vhost('dim.gg', dimGgApp));
       // These are just redirects (for now?)
       app.use(
-        vhost('beta.dim.gg', (req, res) =>
-          res.redirect('https://beta.destinyitemmanager.com' + req.originalUrl)
-        )
+        vhost('beta.dim.gg', (req, res) => {
+          // Instruct CF to cache for 15 minutes
+          res.set('Cache-Control', 'max-age=900');
+          res.redirect('https://beta.destinyitemmanager.com' + req.originalUrl);
+        })
       );
       app.use(
-        vhost('app.dim.gg', (req, res) =>
-          res.redirect('https://app.destinyitemmanager.com' + req.originalUrl)
-        )
+        vhost('app.dim.gg', (req, res) => {
+          // Instruct CF to cache for 15 minutes
+          res.set('Cache-Control', 'max-age=900');
+          res.redirect('https://app.destinyitemmanager.com' + req.originalUrl);
+        })
       );
     }
     break;
