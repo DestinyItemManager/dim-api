@@ -71,16 +71,20 @@ export enum UpgradeSpendTier {
 
 /** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
 export enum AssumeArmorMasterwork {
-  /** Only legendary items will have assumed masterworked stats. */
-  Legendary = 1,
-  /** All items (legendary & exotic) will have assumed masterworked stats. */
+  /** No armor will have assumed masterworked stats. */
+  None = 1,
+  /** Only legendary armor will have assumed masterworked stats. */
+  Legendary,
+  /** All armor (legendary & exotic) will have assumed masterworked stats. */
   All,
 }
 
 /** Whether armor of this type will have locked energy type in the Loadout Optimizer. */
 export enum LockArmorEnergyType {
+  /** No armor will have their energy type locked. */
+  None = 1,
   /** Only already masterworked armor will have their energy type locked. */
-  Masterworked = 1,
+  Masterworked,
   /** All armor will have their energy type locked. */
   All,
 }
