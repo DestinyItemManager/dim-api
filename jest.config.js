@@ -1,4 +1,4 @@
-const { pathsToModuleNameMapper } = require('ts-jest/utils');
+const { pathsToModuleNameMapper } = require('ts-jest');
 const { compilerOptions } = require('./tsconfig');
 
 module.exports = {
@@ -8,8 +8,8 @@ module.exports = {
   moduleNameMapper:
     compilerOptions.paths &&
     pathsToModuleNameMapper(compilerOptions.paths, {
-      prefix: '<rootDir>/'
+      prefix: '<rootDir>/',
     }),
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
-  setupFiles: ['dotenv/config']
+  setupFiles: ['dotenv/config'],
 };
