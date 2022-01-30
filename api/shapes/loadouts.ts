@@ -69,6 +69,26 @@ export enum UpgradeSpendTier {
   AscendantShardsLockEnergyType,
 }
 
+/** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
+export enum AssumeArmorMasterwork {
+  /** No armor will have assumed masterworked stats. */
+  None = 1,
+  /** Only legendary armor will have assumed masterworked stats. */
+  Legendary,
+  /** All armor (legendary & exotic) will have assumed masterworked stats. */
+  All,
+}
+
+/** Whether armor of this type will have locked energy type in the Loadout Optimizer. */
+export enum LockArmorEnergyType {
+  /** No armor will have their energy type locked. */
+  None = 1,
+  /** Only already masterworked armor will have their energy type locked. */
+  Masterworked,
+  /** All armor will have their energy type locked. */
+  All,
+}
+
 /**
  * Parameters that explain how this loadout was chosen (in Loadout Optimizer)
  * and at the same time, how this loadout should be configured when equipped.
@@ -118,18 +138,26 @@ export interface LoadoutParameters {
    * which constrains the items that can be in the loadout.
    */
   query?: string;
+
   /**
    * When generating the loadout, did we assume all items were at their
    * masterworked stats, or did we use their current stats?
    *
-   * @deprecated use upgradeSpendTier
+   * @deprecated use assumeArmorMasterworked
    */
   assumeMasterworked?: boolean;
 
   /**
    * What upgrades are the user willing to shell out for?
+   *
+   * @deprecated use assumeArmorMasterworked
    */
   upgradeSpendTier?: UpgradeSpendTier;
+
+  /**
+   * Whether armor of this type will have assumed materwork stats in the Loadout Optimizer.
+   */
+  assumeArmorMasterwork?: AssumeArmorMasterwork;
 
   /**
    * The InventoryItemHash of the pinned exotic, if any was chosen.
@@ -138,8 +166,15 @@ export interface LoadoutParameters {
 
   /**
    * Don't change energy type of armor in order to fit mods.
+   *
+   * @deprecated use lockArmorEnergyType
    */
   lockItemEnergyType?: boolean;
+
+  /**
+   * Whether armor of this type will have locked energy type in the Loadout Optimizer.
+   */
+  lockArmorEnergyType?: LockArmorEnergyType;
 }
 
 /**
