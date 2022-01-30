@@ -6,9 +6,18 @@ enum TagVariant {
 }
 
 /** Any extra info added by the user to individual items - tags, notes, etc. */
-export interface ItemAnnotation {
+export interface ItemAnnotation extends Annotation {
   /** The item instance ID for an individual item */
   id: string;
+}
+
+/** Any extra info added by the user to item hashes (shaders and mods) */
+export interface ItemHashTag extends Annotation {
+  /** The inventory item hash for an item */
+  hash: number;
+}
+
+interface Annotation {
   /** Optional tag for the item. */
   tag?: TagValue | null;
   /** Optional text notes on the item. */
@@ -22,13 +31,3 @@ export interface ItemAnnotation {
    */
   v?: TagVariant;
 }
-
-/** Any extra info added by the user to item hashes (shaders and mods) */
-export type ItemHashTag = {
-  /** The inventory item hash for an item */
-  hash: number;
-  /** Optional tag for the item. */
-  tag?: TagValue | null;
-  /** Optional text notes on the item. */
-  notes?: string | null;
-};
