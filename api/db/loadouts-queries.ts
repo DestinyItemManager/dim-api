@@ -1,7 +1,8 @@
-import { Loadout, LoadoutItem } from '../shapes/loadouts';
 import { ClientBase, QueryResult } from 'pg';
-import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { Loadout, LoadoutItem } from '../shapes/loadouts';
+import { isValidItemId } from '../utils';
 
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.
@@ -146,7 +147,7 @@ export function cleanItem(item: LoadoutItem): LoadoutItem {
   }
 
   if (item.id) {
-    if (!/^\d{1,32}$/.test(item.id)) {
+    if (!isValidItemId(item.id)) {
       throw new Error(`item ID ${item.id} is not in the right format`);
     }
     result.id = item.id;
