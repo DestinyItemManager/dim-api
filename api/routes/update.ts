@@ -30,7 +30,7 @@ import {
   UsedSearchUpdate,
 } from '../shapes/profile';
 import { Settings } from '../shapes/settings';
-import { badRequest } from '../utils';
+import { badRequest, isValidItemId, isValidPlatformMembershipId } from '../utils';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -46,7 +46,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
 
-  if (platformMembershipId && !/^\d{1,32}$/.test(platformMembershipId)) {
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
     badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
     return;
   }
@@ -307,7 +307,7 @@ async function updateItemAnnotation(
     };
   }
 
-  if (itemAnnotation.id.includes('E+') || itemAnnotation.id.includes('-')) {
+  if (!isValidItemId(itemAnnotation.id)) {
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
@@ -356,7 +356,7 @@ async function tagCleanup(
   await deleteItemAnnotationList(
     client,
     bungieMembershipId,
-    inventoryItemIds.filter((i) => !i.includes('-') && !i.includes('E+'))
+    inventoryItemIds.filter(isValidItemId)
   );
   metrics.timing('update.tagCleanup', start);
 

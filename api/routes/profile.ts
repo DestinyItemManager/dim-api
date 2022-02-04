@@ -10,7 +10,7 @@ import { metrics } from '../metrics';
 import { DestinyVersion } from '../shapes/general';
 import { ProfileResponse } from '../shapes/profile';
 import { defaultSettings } from '../shapes/settings';
-import { badRequest } from '../utils';
+import { badRequest, isValidPlatformMembershipId } from '../utils';
 
 const validComponents = new Set([
   'settings',
@@ -28,7 +28,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
   const platformMembershipId = (req.query.platformMembershipId as string) || undefined;
 
-  if (platformMembershipId && !/^\d{1,32}$/.test(platformMembershipId)) {
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
     badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
     return;
   }
