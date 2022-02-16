@@ -118,6 +118,11 @@ export interface LoadoutParameters {
   mods?: number[];
 
   /**
+   * If set, after applying the mods above, all other mods will be removed from armor.
+   */
+  clearMods?: boolean;
+
+  /**
    * Mods that must be applied to a specific bucket hash. In general, prefer to
    * use the flat mods list above, and rely on the loadout function to assign
    * mods automatically. However there are some mods like shaders which can't
