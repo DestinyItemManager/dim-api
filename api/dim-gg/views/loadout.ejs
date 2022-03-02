@@ -38,12 +38,12 @@
         <ul>
           <% if (numMods > 0) { %><li><%= numMods %> mods</li><% } %>
           <% if (hasFashion) { %><li>Fashion (shaders &amp; ornaments)</li><% } %>
-          <% if (hasSubclass) { %><li>Stasis subclass settings</li><% } %>
+          <% if (hasSubclass) { %><li>Subclass customization</li><% } %>
           <% if (hasLoParams) { %><li>Loadout Optimizer settings</li><% } %>
         </ul>
       </p>
-      <a class="dim-button" href="<%= appShareUrl %>">Load in DIM</a>
-      <a class="dim-button" href="<%= betaShareUrl %>">Load in DIM Beta</a>
+      <a class="dim-button" href="<%= appShareUrl %>"><img src="/favicon-release.svg" height="16" width="16" /> Open Loadout Optimizer settings &amp; mods in DIM</a>
+      <a class="dim-button" href="<%= betaShareUrl %>"><img src="/favicon-beta.svg" height="16" width="16" /> Open entire Loadout in DIM Beta</a>
     </div>
   </body>
 </html>
