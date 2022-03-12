@@ -33,19 +33,9 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
   // TODO: generate preview SVG!
   // TODO: download manifest and images in order to generate preview SVG
 
-  const loadoutOptimizerParams: Record<string, string> = {
-    class: loadout.classType.toString(),
-  };
-  if (loadout.parameters) {
-    loadoutOptimizerParams.p = JSON.stringify(loadout.parameters);
-  }
-  if (loadout.notes) {
-    loadoutOptimizerParams.n = loadout.notes;
-  }
-  const loadoutOptimizerUrlParams = new URLSearchParams(loadoutOptimizerParams).toString();
   const loadoutsUrlParams = new URLSearchParams({ loadout: JSON.stringify(loadout) }).toString();
 
-  const appShareUrl = `https://app.destinyitemmanager.com/optimizer?${loadoutOptimizerUrlParams}`;
+  const appShareUrl = `https://app.destinyitemmanager.com/loadouts?${loadoutsUrlParams}`;
   const betaShareUrl = `https://beta.destinyitemmanager.com/loadouts?${loadoutsUrlParams}`;
 
   const numMods = loadout.parameters?.mods?.length ?? 0;
