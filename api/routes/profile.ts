@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db';
 import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
@@ -147,6 +148,17 @@ export const profileHandler = asyncHandler(async (req, res) => {
       response.searches = await getSearchesForProfile(client, bungieMembershipId, destinyVersion);
       metrics.timing('profile.searches.numReturned', response.searches.length);
       metrics.timing('profile.searches', start);
+    }
+
+    if ((response.tags?.length ?? 0) > 1000) {
+      Sentry.captureMessage('User with a lot of tags', {
+        extra: {
+          bungieMembershipId,
+          destinyVersion,
+          appId,
+          tagsLength: response.tags?.length,
+        },
+      });
     }
 
     return response;
