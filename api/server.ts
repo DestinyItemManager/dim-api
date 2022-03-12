@@ -4,7 +4,7 @@ import express from 'express';
 import jwt from 'express-jwt';
 import { apiKey, isAppOrigin } from './apps';
 import { metrics } from './metrics';
-import { setRouteNameForStats } from './metrics/express';
+import expressStatsd from './metrics/express';
 import { authTokenHandler } from './routes/auth-token';
 import { createAppHandler } from './routes/create-app';
 import { deleteAllDataHandler } from './routes/delete-all-data';
@@ -17,8 +17,7 @@ import { updateHandler } from './routes/update';
 
 export const app = express();
 
-app.use(setRouteNameForStats); // fix path names for next middleware
-app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
+app.use(expressStatsd({ client: metrics, prefix: 'http' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 /** CORS config that allows any origin to call */
@@ -28,13 +27,9 @@ const permissiveCors = cors({
 
 // These paths can be accessed by any caller
 app.options('/', permissiveCors);
-app.get('/', permissiveCors, (_, res) =>
-  res.send({ message: 'Hello from DIM!!!' })
-);
+app.get('/', permissiveCors, (_, res) => res.send({ message: 'Hello from DIM!!!' }));
 app.post('/', permissiveCors, (_, res) => res.status(404).send('Not Found'));
-app.get('/favicon.ico', permissiveCors, (_, res) =>
-  res.status(404).send('Not Found')
-);
+app.get('/favicon.ico', permissiveCors, (_, res) => res.status(404).send('Not Found'));
 
 app.options('/platform_info', permissiveCors);
 app.get('/platform_info', permissiveCors, platformInfoHandler);
@@ -66,17 +61,8 @@ app.use(apiKeyCors);
 
 // Validate that the API key in the header is valid for this origin.
 app.use((req, res, next) => {
-  if (
-    req.dimApp &&
-    req.headers.origin &&
-    req.dimApp.origin !== req.headers.origin
-  ) {
-    console.warn(
-      'OriginMismatch',
-      req.dimApp?.id,
-      req.dimApp?.origin,
-      req.headers.origin
-    );
+  if (req.dimApp && req.headers.origin && req.dimApp.origin !== req.headers.origin) {
+    console.warn('OriginMismatch', req.dimApp?.id, req.dimApp?.origin, req.headers.origin);
     metrics.increment('apiKey.wrongOrigin.count');
     // TODO: sentry
     res.status(401).send({
@@ -123,12 +109,7 @@ app.use((req, _, next) => {
 // Validate that the auth token and the API key in the header match.
 app.use((req, res, next) => {
   if (req.dimApp && req.dimApp.dimApiKey !== req.jwt!.iss) {
-    console.warn(
-      'ApiKeyMismatch',
-      req.dimApp?.id,
-      req.dimApp?.dimApiKey,
-      req.jwt!.iss
-    );
+    console.warn('ApiKeyMismatch', req.dimApp?.id, req.dimApp?.dimApiKey, req.jwt!.iss);
     metrics.increment('apiKey.mismatch.count');
     res.status(401).send({
       error: 'ApiKeyMismatch',

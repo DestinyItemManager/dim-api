@@ -5,10 +5,7 @@ import slugify from 'slugify';
 import { transaction } from '../db';
 import { addLoadoutShare } from '../db/loadout-share-queries';
 import { metrics } from '../metrics';
-import {
-  LoadoutShareRequest,
-  LoadoutShareResponse,
-} from '../shapes/loadout-share';
+import { LoadoutShareRequest, LoadoutShareResponse } from '../shapes/loadout-share';
 import { validateLoadout } from './update';
 
 // Prevent it translating pipe to "or"
@@ -20,14 +17,12 @@ slugify.extend({ '|': '-' });
 export const loadoutShareHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
-  metrics.counter('loadout_share.app.' + appId, 1);
+  metrics.increment('loadout_share.app.' + appId, 1);
   const request = req.body as LoadoutShareRequest;
   const { platformMembershipId, loadout } = request;
 
   if (!platformMembershipId) {
-    metrics.increment(
-      'loadout_share.validation.platformMembershipIdMissing.count'
-    );
+    metrics.increment('loadout_share.validation.platformMembershipIdMissing.count');
     res.status(400).send({
       status: 'InvalidArgument',
       message: 'Loadouts require platform membership ID to be set',
