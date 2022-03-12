@@ -113,6 +113,11 @@ createTerminus(server, {
   },
 });
 
-refreshApps().then(() => {
-  server.listen(port, () => console.log(`DIM API started up on port ${port}`));
-});
+refreshApps()
+  .then(() => {
+    server.listen(port, () => console.log(`DIM API started up on port ${port}`));
+  })
+  .catch((e) => {
+    console.log('Unable to load apps', e);
+    throw e;
+  });
