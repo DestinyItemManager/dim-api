@@ -1,12 +1,8 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
-import { LoadoutParameters, StatConstraint } from './loadouts';
+import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts';
 
-export type CharacterOrder =
-  | 'mostRecent'
-  | 'mostRecentReverse'
-  | 'fixed'
-  | 'custom';
+export type CharacterOrder = 'mostRecent' | 'mostRecentReverse' | 'fixed' | 'custom';
 
 export enum InfuseDirection {
   /** infuse something into the query (query = target) */
@@ -66,7 +62,7 @@ export interface Settings {
    */
   readonly loParameters: Exclude<
     LoadoutParameters,
-    'mods' | 'query' | 'exoticArmorHash'
+    'mods' | 'query' | 'exoticArmorHash' | 'statConstraints' | 'clearMods'
   >;
 
   /**
@@ -96,6 +92,21 @@ export interface Settings {
 
   /** Badge the app icon with the number of postmaster items on the current character */
   readonly badgePostmaster: boolean;
+
+  /** Display perks as a list instead of a grid. */
+  readonly perkList: boolean;
+
+  /** How the loadouts menu and page should be sorted */
+  readonly loadoutSort: LoadoutSort;
+
+  /** Hide tagged items in the Item Feed */
+  readonly itemFeedHideTagged: boolean;
+
+  /** Show the Item Feed */
+  readonly itemFeedExpanded: boolean;
+
+  /** Pull from postmaster is an irreversible action and some people don't want to accidentally hit it. */
+  readonly hidePullFromPostmaster: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -170,4 +181,9 @@ export const defaultSettings: Settings = {
 
   singleCharacter: false,
   badgePostmaster: true,
+  perkList: true,
+  loadoutSort: LoadoutSort.ByEditTime,
+  itemFeedHideTagged: true,
+  itemFeedExpanded: false,
+  hidePullFromPostmaster: false,
 };

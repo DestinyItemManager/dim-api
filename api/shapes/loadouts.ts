@@ -89,6 +89,12 @@ export enum LockArmorEnergyType {
   All,
 }
 
+/** How the loadouts menu and page should be sorted */
+export const enum LoadoutSort {
+  ByEditTime,
+  ByName,
+}
+
 /**
  * Parameters that explain how this loadout was chosen (in Loadout Optimizer)
  * and at the same time, how this loadout should be configured when equipped.
