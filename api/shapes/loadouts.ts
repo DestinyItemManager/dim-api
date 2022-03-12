@@ -197,9 +197,8 @@ export const defaultLoadoutParameters: LoadoutParameters = {
     { statHash: 4244567218 }, //Strength
   ],
   mods: [],
-  assumeMasterworked: false,
-  upgradeSpendTier: UpgradeSpendTier.Nothing,
-  lockItemEnergyType: false,
+  assumeArmorMasterwork: AssumeArmorMasterwork.None,
+  lockArmorEnergyType: LockArmorEnergyType.None,
   autoStatMods: true,
 };
 
