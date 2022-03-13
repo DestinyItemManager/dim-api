@@ -164,7 +164,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return response;
   });
 
-  // Instruct CF not to cache this
-  res.set('Cache-Control', 'no-cache, max-age=0');
+  // Instruct CF not to cache this for longer than a minute
+  res.set('Cache-Control', 'max-age=60');
   res.send(response);
 });

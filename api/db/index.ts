@@ -4,7 +4,7 @@ import { metrics } from '../metrics';
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
 export const pool = new Pool({
-  max: 1, // We get 25 connections per 1GB of RAM (we have 2GB), minus 3 connections for maintenance = 47. We run a variable number of DIM services.
+  max: 2, // We get 25 connections per 1GB of RAM (we have 2GB), minus 3 connections for maintenance = 47. We run a variable number of DIM services.
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,
   // Statement query is at the Postgres side, times out any individual query
