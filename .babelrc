@@ -1,0 +1,11 @@
+{
+  "comments": false,
+  "presets": [
+    ["@babel/preset-env", { "modules": "commonjs", "bugfixes": true }],
+    ["@babel/preset-typescript", { "optimizeConstEnums": true }]
+  ],
+  "plugins": [
+    "@babel/proposal-class-properties",
+    "@babel/proposal-object-rest-spread"
+  ]
+}

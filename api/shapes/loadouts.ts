@@ -55,7 +55,7 @@ export interface Loadout {
 }
 
 /** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */
-export enum UpgradeSpendTier {
+export const enum UpgradeSpendTier {
   Nothing,
   LegendaryShards,
   EnhancementPrisms,
@@ -70,7 +70,7 @@ export enum UpgradeSpendTier {
 }
 
 /** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
-export enum AssumeArmorMasterwork {
+export const enum AssumeArmorMasterwork {
   /** No armor will have assumed masterworked stats. */
   None = 1,
   /** Only legendary armor will have assumed masterworked stats. */
@@ -80,7 +80,7 @@ export enum AssumeArmorMasterwork {
 }
 
 /** Whether armor of this type will have locked energy type in the Loadout Optimizer. */
-export enum LockArmorEnergyType {
+export const enum LockArmorEnergyType {
   /** No armor will have their energy type locked. */
   None = 1,
   /** Only already masterworked armor will have their energy type locked. */
