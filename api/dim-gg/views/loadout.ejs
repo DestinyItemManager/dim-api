@@ -36,6 +36,7 @@
       <p>
         These build settings contain:
         <ul>
+          <% if (numItems > 0) { %><li><%= numItems %> items - recipients will have to choose their own copies of these</li><% } %>
           <% if (numMods > 0) { %><li><%= numMods %> mods</li><% } %>
           <% if (hasFashion) { %><li>Fashion (shaders &amp; ornaments)</li><% } %>
           <% if (hasSubclass) { %><li>Subclass customization</li><% } %>
