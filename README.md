@@ -52,7 +52,7 @@ curl 'https://api.destinyitemmanager.com/auth/token'
 
 The returned token has an expiration - do not use the token after that expiration. For all subsequent DIM API calls, you'll include the DIM API token and the DIM API key as HTTP headers, like so:
 ```
-Authentication: Bearer xxxThisUsersDimAccesTokenxxx
+Authorization: Bearer xxxThisUsersDimAccesTokenxxx
 X-API-Key: xxxYourDimApiKeyxxx
 ```
 
