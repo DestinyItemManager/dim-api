@@ -43,15 +43,25 @@ it('returns basic info from GET /', async () => {
   expect(response.status).toBe(200);
 });
 
-it('returns global info from GET /platform_info', async () => {
-  const response = await request
-    .get('/platform_info')
-    .expect('Content-Type', /json/)
-    .expect(200);
+describe('platform_info', () => {
+  it('returns global info from GET /platform_info', async () => {
+    const response = await request.get('/platform_info').expect('Content-Type', /json/).expect(200);
 
-  const platformInfo = response.body.settings as GlobalSettings;
+    const platformInfo = response.body.settings as GlobalSettings;
 
-  expect(platformInfo.dimApiEnabled).toBe(true);
+    expect(platformInfo.dimApiEnabled).toBe(true);
+  });
+
+  it('can return info from an unknown flavor', async () => {
+    const response = await request
+      .get('/platform_info?flavor=foo')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    const platformInfo = response.body.settings as GlobalSettings;
+
+    expect(platformInfo.dimApiEnabled).toBe(true);
+  });
 });
 
 it('can create new apps idempotently', async () => {
@@ -109,9 +119,7 @@ describe('profile', () => {
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -166,9 +174,7 @@ describe('settings', () => {
   beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('returns default settings', async () => {
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -190,9 +196,7 @@ describe('settings', () => {
     await postRequestAuthed('/profile').send(request).expect(200);
 
     // Read settings back
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -238,9 +242,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -274,9 +276,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -292,9 +292,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -321,9 +319,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -339,9 +335,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -374,9 +368,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -410,9 +402,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -432,9 +422,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -468,9 +456,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile')
-      .send(request3)
-      .expect(200);
+    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
 
     expect(updateResult3.body.results[0].status).toBe('Success');
 
@@ -505,9 +491,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -527,9 +511,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -567,9 +549,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
     expect(updateResult.body.results[1].status).toBe('Success');
@@ -586,9 +566,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -619,9 +597,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -653,9 +629,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -673,9 +647,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -707,9 +679,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile')
-      .send(request3)
-      .expect(200);
+    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
 
     expect(updateResult3.body.results[0].status).toBe('Success');
 
@@ -742,9 +712,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -764,9 +732,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
@@ -799,9 +765,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -831,9 +795,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -851,9 +813,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -884,9 +844,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -904,9 +862,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -940,9 +896,7 @@ describe('searches', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -953,9 +907,7 @@ describe('searches', () => {
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(
-      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
-    ).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].usageCount).toBe(1);
   });
@@ -980,9 +932,7 @@ describe('searches', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -993,9 +943,7 @@ describe('searches', () => {
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(
-      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
-    ).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].saved).toBe(true);
     expect(profileResponse.searches![0].usageCount).toBe(1);
@@ -1009,14 +957,10 @@ describe('loadouts', () => {
       loadout,
     };
 
-    const updateResult = await postRequestAuthed('/loadout_share')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/loadout_share').send(request).expect(200);
 
     console.log(updateResult.body.shareUrl);
-    expect(updateResult.body.shareUrl).toMatch(
-      /https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/
-    );
+    expect(updateResult.body.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
   });
 });
 
@@ -1037,9 +981,7 @@ async function createApp() {
 }
 
 async function importData() {
-  const file = JSON.parse(
-    (await promisify(readFile)('./dim-data.json')).toString()
-  );
+  const file = JSON.parse((await promisify(readFile)('./dim-data.json')).toString());
 
   await postRequestAuthed('/import').send(file).expect(200);
 
