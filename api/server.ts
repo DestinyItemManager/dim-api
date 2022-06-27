@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import express from 'express';
-import jwt from 'express-jwt';
+import { expressjwt as jwt } from 'express-jwt';
 import { apiKey, isAppOrigin } from './apps';
 import { metrics } from './metrics';
 import expressStatsd from './metrics/express';
@@ -87,7 +87,7 @@ app.all(
   '*',
   jwt({
     secret: process.env.JWT_SECRET!,
-    userProperty: 'jwt',
+    requestProperty: 'jwt',
     algorithms: ['HS256'],
   })
 );
