@@ -8,7 +8,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
 
   const result = await pool.query<GlobalSettings>({
     name: 'get_global_settings',
-    text: 'SELECT * FROM global_settings where flavor = ? LIMIT 1',
+    text: 'SELECT * FROM global_settings where flavor = $1 LIMIT 1',
     values: [flavor],
   });
   const settings =
