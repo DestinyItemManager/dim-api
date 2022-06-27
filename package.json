@@ -66,7 +66,7 @@
     "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
     "express-hot-shots": "^1.0.2",
-    "express-jwt": "^6.0.0",
+    "express-jwt": "^7.7.5",
     "hi-base32": "^0.5.1",
     "hot-shots": "^9.0.0",
     "jsonwebtoken": "^8.5.1",
@@ -74,7 +74,7 @@
     "morgan": "^1.9.1",
     "pg": "^8.0.0",
     "slugify": "^1.6.5",
-    "superagent": "^7.1.1",
+    "superagent": "^8.0.0",
     "uuid": "^8.1.0",
     "vhost": "^3.0.2"
   }
