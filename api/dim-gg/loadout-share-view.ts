@@ -48,6 +48,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
       loadout.parameters.statConstraints?.some(
         (s) => s.maxTier !== undefined || s.minTier !== undefined
       ));
+  const numItems = loadout.equipped.length + loadout.unequipped.length - (hasSubclass ? 1 : 0);
 
   const description = loadout.notes
     ? loadout.notes.length > 197
@@ -66,5 +67,6 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
     hasSubclass,
     hasLoParams,
     description,
+    numItems,
   });
 });
