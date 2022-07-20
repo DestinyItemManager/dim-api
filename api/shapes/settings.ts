@@ -20,6 +20,8 @@ export interface Settings {
   readonly characterOrder: CharacterOrder;
   /** Custom sorting properties, in order of application */
   readonly itemSortOrderCustom: string[];
+  /** supplements itemSortOrderCustom by allowing each sort to be reversed */
+  readonly itemSortReversals: string[];
   /** How many columns to display character buckets */
   readonly charCol: number;
   /** How many columns to display character buckets on Mobile */
@@ -117,6 +119,7 @@ export const defaultSettings: Settings = {
   // Sort characters (mostRecent, mostRecentReverse, fixed)
   characterOrder: 'mostRecent',
   itemSortOrderCustom: ['primStat', 'name'],
+  itemSortReversals: [],
   // How many columns to display character buckets
   charCol: 3,
   // How many columns to display character buckets on Mobile
