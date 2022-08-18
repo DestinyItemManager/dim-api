@@ -71,3 +71,7 @@ body {
   background-color: #e8a534 !important;
   color: black !important;
 }
+
+.dim-notes {
+  white-space: pre-line;
+}
