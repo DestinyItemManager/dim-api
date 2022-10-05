@@ -66,7 +66,7 @@ export function convertLoadout(row: any): Loadout {
     equipped: row.items.equipped || [],
     unequipped: row.items.unequipped || [],
     createdAt: row.created_at.getTime(),
-    lastUpdatedAt: row.last_updated_at.getTime(),
+    lastUpdatedAt: row.last_updated_at?.getTime(),
   };
   if (row.notes) {
     loadout.notes = row.notes;
