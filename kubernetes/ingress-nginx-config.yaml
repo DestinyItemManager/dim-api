@@ -1,12 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nginx-configuration
-  namespace: ingress-nginx
   labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.4.0
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
 data:
+  allow-snippet-annotations: "true"
   use-forwarded-headers: "true"
   compute-full-forwarded-for: "true"
   use-proxy-protocol: "true"
@@ -15,3 +19,4 @@ data:
   enable-owasp-modsecurity-crs: "false"
   proxy-body-size: "2m"
   use-gzip: "true"
+  enable-brotli: "true"
