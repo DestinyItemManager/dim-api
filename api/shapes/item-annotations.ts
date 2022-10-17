@@ -9,11 +9,11 @@ export interface ItemAnnotation {
   /** Optional text notes on the item. */
   notes?: string | null;
   /**
-   * UTC epoch milliseconds timestamp of when the item was crafted. Used to
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
    * match up items that have changed instance ID from being reshaped since they
    * were tagged.
    */
-  dateCrafted?: number;
+  craftedDate?: number;
 }
 
 /** Any extra info added by the user to item hashes (shaders, basically) */

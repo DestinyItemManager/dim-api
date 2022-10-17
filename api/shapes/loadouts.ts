@@ -13,11 +13,11 @@ export interface LoadoutItem {
    */
   socketOverrides?: { [socketIndex: number]: number };
   /**
-   * UTC epoch milliseconds timestamp of when the item was crafted. Used to
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
    * match up items that have changed instance ID from being reshaped since they
    * were added to the loadout.
    */
-  dateCrafted?: number;
+  craftedDate?: number;
 }
 
 export interface Loadout {

@@ -15,11 +15,11 @@ exports.setup = function (options, seedLink) {
 };
 
 exports.up = function (db, callback) {
-  db.runSql(`ALTER TABLE item_annotations ADD COLUMN date_crafted timestamp;`, callback);
+  db.runSql(`ALTER TABLE item_annotations ADD COLUMN crafted_date timestamp;`, callback);
 };
 
 exports.down = function (db, callback) {
-  db.runSql(`ALTER TABLE item_annotations DROP COLUMN date_crafted;`, callback);
+  db.runSql(`ALTER TABLE item_annotations DROP COLUMN crafted_date;`, callback);
 };
 
 exports._meta = {
