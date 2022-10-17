@@ -1,4 +1,4 @@
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: dim-api-hpa
@@ -8,9 +8,11 @@ spec:
     kind: Deployment
     name: dim-api
   minReplicas: 3
-  maxReplicas: 18
+  maxReplicas: 40
   metrics:
     - type: Resource
       resource:
         name: cpu
-        targetAverageUtilization: 60
+        target:
+          type: Utilization
+          averageUtilization: 60
