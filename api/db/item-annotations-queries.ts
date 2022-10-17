@@ -1,7 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { ItemAnnotation } from '../shapes/item-annotations';
 
 /**
  * Get all of the item annotations for a particular platform_membership_id and destiny_version.
@@ -15,8 +15,7 @@ export async function getItemAnnotationsForProfile(
   try {
     const results = await client.query({
       name: 'get_item_annotations',
-      text:
-        'SELECT inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+      text: 'SELECT inventory_item_id, tag, notes, date_crafted FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
       values: [bungieMembershipId, platformMembershipId, destinyVersion],
     });
     return results.rows.map(convertItemAnnotation);
@@ -42,8 +41,7 @@ export async function getAllItemAnnotationsForUser(
     // TODO: this isn't indexed!
     const results = await client.query({
       name: 'get_all_item_annotations',
-      text:
-        'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes FROM item_annotations WHERE membership_id = $1',
+      text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, date_crafted FROM item_annotations WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => ({
@@ -65,6 +63,9 @@ function convertItemAnnotation(row: any): ItemAnnotation {
   }
   if (row.notes) {
     result.notes = row.notes;
+  }
+  if (row.date_crafted) {
+    result.dateCrafted = row.dateCrafted.getTime();
   }
   return result;
 }
@@ -90,8 +91,8 @@ export async function updateItemAnnotation(
   try {
     const response = await client.query({
       name: 'upsert_item_annotation',
-      text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, created_by, last_updated_by)
-values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7, $7)
+      text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, date_crafted, created_by, last_updated_by)
+values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $8, $7, $7)
 on conflict (membership_id, inventory_item_id)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), current_timestamp, $7)`,
       values: [
@@ -102,6 +103,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 
         tagValue,
         notesValue,
         appId,
+        itemAnnotation.dateCrafted ? new Date(itemAnnotation.dateCrafted) : null,
       ],
     });
 
