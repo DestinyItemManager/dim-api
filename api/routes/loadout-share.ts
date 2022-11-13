@@ -3,13 +3,23 @@ import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
 import slugify from 'slugify';
 import { transaction } from '../db';
-import { addLoadoutShare } from '../db/loadout-share-queries';
+import { addLoadoutShare, getLoadoutShare, recordAccess } from '../db/loadout-share-queries';
 import { metrics } from '../metrics';
-import { LoadoutShareRequest, LoadoutShareResponse } from '../shapes/loadout-share';
+import {
+  GetSharedLoadoutResponse,
+  LoadoutShareRequest,
+  LoadoutShareResponse,
+} from '../shapes/loadout-share';
+import { Loadout } from '../shapes/loadouts';
 import { validateLoadout } from './update';
 
 // Prevent it translating pipe to "or"
 slugify.extend({ '|': '-' });
+
+const getShareURL = (loadout: Loadout, shareId: string) => {
+  const titleSlug = slugify(loadout.name);
+  return `https://dim.gg/${shareId}/${titleSlug}`;
+};
 
 /**
  * Save a loadout to be shared via a dim.gg link.
@@ -75,10 +85,8 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     }
   }
 
-  const titleSlug = slugify(loadout.name);
-
   const result: LoadoutShareResponse = {
-    shareUrl: `https://dim.gg/${shareId}/${titleSlug}`,
+    shareUrl: getShareURL(loadout, shareId!),
   };
 
   res.send(result);
@@ -93,3 +101,28 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
 function generateRandomShareId() {
   return base32.encode(crypto.randomBytes(4)).replace(/=/g, '').toLowerCase();
 }
+
+export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
+  const shareId = req.query.shareId as string;
+
+  if (!shareId) {
+    return;
+  }
+
+  await transaction(async (client) => {
+    const loadout = await getLoadoutShare(client, shareId);
+    if (loadout) {
+      // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
+      await recordAccess(client, shareId);
+
+      const response: GetSharedLoadoutResponse = {
+        loadout,
+        shareUrl: getShareURL(loadout, shareId),
+      };
+
+      res.send(response);
+    } else {
+      res.status(404).send();
+    }
+  });
+});
