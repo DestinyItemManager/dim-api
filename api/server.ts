@@ -10,7 +10,7 @@ import { createAppHandler } from './routes/create-app';
 import { deleteAllDataHandler } from './routes/delete-all-data';
 import { exportHandler } from './routes/export';
 import { importHandler } from './routes/import';
-import { loadoutShareHandler } from './routes/loadout-share';
+import { getLoadoutShareHandler, loadoutShareHandler } from './routes/loadout-share';
 import { platformInfoHandler } from './routes/platform-info';
 import { profileHandler } from './routes/profile';
 import { updateHandler } from './routes/update';
@@ -35,6 +35,8 @@ app.options('/platform_info', permissiveCors);
 app.get('/platform_info', permissiveCors, platformInfoHandler);
 app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
+// Get a shared loadout
+app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
 
 /* ****** API KEY REQUIRED ****** */
 /* Any routes declared below this will require an API Key in X-API-Key header */
