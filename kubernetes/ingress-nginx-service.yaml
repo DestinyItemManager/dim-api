@@ -5,19 +5,33 @@ metadata:
   namespace: ingress-nginx
   annotations:
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: 'true'
+    kubernetes.digitalocean.com/load-balancer-id: 23090a56-2f5a-4f5a-b3a0-65908b74253d
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/version: 1.4.0
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
 spec:
   externalTrafficPolicy: Local
   type: LoadBalancer
   selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
   ports:
-    - name: http
+    - appProtocol: http
+      name: http
       port: 80
+      protocol: TCP
       targetPort: http
-    - name: https
+    - appProtocol: https
+      name: https
       port: 443
+      protocol: TCP
       targetPort: https

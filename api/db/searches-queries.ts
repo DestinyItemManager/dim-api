@@ -1,8 +1,8 @@
+import _ from 'lodash';
 import { ClientBase, QueryResult } from 'pg';
-import { DestinyVersion } from '../shapes/general';
 import { metrics } from '../metrics';
 import { ExportResponse } from '../shapes/export';
-import _ from 'lodash';
+import { DestinyVersion } from '../shapes/general';
 import { Search } from '../shapes/search';
 
 /*
@@ -19,14 +19,14 @@ const cannedSearchesForD2: Search[] = [
   lastUsage: 0,
 }));
 
-const cannedSearchesForD1: Search[] = [
-  '-is:equipped is:haslight is:incurrentchar',
-].map((query) => ({
-  query,
-  saved: false,
-  usageCount: 0,
-  lastUsage: 0,
-}));
+const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentchar'].map(
+  (query) => ({
+    query,
+    saved: false,
+    usageCount: 0,
+    lastUsage: 0,
+  })
+);
 /*
  * Searches are stored in a single table, scoped by Bungie.net account and destiny version (D1 searches are separate from D2 searches).
  * Favorites and recent searches are stored the same - there's just a favorite flag for saved searches. There is also a usage count
@@ -48,16 +48,13 @@ export async function getSearchesForProfile(
     const results = await client.query({
       name: 'get_searches',
       // TODO: order by frecency
-      text:
-        'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
+      text: 'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
       values: [bungieMembershipId, destinyVersion],
     });
     return _.uniqBy(
       results.rows
         .map(convertSearch)
-        .concat(
-          destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1
-        ),
+        .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
       (s) => s.query
     );
   } catch (e) {
@@ -76,8 +73,7 @@ export async function getSearchesForUser(
   try {
     const results = await client.query({
       name: 'get_all_searches',
-      text:
-        'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
+      text: 'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => ({
@@ -115,7 +111,7 @@ export async function updateUsedSearch(
       name: 'upsert_search',
       text: `insert INTO searches (membership_id, destiny_version, query, created_by, last_updated_by)
 values ($1, $2, $3, $4, $4)
-on conflict (membership_id, destiny_version, query)
+on conflict (membership_id, destiny_version, qhash)
 do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $4)`,
       values: [bungieMembershipId, destinyVersion, query, appId],
     });
@@ -146,7 +142,7 @@ export async function saveSearch(
   try {
     const response = await client.query({
       name: 'save_search',
-      text: `UPDATE searches SET (saved, last_updated_by) = ($4, $5) WHERE membership_id = $1 AND destiny_version = $2 AND query = $3`,
+      text: `UPDATE searches SET (saved, last_updated_by) = ($4, $5) WHERE membership_id = $1 AND destiny_version = $2 AND qhash = decode(md5($3), 'hex') AND query = $3`,
       values: [bungieMembershipId, destinyVersion, query, saved, appId],
     });
 
@@ -220,7 +216,7 @@ export async function deleteSearch(
   try {
     return client.query({
       name: 'delete_search',
-      text: `delete from searches where membership_id = $1 and destiny_version = $2 and query = $3`,
+      text: `delete from searches where membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3`,
       values: [bungieMembershipId, destinyVersion, query],
     });
   } catch (e) {

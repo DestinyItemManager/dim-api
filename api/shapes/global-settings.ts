@@ -9,8 +9,6 @@ export interface GlobalSettings {
   autoRefresh: boolean;
   /** Whether to refresh profile when the page becomes visible after being in the background. */
   refreshProfileOnVisible: boolean;
-  /** Whether to use dirty tricks to bust the Bungie.net cache when users manually refresh. */
-  bustProfileCacheOnHardRefresh: boolean;
   /** Don't automatically refresh DIM profile info more often than this many seconds. */
   dimProfileMinimumRefreshInterval: number;
   /** Display an issue banner, if there is one. */
@@ -21,10 +19,9 @@ export const defaultGlobalSettings: GlobalSettings = {
   dimApiEnabled: true,
   destinyProfileMinimumRefreshInterval: 15,
   destinyProfileRefreshInterval: 30,
-  autoRefresh: true,
+  autoRefresh: false,
   refreshProfileOnVisible: true,
-  bustProfileCacheOnHardRefresh: false,
-  dimProfileMinimumRefreshInterval: 300,
+  dimProfileMinimumRefreshInterval: 600,
   showIssueBanner: false,
 };
 

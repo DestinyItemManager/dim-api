@@ -9,6 +9,12 @@ enum TagVariant {
 export interface ItemAnnotation extends Annotation {
   /** The item instance ID for an individual item */
   id: string;
+  /**
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
+   * match up items that have changed instance ID from being reshaped since they
+   * were tagged.
+   */
+  craftedDate?: number;
 }
 
 /** Any extra info added by the user to item hashes (shaders and mods) */

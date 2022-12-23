@@ -12,6 +12,12 @@ export interface LoadoutItem {
    * (by it's hash) is supposed to be socketed into the given socket index.
    */
   socketOverrides?: { [socketIndex: number]: number };
+  /**
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
+   * match up items that have changed instance ID from being reshaped since they
+   * were added to the loadout.
+   */
+  craftedDate?: number;
 }
 
 export interface Loadout {
@@ -55,7 +61,7 @@ export interface Loadout {
 }
 
 /** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */
-export enum UpgradeSpendTier {
+export const enum UpgradeSpendTier {
   Nothing,
   LegendaryShards,
   EnhancementPrisms,
@@ -67,6 +73,32 @@ export enum UpgradeSpendTier {
    * No longer needed with the lock energy toggle, treat this as if it was the Nothing option.
    */
   AscendantShardsLockEnergyType,
+}
+
+/** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
+export const enum AssumeArmorMasterwork {
+  /** No armor will have assumed masterworked stats. */
+  None = 1,
+  /** Only legendary armor will have assumed masterworked stats. */
+  Legendary,
+  /** All armor (legendary & exotic) will have assumed masterworked stats. */
+  All,
+}
+
+/** Whether armor of this type will have locked energy type in the Loadout Optimizer. */
+export const enum LockArmorEnergyType {
+  /** No armor will have their energy type locked. */
+  None = 1,
+  /** Only already masterworked armor will have their energy type locked. */
+  Masterworked,
+  /** All armor will have their energy type locked. */
+  All,
+}
+
+/** How the loadouts menu and page should be sorted */
+export const enum LoadoutSort {
+  ByEditTime,
+  ByName,
 }
 
 /**
@@ -98,6 +130,11 @@ export interface LoadoutParameters {
   mods?: number[];
 
   /**
+   * If set, after applying the mods above, all other mods will be removed from armor.
+   */
+  clearMods?: boolean;
+
+  /**
    * Mods that must be applied to a specific bucket hash. In general, prefer to
    * use the flat mods list above, and rely on the loadout function to assign
    * mods automatically. However there are some mods like shaders which can't
@@ -118,18 +155,26 @@ export interface LoadoutParameters {
    * which constrains the items that can be in the loadout.
    */
   query?: string;
+
   /**
    * When generating the loadout, did we assume all items were at their
    * masterworked stats, or did we use their current stats?
    *
-   * @deprecated use upgradeSpendTier
+   * @deprecated use assumeArmorMasterworked
    */
   assumeMasterworked?: boolean;
 
   /**
    * What upgrades are the user willing to shell out for?
+   *
+   * @deprecated use assumeArmorMasterworked
    */
   upgradeSpendTier?: UpgradeSpendTier;
+
+  /**
+   * Whether armor of this type will have assumed materwork stats in the Loadout Optimizer.
+   */
+  assumeArmorMasterwork?: AssumeArmorMasterwork;
 
   /**
    * The InventoryItemHash of the pinned exotic, if any was chosen.
@@ -138,8 +183,15 @@ export interface LoadoutParameters {
 
   /**
    * Don't change energy type of armor in order to fit mods.
+   *
+   * @deprecated use lockArmorEnergyType
    */
   lockItemEnergyType?: boolean;
+
+  /**
+   * Whether armor of this type will have locked energy type in the Loadout Optimizer.
+   */
+  lockArmorEnergyType?: LockArmorEnergyType;
 }
 
 /**
@@ -157,9 +209,8 @@ export const defaultLoadoutParameters: LoadoutParameters = {
     { statHash: 4244567218 }, //Strength
   ],
   mods: [],
-  assumeMasterworked: false,
-  upgradeSpendTier: UpgradeSpendTier.Nothing,
-  lockItemEnergyType: false,
+  assumeArmorMasterwork: AssumeArmorMasterwork.None,
+  lockArmorEnergyType: LockArmorEnergyType.None,
   autoStatMods: true,
 };
 

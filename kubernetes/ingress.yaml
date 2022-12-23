@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: dim-api-ingress
@@ -15,12 +15,70 @@ spec:
     - host: api.destinyitemmanager.com
       http:
         paths:
-          - backend:
-              serviceName: dim-api
-              servicePort: 80
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: dim-api
+                port:
+                  number: 80
     - host: grafana.destinyitemmanager.com
       http:
         paths:
-          - backend:
-              serviceName: grafana
-              servicePort: 80
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 80
+  ingressClassName: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dim-gg
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - dim.gg
+        - www.dim.gg
+        - app.dim.gg
+        - beta.dim.gg
+      secretName: dim-gg-tls
+  rules:
+    - host: dim.gg
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: dim-api
+                port:
+                  number: 80
+    - host: beta.dim.gg
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: dim-api
+                port:
+                  number: 80
+    - host: app.dim.gg
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: dim-api
+                port:
+                  number: 80
+  ingressClassName: nginx

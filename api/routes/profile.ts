@@ -1,27 +1,57 @@
+import * as Sentry from '@sentry/node';
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db';
-import { getSettings } from '../db/settings-queries';
-import { getLoadoutsForProfile } from '../db/loadouts-queries';
 import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
-import { badRequest } from '../utils';
-import { ProfileResponse } from '../shapes/profile';
-import { DestinyVersion } from '../shapes/general';
-import { defaultSettings } from '../shapes/settings';
-import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
-import { getSearchesForProfile } from '../db/searches-queries';
-import { metrics } from '../metrics';
 import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
+import { getLoadoutsForProfile } from '../db/loadouts-queries';
+import { getSearchesForProfile } from '../db/searches-queries';
+import { getSettings } from '../db/settings-queries';
+import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
+import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { ProfileResponse } from '../shapes/profile';
+import { defaultSettings } from '../shapes/settings';
+import { badRequest, isValidPlatformMembershipId } from '../utils';
+
+const validComponents = new Set([
+  'settings',
+  'loadouts',
+  'tags',
+  'hashtags',
+  'triumphs',
+  'searches',
+]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
-  metrics.counter('profile.app.' + appId, 1);
+  metrics.increment('profile.app.' + appId, 1);
 
-  const platformMembershipId = req.query.platformMembershipId as string;
+  const platformMembershipId = (req.query.platformMembershipId as string) || undefined;
+
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+    return;
+  }
+
   const destinyVersion: DestinyVersion = req.query.destinyVersion
     ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
     : 2;
+
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    return;
+  }
+
   const components = ((req.query.components as string) || '').split(/\s*,\s*/);
+
+  if (components.some((c) => !validComponents.has(c))) {
+    badRequest(
+      res,
+      `[${components.filter((c) => !validComponents.has(c)).join(', ')}] are not valid components`
+    );
+    return;
+  }
 
   if (!components) {
     badRequest(res, 'No components provided');
@@ -29,7 +59,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
   }
 
   // TODO: Maybe do parallel non-transactional reads instead
-  await readTransaction(async (client) => {
+  const response = await readTransaction(async (client) => {
     const response: ProfileResponse = {};
 
     if (components.includes('settings')) {
@@ -77,10 +107,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('tags')) {
       if (!platformMembershipId) {
-        badRequest(
-          res,
-          'Need a platformMembershipId to return item annotations'
-        );
+        badRequest(res, 'Need a platformMembershipId to return item annotations');
         return;
       }
       const start = new Date();
@@ -96,14 +123,8 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('hashtags')) {
       const start = new Date();
-      response.itemHashTags = await getItemHashTagsForProfile(
-        client,
-        bungieMembershipId
-      );
-      metrics.timing(
-        'profile.hashtags.numReturned',
-        response.itemHashTags.length
-      );
+      response.itemHashTags = await getItemHashTagsForProfile(client, bungieMembershipId);
+      metrics.timing('profile.hashtags.numReturned', response.itemHashTags.length);
       metrics.timing('profile.hashtags', start);
     }
 
@@ -124,17 +145,26 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('searches')) {
       const start = new Date();
-      response.searches = await getSearchesForProfile(
-        client,
-        bungieMembershipId,
-        destinyVersion
-      );
+      response.searches = await getSearchesForProfile(client, bungieMembershipId, destinyVersion);
       metrics.timing('profile.searches.numReturned', response.searches.length);
       metrics.timing('profile.searches', start);
     }
 
-    // Instruct CF not to cache this
-    res.set('Cache-Control', 'no-cache, max-age=0');
-    res.send(response);
+    if ((response.tags?.length ?? 0) > 1000) {
+      Sentry.captureMessage('User with a lot of tags', {
+        extra: {
+          bungieMembershipId,
+          destinyVersion,
+          appId,
+          tagsLength: response.tags?.length,
+        },
+      });
+    }
+
+    return response;
   });
+
+  // Instruct CF not to cache this for longer than a minute
+  res.set('Cache-Control', 'max-age=60');
+  res.send(response);
 });

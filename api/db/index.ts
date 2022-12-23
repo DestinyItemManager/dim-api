@@ -1,13 +1,11 @@
-import { Pool, ClientBase } from 'pg';
+import { ClientBase, Pool } from 'pg';
 import { metrics } from '../metrics';
 
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
 export const pool = new Pool({
-  max: 2, // We get 25 connections per 1GB of RAM (we have 2GB), minus 3 connections for maintenance = 47. We run a variable number of DIM services.
-  ssl: process.env.PGSSL
-    ? process.env.PGSSL === 'true'
-    : { rejectUnauthorized: false },
+  max: 2, // We get 25 connections per 1GB of RAM (we have 4GB), minus 3 connections for maintenance = 97. We run a variable number of DIM services.
+  ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,
   // Statement query is at the Postgres side, times out any individual query
   statement_timeout: 750,
@@ -59,9 +57,7 @@ export async function transaction<T>(fn: (client: ClientBase) => Promise<T>) {
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction that's only meant for reads.
  */
-export async function readTransaction<T>(
-  fn: (client: ClientBase) => Promise<T>
-) {
+export async function readTransaction<T>(fn: (client: ClientBase) => Promise<T>) {
   const client = await pool.connect();
   try {
     // We used to wrap multiple reads in a transaction but I'm not sure it matters all that much.

@@ -1,39 +1,36 @@
 import asyncHandler from 'express-async-handler';
+import { ClientBase } from 'pg';
 import { transaction } from '../db';
 import {
-  ProfileUpdateRequest,
-  ProfileUpdateResult,
-  TrackTriumphUpdate,
-  UsedSearchUpdate,
-  SavedSearchUpdate,
-  ItemHashTagUpdate,
-} from '../shapes/profile';
-import { badRequest } from '../utils';
-import { ClientBase } from 'pg';
-import { Settings } from '../shapes/settings';
-import { DestinyVersion } from '../shapes/general';
-import { Loadout } from '../shapes/loadouts';
-import { setSetting as setSettingInDb } from '../db/settings-queries';
+  deleteItemAnnotationList,
+  updateItemAnnotation as updateItemAnnotationInDb,
+} from '../db/item-annotations-queries';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
 import {
-  updateLoadout as updateLoadoutInDb,
   deleteLoadout as deleteLoadoutInDb,
+  updateLoadout as updateLoadoutInDb,
 } from '../db/loadouts-queries';
 import {
-  updateItemAnnotation as updateItemAnnotationInDb,
-  deleteItemAnnotationList,
-} from '../db/item-annotations-queries';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { metrics } from '../metrics';
-import {
-  trackTriumph as trackTriumphInDb,
-  unTrackTriumph,
-} from '../db/triumphs-queries';
-import {
-  updateUsedSearch,
-  saveSearch as saveSearchInDb,
   deleteSearch as deleteSearchInDb,
+  saveSearch as saveSearchInDb,
+  updateUsedSearch,
 } from '../db/searches-queries';
-import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
+import { setSetting as setSettingInDb } from '../db/settings-queries';
+import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries';
+import { metrics } from '../metrics';
+import { DestinyVersion } from '../shapes/general';
+import { ItemAnnotation } from '../shapes/item-annotations';
+import { Loadout } from '../shapes/loadouts';
+import {
+  ItemHashTagUpdate,
+  ProfileUpdateRequest,
+  ProfileUpdateResult,
+  SavedSearchUpdate,
+  TrackTriumphUpdate,
+  UsedSearchUpdate,
+} from '../shapes/profile';
+import { Settings } from '../shapes/settings';
+import { badRequest, isValidItemId, isValidPlatformMembershipId } from '../utils';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -44,14 +41,29 @@ import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags
 export const updateHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;
   const { id: appId } = req.dimApp!;
-  metrics.counter('update.app.' + appId, 1);
+  metrics.increment('update.app.' + appId, 1);
   const request = req.body as ProfileUpdateRequest;
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
 
-  const results: ProfileUpdateResult[] = [];
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+    return;
+  }
 
-  await transaction(async (client) => {
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    return;
+  }
+
+  if (!Array.isArray(updates)) {
+    badRequest(res, `updates must be an array`);
+    return;
+  }
+
+  const results = await transaction(async (client) => {
+    const results: ProfileUpdateResult[] = [];
+
     for (const update of updates) {
       let result: ProfileUpdateResult;
 
@@ -59,12 +71,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
 
       switch (update.action) {
         case 'setting':
-          result = await updateSetting(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateSetting(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'loadout':
@@ -79,11 +86,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'delete_loadout':
-          result = await deleteLoadout(
-            client,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await deleteLoadout(client, bungieMembershipId, update.payload);
           break;
 
         case 'tag':
@@ -102,12 +105,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'item_hash_tag':
-          result = await updateItemHashTag(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateItemHashTag(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'track_triumph':
@@ -150,11 +148,20 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         default:
-          badRequest(res, `Unknown action type ${(update as any).action}`);
-          return;
+          console.warn(
+            `Unknown action type: ${(update as any).action} from ${appId}, ${req.header(
+              'User-Agent'
+            )}, ${req.header('Referer')}`
+          );
+          result = {
+            status: 'InvalidArgument',
+            message: `Unknown action type: ${(update as any).action}`,
+          };
       }
       results.push(result);
     }
+
+    return results;
   });
 
   res.send({
@@ -193,49 +200,9 @@ async function updateLoadout(
     };
   }
 
-  if (!loadout.name) {
-    metrics.increment('update.validation.loadoutNameMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout name missing',
-    };
-  }
-  if (loadout.name && loadout.name.length > 120) {
-    metrics.increment('update.validation.loadoutNameTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout names must be under 120 characters',
-    };
-  }
-
-  if (!loadout.id) {
-    metrics.increment('update.loadoutIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout id missing',
-    };
-  }
-  if (loadout.id && loadout.id.length > 120) {
-    metrics.increment('update.validation.loadoutIdTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout ids must be under 120 characters',
-    };
-  }
-
-  if (!Number.isFinite(loadout.classType)) {
-    metrics.increment('update.validation.classTypeMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type missing or malformed',
-    };
-  }
-  if (loadout.classType < 0 || loadout.classType > 3) {
-    metrics.increment('update.validation.classTypeOutOfRange.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type out of range',
-    };
+  const validationResult = validateLoadout('update', loadout);
+  if (validationResult) {
+    return validationResult;
   }
 
   const start = new Date();
@@ -252,17 +219,70 @@ async function updateLoadout(
   return { status: 'Success' };
 }
 
+export function validateLoadout(metricPrefix: string, loadout: Loadout) {
+  if (!loadout.name) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout name missing',
+    };
+  }
+  if (loadout.name.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout names must be under 120 characters',
+    };
+  }
+
+  if (loadout.notes && loadout.notes.length > 2048) {
+    metrics.increment(metricPrefix + '.validation.loadoutNotesTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout notes must be under 2048 characters',
+    };
+  }
+
+  if (!loadout.id) {
+    metrics.increment(metricPrefix + '.loadoutIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout id missing',
+    };
+  }
+  if (loadout.id && loadout.id.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutIdTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout ids must be under 120 characters',
+    };
+  }
+
+  if (!Number.isFinite(loadout.classType)) {
+    metrics.increment(metricPrefix + '.validation.classTypeMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type missing or malformed',
+    };
+  }
+  if (loadout.classType < 0 || loadout.classType > 3) {
+    metrics.increment(metricPrefix + '.validation.classTypeOutOfRange.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type out of range',
+    };
+  }
+
+  return undefined;
+}
+
 async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
   loadoutId: string
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  const loadout = await deleteLoadoutInDb(
-    client,
-    bungieMembershipId,
-    loadoutId
-  );
+  const loadout = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
   metrics.timing('update.deleteLoadout', start);
   if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
@@ -287,7 +307,7 @@ async function updateItemAnnotation(
     };
   }
 
-  if (itemAnnotation.id.includes('E+') || itemAnnotation.id.includes('-')) {
+  if (!isValidItemId(itemAnnotation.id)) {
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
@@ -297,9 +317,7 @@ async function updateItemAnnotation(
 
   if (
     itemAnnotation.tag &&
-    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(
-      itemAnnotation.tag
-    )
+    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(itemAnnotation.tag)
   ) {
     metrics.increment('update.validation.tagNotRecognized.count');
     return {
@@ -338,7 +356,7 @@ async function tagCleanup(
   await deleteItemAnnotationList(
     client,
     bungieMembershipId,
-    inventoryItemIds.filter((i) => !i.includes('-') && !i.includes('E+'))
+    inventoryItemIds.filter(isValidItemId)
   );
   metrics.timing('update.tagCleanup', start);
 
@@ -369,12 +387,7 @@ async function trackTriumph(
         platformMembershipId,
         payload.recordHash
       )
-    : await unTrackTriumph(
-        client,
-        bungieMembershipId,
-        platformMembershipId,
-        payload.recordHash
-      );
+    : await unTrackTriumph(client, bungieMembershipId, platformMembershipId, payload.recordHash);
   metrics.timing('update.trackTriumph', start);
 
   return { status: 'Success' };
@@ -387,14 +400,21 @@ async function recordSearch(
   destinyVersion: DestinyVersion,
   payload: UsedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
-  await updateUsedSearch(
-    client,
-    appId,
-    bungieMembershipId,
-    destinyVersion,
-    payload.query
-  );
+  await updateUsedSearch(client, appId, bungieMembershipId, destinyVersion, payload.query);
   metrics.timing('update.recordSearch', start);
 
   return { status: 'Success' };
@@ -407,6 +427,19 @@ async function saveSearch(
   destinyVersion: DestinyVersion,
   payload: SavedSearchUpdate['payload']
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
   await saveSearchInDb(
     client,
