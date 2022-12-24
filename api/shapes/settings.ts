@@ -109,6 +109,18 @@ export interface Settings {
 
   /** Pull from postmaster is an irreversible action and some people don't want to accidentally hit it. */
   readonly hidePullFromPostmaster: boolean;
+
+  /** Select descriptions to display */
+  readonly descriptionsToDisplay: 'bungie' | 'community' | 'both';
+
+  /** Plug the T10 masterwork into D2Y2+ random roll weapons for comparison purposes. */
+  readonly compareWeaponMasterwork: boolean;
+
+  /**
+   * Cutoff point; the instance ID of the newest item that isn't shown in
+   * the item feed anymore after the user presses the "clear" button.
+   */
+  readonly itemFeedWatermark: string | undefined;
 }
 
 export const defaultSettings: Settings = {
@@ -189,4 +201,7 @@ export const defaultSettings: Settings = {
   itemFeedHideTagged: true,
   itemFeedExpanded: false,
   hidePullFromPostmaster: false,
+  descriptionsToDisplay: 'both',
+  compareWeaponMasterwork: false,
+  itemFeedWatermark: undefined,
 };
