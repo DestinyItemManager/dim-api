@@ -144,7 +144,7 @@ it('can insert tags with a variant', async () => {
   await transaction(async (client) => {
     await updateItemAnnotation(client, appId, bungieMembershipId, platformMembershipId, 2, {
       id: '123456',
-      tag: 'favorite',
+      tag: 'keep',
       v: TagVariant.PVP,
     });
 
@@ -156,7 +156,7 @@ it('can insert tags with a variant', async () => {
     );
     expect(annotations[0]).toEqual({
       id: '123456',
-      tag: 'favorite',
+      tag: 'keep',
       v: TagVariant.PVP,
     });
 
@@ -174,7 +174,7 @@ it('can insert tags with a variant', async () => {
     );
     expect(annotations2[0]).toEqual({
       id: '123456',
-      tag: 'favorite',
+      tag: 'keep',
       v: TagVariant.PVP,
       notes: 'pretty cool',
     });
