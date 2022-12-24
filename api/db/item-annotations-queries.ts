@@ -99,7 +99,7 @@ export async function updateItemAnnotation(
       text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date, created_by, last_updated_by)
 values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $9, $8, $7, $7)
 on conflict (membership_id, inventory_item_id)
-do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), (CASE WHEN $9 = 'clear' THEN NULL WHEN $9 IS NULL THEN item_annotations.variant ELSE $9 END), current_timestamp, $7)`,
+do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), (CASE WHEN $9 = 0 THEN NULL WHEN $9 IS NULL THEN item_annotations.variant ELSE $9 END), current_timestamp, $7)`,
       values: [
         bungieMembershipId,
         platformMembershipId,
@@ -143,17 +143,17 @@ function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | 
 /**
  * Like clearValue, this decides whether the variant should be set, cleared, or left alone.
  * Returning null preserves the existing value.
- * Returning "clear", removes the existing value,
+ * Returning 0, removes the existing value,
  */
 function variantValue(
   tag: TagValue | 'clear' | null,
   v: TagVariant | undefined
-): TagVariant | 'clear' | null {
+): TagVariant | 0 | null {
   if (tag === 'keep') {
-    return v ?? 'clear';
+    return v ?? 0;
   } else if (tag !== null) {
     // If tag is being cleared or set to a non-keep value, remove the variant
-    return 'clear';
+    return 0;
   } else {
     // Otherwise leave it be
     return null;
