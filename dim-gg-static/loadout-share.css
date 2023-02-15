@@ -42,9 +42,16 @@ body {
 .dim-page {
   max-width: 900px;
   margin: 0 auto;
+  padding: 0 1em;
 }
 
 /* Button */
+
+.dim-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
 
 .dim-button {
   cursor: pointer;
