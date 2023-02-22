@@ -1,5 +1,6 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
+import { CustomStatDef } from './custom-stats';
 import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts';
 
 export type CharacterOrder = 'mostRecent' | 'mostRecentReverse' | 'fixed' | 'custom';
@@ -121,6 +122,13 @@ export interface Settings {
    * the item feed anymore after the user presses the "clear" button.
    */
   readonly itemFeedWatermark: string | undefined;
+
+  /**
+   * a set of user-defined custom stat totals.
+   * this will supercede customTotalStatsByClass.
+   * it defaults below to empty, which in DIM, initiates fallback to customTotalStatsByClass
+   */
+  readonly customStats: CustomStatDef[];
 }
 
 export const defaultSettings: Settings = {
@@ -204,4 +212,5 @@ export const defaultSettings: Settings = {
   descriptionsToDisplay: 'both',
   compareWeaponMasterwork: false,
   itemFeedWatermark: undefined,
+  customStats: [],
 };
