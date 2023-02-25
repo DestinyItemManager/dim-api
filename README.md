@@ -8,6 +8,8 @@
 
 The types for all API requests and responses are written out as TypeScript in [the `api/shapes` folder](https://github.com/DestinyItemManager/dim-api/tree/master/api/shapes). You can use the npm package `@destinyitemmanager/dim-api-types` to reference these types in your own code. [This file](https://github.com/DestinyItemManager/DIM/blob/master/src/app/dim-api/dim-api.ts) in DIM's source code also lists out all the API endpoints, and shows examples of how to call them.
 
+Updating the package version in `dim-api-types/package.json` and pushing to `master` will automatically publish to NPM.
+
 ### Get an API key
 
 To use the DIM API, you will need a DIM API key. Anyone can get an API key for localhost development — to get a production development token, join the [DIM Discord](https://t.co/70AKGCbEM5) and message `bhollis`.
