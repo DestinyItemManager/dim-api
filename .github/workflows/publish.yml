@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
+          registry-url: https://registry.npmjs.org/
 
       - name: Install
         if: steps.check.outputs.changed == 'true'
@@ -36,6 +37,6 @@ jobs:
 
       - name: Publish the package to NPM
         if: steps.check.outputs.changed == 'true'
-        run: cd dim-api-types && npm publish
+        run: cd dim-api-types && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # NPM will automatically authenticate with this
