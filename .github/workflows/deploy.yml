@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
-        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{K8S_CLUSTER}}
+        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{secrets.K8S_CLUSTER}}
 
       - name: Add IP address to trusted source (managed database)
         uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
@@ -79,7 +79,7 @@ jobs:
           SENTRY_PROJECT: dim-api
         with:
           environment: prod
-          version: ${{ GITHUB_SHA }}
+          version: ${{ env.GITHUB_SHA }}
 
       - name: Verify deployment
         run: kubectl rollout status deployment/dim-api
