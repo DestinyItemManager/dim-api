@@ -5,12 +5,7 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.formatOnSave": true,
   "eslint.packageManager": "yarn",
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll": true
   },
@@ -107,5 +102,8 @@
     "xpincomplete",
     "xur's",
     "zavala"
-  ]
+  ],
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "file:///Users/brh/Documents/oss/dim-api/.github/workflows/deploy.yml"
+  }
 }

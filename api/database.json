@@ -13,5 +13,17 @@
     "host": "localhost",
     "database": "postgres",
     "port": 31744
+  },
+  "prod": {
+    "driver": "pg",
+    "user": { "ENV": "DATABASE_USER" },
+    "password": { "ENV": "DATABASE_PASSWORD" },
+    "host": { "ENV": "DATABASE_HOST" },
+    "database": { "ENV": "DATABASE_NAME" },
+    "port": { "ENV": "DATABASE_PORT" },
+    "ssl": {
+      "rejectUnauthorized": false,
+      "ca": "./ca-certificate.crt"
+    }
   }
 }
