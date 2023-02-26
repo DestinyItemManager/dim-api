@@ -22,6 +22,8 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 # So sentry can get the previous commit
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -80,8 +82,9 @@ jobs:
           SENTRY_ORG: destiny-item-manager
           SENTRY_PROJECT: dim-api
         with:
-          environment: prod
+          environment: production
           version: ${{ env.GITHUB_SHA }}
+          ignore_missing: true
 
       - name: Verify deployment
         run: kubectl rollout status deployment/dim-api

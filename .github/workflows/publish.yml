@@ -19,6 +19,8 @@ jobs:
         id: check # This will be the reference for later
         with:
           file-name: ./dim-api-types/package.json
+          file-url: https://unpkg.com/@destinyitemmanager/dim-api-types@latest/package.json
+          static-checking: localIsNew
 
       - name: Setup Node
         if: steps.check.outputs.changed == 'true'
