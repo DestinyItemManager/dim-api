@@ -4,6 +4,7 @@
   "description": "TypeScript types for the DIM API",
   "main": "./index.js",
   "types": "./index.d.ts",
+  "module": "./esm/index.js",
   "sideEffects": false,
   "scripts": {},
   "repository": {
