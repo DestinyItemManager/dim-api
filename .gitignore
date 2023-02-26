@@ -18,4 +18,3 @@ yarn-error.log
 coverage/
 dim-api-types/*.js
 dim-api-types/*.ts
-dim-api-types/esm
