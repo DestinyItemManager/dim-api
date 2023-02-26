@@ -1,10 +1,12 @@
 name: Deploy dim-api
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
     paths:
+      - '.github/workflows/deploy.yml'
       - 'api/**'
       - 'dim-gg-static/**'
       - 'kubernetes/dim-api-deployment.yaml'
