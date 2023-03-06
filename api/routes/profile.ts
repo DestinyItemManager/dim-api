@@ -11,7 +11,7 @@ import { metrics } from '../metrics';
 import { DestinyVersion } from '../shapes/general';
 import { ProfileResponse } from '../shapes/profile';
 import { defaultSettings } from '../shapes/settings';
-import { badRequest, isValidPlatformMembershipId } from '../utils';
+import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils';
 
 const validComponents = new Set([
   'settings',
@@ -23,16 +23,18 @@ const validComponents = new Set([
 ]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
+  const { bungieMembershipId, profileIds } = req.user!;
   const { id: appId } = req.dimApp!;
   metrics.increment('profile.app.' + appId, 1);
 
-  const platformMembershipId = (req.query.platformMembershipId as string) || undefined;
+  const platformMembershipId = req.query.platformMembershipId?.toString();
 
   if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
     badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
     return;
   }
+
+  checkPlatformMembershipId(platformMembershipId, profileIds, 'profile');
 
   const destinyVersion: DestinyVersion = req.query.destinyVersion
     ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
@@ -43,7 +45,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const components = ((req.query.components as string) || '').split(/\s*,\s*/);
+  const components = (req.query.components?.toString() || '').split(/\s*,\s*/);
 
   if (components.some((c) => !validComponents.has(c))) {
     badRequest(
@@ -63,6 +65,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
     const response: ProfileResponse = {};
 
     if (components.includes('settings')) {
+      // TODO: should settings be stored under profile too?? maybe primary profile ID?
       const start = new Date();
       const storedSettings = await getSettings(client, bungieMembershipId);
 

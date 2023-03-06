@@ -1,22 +1,18 @@
-import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth';
-import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
-import superagent from 'superagent';
-import asyncHandler from 'express-async-handler';
-import util from 'util';
 import * as Sentry from '@sentry/node';
+import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
+import asyncHandler from 'express-async-handler';
+import superagent from 'superagent';
+import util from 'util';
+import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth';
 
-import { sign, Secret, SignOptions } from 'jsonwebtoken';
-import { badRequest } from '../utils';
+import { Secret, sign, SignOptions } from 'jsonwebtoken';
+import _ from 'lodash';
 import { metrics } from '../metrics';
+import { badRequest } from '../utils';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
-const signJwt = util.promisify<
-  string | Buffer | object,
-  Secret,
-  SignOptions,
-  string
->(sign);
+const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, string>(sign);
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
@@ -42,13 +38,36 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     const responseData = bungieResponse.body as ServerResponse<UserMembershipData>;
 
     const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
+    const primaryMembershipId = responseData.Response.primaryMembershipId;
+    const profileIds = _.sortBy(
+      responseData.Response.destinyMemberships
+        .filter((m) => !m.crossSaveOverride)
+        .map((m) => m.membershipId),
+      // Sort the primary membership ID so it's always the first one (if it
+      // exists?). The only reason someone would have multiple accounts is if
+      // they don't have cross-save enabled.
+      (membershipId) => (membershipId === primaryMembershipId ? 0 : 1)
+    );
     if (serverMembershipId === membershipId) {
       // generate and return a token
-      const token = await signJwt({}, process.env.JWT_SECRET!, {
-        subject: membershipId,
-        issuer: apiApp.dimApiKey,
-        expiresIn: TOKEN_EXPIRES_IN,
-      });
+      const token = await signJwt(
+        {
+          // Save the IDs of all the profiles this account can see, to allow us
+          // to control access at the Destiny Profile level instead of the
+          // Bungie.net account level. This is because Destiny profiles can
+          // apparently be reassigned to different Destiny IDs all the time. We
+          // stuff this in the JWT so we don't have to check with Bungie.net for
+          // every action.
+          profileIds,
+        },
+        process.env.JWT_SECRET!,
+        {
+          subject: membershipId,
+          issuer: apiApp.dimApiKey,
+          expiresIn: TOKEN_EXPIRES_IN,
+          // TODO: save all profile memberships
+        }
+      );
 
       const response: AuthTokenResponse = {
         accessToken: token,

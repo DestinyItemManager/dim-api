@@ -30,7 +30,12 @@ import {
   UsedSearchUpdate,
 } from '../shapes/profile';
 import { Settings } from '../shapes/settings';
-import { badRequest, isValidItemId, isValidPlatformMembershipId } from '../utils';
+import {
+  badRequest,
+  checkPlatformMembershipId,
+  isValidItemId,
+  isValidPlatformMembershipId,
+} from '../utils';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -39,7 +44,7 @@ import { badRequest, isValidItemId, isValidPlatformMembershipId } from '../utils
  * Note that you can't mix updates for multiple profiles - you'll have to make multiple requests.
  */
 export const updateHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
+  const { bungieMembershipId, profileIds } = req.user!;
   const { id: appId } = req.dimApp!;
   metrics.increment('update.app.' + appId, 1);
   const request = req.body as ProfileUpdateRequest;
@@ -50,6 +55,8 @@ export const updateHandler = asyncHandler(async (req, res) => {
     badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
     return;
   }
+
+  checkPlatformMembershipId(platformMembershipId, profileIds, 'update');
 
   if (destinyVersion !== 1 && destinyVersion !== 2) {
     badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
