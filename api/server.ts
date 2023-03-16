@@ -101,8 +101,9 @@ app.use((req, _, next) => {
     next(new Error('Expected JWT info'));
   } else {
     req.user = {
-      bungieMembershipId: parseInt(req.jwt.sub, 10),
-      dimApiKey: req.jwt.iss,
+      bungieMembershipId: parseInt(req.jwt.sub!, 10),
+      dimApiKey: req.jwt.iss!,
+      profileIds: req.jwt['profileIds'] ?? [],
     };
     next();
   }
