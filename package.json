@@ -40,7 +40,7 @@
     "@types/supertest": "^2.0.8",
     "@types/uuid": "^9.0.0",
     "@types/vhost": "^3.0.4",
-    "@typescript-eslint/eslint-plugin": "^5.10.1",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.10.1",
     "db-migrate": "^0.11.6",
     "db-migrate-pg": "^1.0.0",
