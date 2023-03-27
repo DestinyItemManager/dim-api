@@ -85,7 +85,11 @@ export const enum AssumeArmorMasterwork {
   All,
 }
 
-/** Whether armor of this type will have locked energy type in the Loadout Optimizer. */
+/**
+ * Whether armor of this type will have locked energy type in the Loadout Optimizer.
+ * @deprecated
+ * Armor energy type does not exist anymore.
+ */
 export const enum LockArmorEnergyType {
   /** No armor will have their energy type locked. */
   None = 1,
@@ -145,6 +149,14 @@ export interface LoadoutParameters {
     [bucketHash: number]: number[];
   };
 
+  /** The artifact unlocks relevant to this build. */
+  artifactUnlocks?: {
+    /** The item hashes of the unlocked artifact perk items. */
+    unlockedItemHashes: number[];
+    /** The season this set of artifact unlocks was chosen from. */
+    seasonNumber: number;
+  };
+
   /**
    * Whether to automatically add stat mods.
    */
@@ -190,6 +202,7 @@ export interface LoadoutParameters {
 
   /**
    * Whether armor of this type will have locked energy type in the Loadout Optimizer.
+   * @deprecated Armor energy type does not exist anymore.
    */
   lockArmorEnergyType?: LockArmorEnergyType;
 }
