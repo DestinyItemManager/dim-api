@@ -279,6 +279,13 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
       message: 'Loadout class type out of range',
     };
   }
+  if ([...loadout.equipped, ...loadout.unequipped].some((i) => i.id && !isValidItemId(i.id))) {
+    metrics.increment(metricPrefix + '.validation.itemIdFormat.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Item ID is invalid',
+    };
+  }
 
   return undefined;
 }
