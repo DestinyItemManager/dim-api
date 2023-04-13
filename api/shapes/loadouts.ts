@@ -20,6 +20,13 @@ export interface LoadoutItem {
   craftedDate?: number;
 }
 
+/** normally found inside DestinyLoadoutComponent, mapped to respective definition tables */
+export interface InGameLoadoutIdentifiers {
+  colorHash: number;
+  iconHash: number;
+  nameHash: number;
+}
+
 export interface Loadout {
   /**
    * A globally unique (UUID) identifier for the loadout.
@@ -41,8 +48,9 @@ export interface Loadout {
   emblemHash?: number;
   /** Whether to clear out other items when applying this loadout */
   clearSpace: boolean;
-  /** Lists of equipped and unequipped items in the loadout */
+  /** List of equipped items in the loadout */
   equipped: LoadoutItem[];
+  /** List of unequipped items in the loadout */
   unequipped: LoadoutItem[];
   /** Information about the desired properties of this loadout - used to drive the Loadout Optimizer or apply Mod Loadouts */
   parameters?: LoadoutParameters;
@@ -58,6 +66,11 @@ export interface Loadout {
    * applying the loadout.
    */
   autoStatMods?: number[];
+  /**
+   * a user may optionally specify which icon/color/name will be used,
+   * if this DIM loadout is saved to an in-game slot
+   */
+  inGameIdentifiers?: InGameLoadoutIdentifiers;
 }
 
 /** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */
