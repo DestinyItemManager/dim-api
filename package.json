@@ -41,7 +41,7 @@
     "@types/uuid": "^9.0.0",
     "@types/vhost": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
-    "@typescript-eslint/parser": "^5.10.1",
+    "@typescript-eslint/parser": "^5.59.1",
     "db-migrate": "^0.11.6",
     "db-migrate-pg": "^1.0.0",
     "eslint": "^8.8.0",
