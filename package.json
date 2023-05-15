@@ -45,7 +45,7 @@
     "db-migrate": "^0.11.6",
     "db-migrate-pg": "^1.0.0",
     "eslint": "^8.8.0",
-    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-prettier": "^8.8.0",
     "jest": "^29.0.1",
     "prettier": "^2.0.4",
     "prettier-plugin-organize-imports": "^3.0.0",
