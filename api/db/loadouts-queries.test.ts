@@ -62,7 +62,7 @@ it('can record a loadout', async () => {
     expect(firstLoadout.lastUpdatedAt).toBeDefined();
     delete firstLoadout.lastUpdatedAt;
     expect(firstLoadout.unequipped.length).toBe(1);
-    expect(firstLoadout.unequipped[0]['fizbuzz'].toBeUndefined());
+    expect(firstLoadout.unequipped[0]['fizbuzz']).toBeUndefined();
     firstLoadout.unequipped[0]['fizbuzz'] = 11;
     expect(firstLoadout).toEqual(loadout);
   });
