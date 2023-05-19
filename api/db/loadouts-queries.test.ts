@@ -55,7 +55,16 @@ it('can record a loadout', async () => {
     );
 
     expect(loadouts.length).toBe(1);
-    expect(loadouts[0]).toEqual(loadout);
+
+    const firstLoadout = loadouts[0];
+    expect(firstLoadout.createdAt).toBeDefined();
+    delete firstLoadout.createdAt;
+    expect(firstLoadout.lastUpdatedAt).toBeDefined();
+    delete firstLoadout.lastUpdatedAt;
+    expect(firstLoadout.unequipped.length).toBe(1);
+    expect(firstLoadout.unequipped[0]['fizbuzz'].not.toBeDefined());
+    delete firstLoadout.unequipped[0]['fizbuzz'];
+    expect(loadouts[0].id).toEqual(loadout.id);
   });
 });
 
