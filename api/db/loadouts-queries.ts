@@ -157,6 +157,10 @@ export function cleanItem(item: LoadoutItem): LoadoutItem {
     result.socketOverrides = item.socketOverrides;
   }
 
+  if (item.craftedDate && Number.isFinite(item.craftedDate)) {
+    result.craftedDate = item.craftedDate;
+  }
+
   return result;
 }
 
