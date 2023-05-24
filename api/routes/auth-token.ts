@@ -42,7 +42,9 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       const primaryMembershipId = responseData.Response.primaryMembershipId;
       const profileIds = _.sortBy(
         responseData.Response.destinyMemberships
-          .filter((m) => !m.crossSaveOverride)
+          // Filter out accounts that are tied to another platform's cross-save account. This should also cover
+          // cases where crossSaveOverride is undefined/null since membershipType is always defined
+          .filter((m) => m.crossSaveOverride !== m.membershipType)
           .map((m) => m.membershipId),
         // Sort the primary membership ID so it's always the first one (if it
         // exists?). The only reason someone would have multiple accounts is if
