@@ -11,7 +11,7 @@ jobs:
     services:
       postgres:
         # Docker Hub image
-        image: ghcr.io/circleboom/docker-postgres-14-with-pg_cron
+        image: nat212/postgres-cron
         # Provide the password for postgres
         env:
           POSTGRES_USER: postgres
