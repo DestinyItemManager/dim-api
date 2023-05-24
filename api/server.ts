@@ -100,6 +100,10 @@ app.use((req, _, next) => {
     console.error('JWT expected', req.path);
     next(new Error('Expected JWT info'));
   } else {
+    if (req.jwt.exp) {
+      metrics.timing('authToken.age', Date.now() - req.jwt.exp);
+    }
+
     req.user = {
       bungieMembershipId: parseInt(req.jwt.sub!, 10),
       dimApiKey: req.jwt.iss!,
