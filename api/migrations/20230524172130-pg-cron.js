@@ -15,11 +15,11 @@ exports.setup = function (options, seedLink) {
 };
 
 exports.up = function (db, callback) {
-  db.runSql(`CREATE EXTENSION pg_cron`, callback);
+  db.runSql(`CREATE EXTENSION pg_cron`, callback, callback);
 };
 
 exports.down = function (db) {
-  db.runSql(`DROP EXTENSION pg_cron`, callback);
+  db.runSql(`DROP EXTENSION pg_cron`, callback, callback);
 };
 
 exports._meta = {
