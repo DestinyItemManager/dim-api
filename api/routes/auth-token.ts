@@ -38,17 +38,28 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     const responseData = bungieResponse.body as ServerResponse<UserMembershipData>;
 
     const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
-    const primaryMembershipId = responseData.Response.primaryMembershipId;
-    const profileIds = _.sortBy(
-      responseData.Response.destinyMemberships
-        .filter((m) => !m.crossSaveOverride)
-        .map((m) => m.membershipId),
-      // Sort the primary membership ID so it's always the first one (if it
-      // exists?). The only reason someone would have multiple accounts is if
-      // they don't have cross-save enabled.
-      (membershipId) => (membershipId === primaryMembershipId ? 0 : 1)
-    );
     if (serverMembershipId === membershipId) {
+      const primaryMembershipId = responseData.Response.primaryMembershipId;
+      const profileIds = _.sortBy(
+        responseData.Response.destinyMemberships
+          .filter((m) => !m.crossSaveOverride)
+          .map((m) => m.membershipId),
+        // Sort the primary membership ID so it's always the first one (if it
+        // exists?). The only reason someone would have multiple accounts is if
+        // they don't have cross-save enabled.
+        (membershipId) => (membershipId === primaryMembershipId ? 0 : 1)
+      );
+      if (profileIds.length === 0) {
+        Sentry.captureMessage('Empty profileIds', (scope) => {
+          scope.setExtras({
+            primaryMembershipId,
+            destinyMemberships: responseData.Response.destinyMemberships,
+          });
+          return scope;
+        });
+        metrics.increment('authToken.emptyMemberships.count');
+      }
+
       // generate and return a token
       const token = await signJwt(
         {
