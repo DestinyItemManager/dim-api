@@ -101,7 +101,12 @@ app.use((req, _, next) => {
     next(new Error('Expected JWT info'));
   } else {
     if (req.jwt.exp) {
-      metrics.timing('authToken.age', req.jwt.exp - Date.now() / 1000);
+      const nowSecs = Date.now() / 1000;
+      if (req.jwt.exp > nowSecs) {
+        metrics.timing('authToken.age', req.jwt.exp - nowSecs);
+      } else {
+        metrics.increment('authToken.expired.count');
+      }
     }
 
     req.user = {
