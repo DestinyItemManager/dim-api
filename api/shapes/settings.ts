@@ -129,6 +129,9 @@ export interface Settings {
    * it defaults below to empty, which in DIM, initiates fallback to customTotalStatsByClass
    */
   readonly customStats: CustomStatDef[];
+
+  /** Automatically sync lock status with tag */
+  readonly autoLockTagged: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -213,4 +216,5 @@ export const defaultSettings: Settings = {
   compareWeaponMasterwork: false,
   itemFeedWatermark: undefined,
   customStats: [],
+  autoLockTagged: false,
 };
