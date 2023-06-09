@@ -121,7 +121,7 @@ export interface Settings {
    * Cutoff point; the instance ID of the newest item that isn't shown in
    * the item feed anymore after the user presses the "clear" button.
    */
-  readonly itemFeedWatermark: string | undefined;
+  readonly itemFeedWatermark: string;
 
   /**
    * a set of user-defined custom stat totals.
@@ -214,7 +214,7 @@ export const defaultSettings: Settings = {
   hidePullFromPostmaster: false,
   descriptionsToDisplay: 'both',
   compareWeaponMasterwork: false,
-  itemFeedWatermark: undefined,
+  itemFeedWatermark: '0',
   customStats: [],
   autoLockTagged: false,
 };
