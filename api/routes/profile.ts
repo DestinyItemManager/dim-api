@@ -168,6 +168,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
   });
 
   // Instruct CF not to cache this for longer than a minute
-  res.set('Cache-Control', 'max-age=60');
+  res.set('Cache-Control', 'public, max-age=60');
+  res.set('Expires', new Date(Date.now() + 60 * 1000).toUTCString());
   res.send(response);
 });
