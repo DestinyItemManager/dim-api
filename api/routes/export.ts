@@ -31,6 +31,6 @@ export const exportHandler = asyncHandler(async (req, res) => {
   });
 
   // Instruct CF not to cache this
-  res.set('Cache-Control', 'no-cache, max-age=0');
+  res.set('Cache-Control', 'no-cache, no-store, max-age=0');
   res.send(response);
 });

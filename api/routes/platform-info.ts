@@ -17,7 +17,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
       : defaultGlobalSettings;
 
   // Instruct CF to cache for 15 minutes
-  res.set('Cache-Control', 'max-age=900');
+  res.set('Cache-Control', 'public, max-age=900');
   res.send({
     settings,
   });
