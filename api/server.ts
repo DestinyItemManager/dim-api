@@ -8,6 +8,7 @@ import expressStatsd from './metrics/express';
 import { authTokenHandler } from './routes/auth-token';
 import { createAppHandler } from './routes/create-app';
 import { deleteAllDataHandler } from './routes/delete-all-data';
+import { donateHandler } from './routes/donate';
 import { exportHandler } from './routes/export';
 import { importHandler } from './routes/import';
 import { getLoadoutShareHandler, loadoutShareHandler } from './routes/loadout-share';
@@ -37,6 +38,9 @@ app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
 // Get a shared loadout
 app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
+
+// Proxy the donation info from donordrive
+app.get('/donate', donateHandler);
 
 /* ****** API KEY REQUIRED ****** */
 /* Any routes declared below this will require an API Key in X-API-Key header */
