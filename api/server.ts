@@ -40,7 +40,7 @@ app.post('/new_app', permissiveCors, createAppHandler);
 app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
 
 // Proxy the donation info from donordrive
-app.get('/donate', donateHandler);
+app.get('/donate', permissiveCors, donateHandler);
 
 /* ****** API KEY REQUIRED ****** */
 /* Any routes declared below this will require an API Key in X-API-Key header */
