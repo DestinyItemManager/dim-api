@@ -1,5 +1,5 @@
 #!node
-const fs = require('fs');
+import fs from 'node:fs';
 
 // Generate an export for each TS file in `shapes`.
 fs.readdir('./api/shapes/', (err, files) => {
