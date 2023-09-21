@@ -5,8 +5,8 @@ import fs from 'node:fs';
 fs.readdir('./api/shapes/', (err, files) => {
   for (const file of files) {
     const match = /(.*?)\.ts/.exec(file);
-    if (match) {
-      process.stdout.write(`export * from './${match[1]}';\n`);
+    if (match && !file.endsWith('index.ts')) {
+      process.stdout.write(`export * from './${match[1]}.js';\n`);
     }
   }
 });

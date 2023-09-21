@@ -5,7 +5,7 @@ import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
 
 export type CharacterOrder = 'mostRecent' | 'mostRecentReverse' | 'fixed' | 'custom';
 
-export enum InfuseDirection {
+export const enum InfuseDirection {
   /** infuse something into the query (query = target) */
   INFUSE,
   /** infuse the query into the target (query = source) */
