@@ -11,7 +11,7 @@ export async function getLoadoutsForProfile(
   client: ClientBase,
   bungieMembershipId: number,
   platformMembershipId: string,
-  destinyVersion: DestinyVersion
+  destinyVersion: DestinyVersion,
 ): Promise<Loadout[]> {
   try {
     const results = await client.query<Loadout>({
@@ -30,7 +30,7 @@ export async function getLoadoutsForProfile(
  */
 export async function getAllLoadoutsForUser(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<
   {
     platformMembershipId: string;
@@ -89,7 +89,7 @@ export async function updateLoadout(
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  loadout: Loadout
+  loadout: Loadout,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -170,7 +170,7 @@ export function cleanItem(item: LoadoutItem): LoadoutItem {
 export async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
-  loadoutId: string
+  loadoutId: string,
 ): Promise<Loadout | null> {
   try {
     const response = await client.query({
@@ -194,7 +194,7 @@ export async function deleteLoadout(
  */
 export async function deleteAllLoadouts(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({

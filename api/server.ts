@@ -95,7 +95,7 @@ app.all(
     secret: process.env.JWT_SECRET!,
     requestProperty: 'jwt',
     algorithms: ['HS256'],
-  })
+  }),
 );
 
 // Copy info from the auth token into a "user" parameter on the request.
@@ -168,7 +168,7 @@ app.use((err: Error, req, res, _next) => {
       req.method,
       req.originalUrl,
       req.user?.bungieMembershipId,
-      err
+      err,
     );
     res.status(500).send({
       error: err.name,

@@ -57,7 +57,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
           bungieMembershipId,
           platformMembershipId,
           shareId,
-          loadout
+          loadout,
         );
         return shareId;
       } catch (e) {

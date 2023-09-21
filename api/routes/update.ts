@@ -88,7 +88,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -103,7 +103,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -121,7 +121,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             platformMembershipId,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -131,7 +131,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -141,7 +141,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -150,15 +150,15 @@ export const updateHandler = asyncHandler(async (req, res) => {
             client,
             bungieMembershipId,
             destinyVersion,
-            update.payload.query
+            update.payload.query,
           );
           break;
 
         default:
           console.warn(
             `Unknown action type: ${(update as any).action} from ${appId}, ${req.header(
-              'User-Agent'
-            )}, ${req.header('Referer')}`
+              'User-Agent',
+            )}, ${req.header('Referer')}`,
           );
           result = {
             status: 'InvalidArgument',
@@ -180,7 +180,7 @@ async function updateSetting(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  settings: Partial<Settings>
+  settings: Partial<Settings>,
 ): Promise<ProfileUpdateResult> {
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
@@ -197,7 +197,7 @@ async function updateLoadout(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  loadout: Loadout
+  loadout: Loadout,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -219,7 +219,7 @@ async function updateLoadout(
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
-    loadout
+    loadout,
   );
   metrics.timing('update.loadout', start);
 
@@ -293,7 +293,7 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
 async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
-  loadoutId: string
+  loadoutId: string,
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   const loadout = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
@@ -311,7 +311,7 @@ async function updateItemAnnotation(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  itemAnnotation: ItemAnnotation
+  itemAnnotation: ItemAnnotation,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -354,7 +354,7 @@ async function updateItemAnnotation(
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
-    itemAnnotation
+    itemAnnotation,
   );
   metrics.timing('update.tag', start);
 
@@ -364,13 +364,13 @@ async function updateItemAnnotation(
 async function tagCleanup(
   client: ClientBase,
   bungieMembershipId: number,
-  inventoryItemIds: string[]
+  inventoryItemIds: string[],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await deleteItemAnnotationList(
     client,
     bungieMembershipId,
-    inventoryItemIds.filter(isValidItemId)
+    inventoryItemIds.filter(isValidItemId),
   );
   metrics.timing('update.tagCleanup', start);
 
@@ -382,7 +382,7 @@ async function trackTriumph(
   appId: string,
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
-  payload: TrackTriumphUpdate['payload']
+  payload: TrackTriumphUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -399,7 +399,7 @@ async function trackTriumph(
         appId,
         bungieMembershipId,
         platformMembershipId,
-        payload.recordHash
+        payload.recordHash,
       )
     : await unTrackTriumph(client, bungieMembershipId, platformMembershipId, payload.recordHash);
   metrics.timing('update.trackTriumph', start);
@@ -412,7 +412,7 @@ async function recordSearch(
   appId: string,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  payload: UsedSearchUpdate['payload']
+  payload: UsedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   // TODO: I did a silly thing and made the query part of the search table's
   // primary key, instead of using a fixed-size hash of the query. This limits
@@ -439,7 +439,7 @@ async function saveSearch(
   appId: string,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  payload: SavedSearchUpdate['payload']
+  payload: SavedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   // TODO: I did a silly thing and made the query part of the search table's
   // primary key, instead of using a fixed-size hash of the query. This limits
@@ -461,7 +461,7 @@ async function saveSearch(
     bungieMembershipId,
     destinyVersion,
     payload.query,
-    payload.saved
+    payload.saved,
   );
   metrics.timing('update.saveSearch', start);
 
@@ -472,7 +472,7 @@ async function deleteSearch(
   client: ClientBase,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  query: string
+  query: string,
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await deleteSearchInDb(client, bungieMembershipId, destinyVersion, query);
@@ -485,7 +485,7 @@ async function updateItemHashTag(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  payload: ItemHashTagUpdate['payload']
+  payload: ItemHashTagUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);

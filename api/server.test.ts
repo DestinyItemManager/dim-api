@@ -101,7 +101,7 @@ describe('profile', () => {
 
   it('can retrieve all profile data', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -137,7 +137,7 @@ describe('profile', () => {
 
   it('can retrieve only loadouts', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -248,7 +248,7 @@ describe('loadouts', () => {
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -298,7 +298,7 @@ describe('loadouts', () => {
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -341,7 +341,7 @@ describe('loadouts', () => {
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -374,7 +374,7 @@ describe('tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -428,7 +428,7 @@ describe('tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -462,7 +462,7 @@ describe('tags', () => {
 
     // Read tags back after deleting the tag
     const response2 = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse2 = response2.body as ProfileResponse;
@@ -517,7 +517,7 @@ describe('tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -572,7 +572,7 @@ describe('tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -603,7 +603,7 @@ describe('item hash tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -653,7 +653,7 @@ describe('item hash tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -685,7 +685,7 @@ describe('item hash tags', () => {
 
     // Read tags back after deleting the tag
     const response2 = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse2 = response2.body as ProfileResponse;
@@ -738,7 +738,7 @@ describe('item hash tags', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -771,7 +771,7 @@ describe('triumphs', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -821,7 +821,7 @@ describe('triumphs', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -870,7 +870,7 @@ describe('triumphs', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -902,7 +902,7 @@ describe('searches', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -938,7 +938,7 @@ describe('searches', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;

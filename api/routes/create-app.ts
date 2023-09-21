@@ -5,7 +5,8 @@ import { insertApp, getAppById } from '../db/apps-queries';
 import { v4 as uuid } from 'uuid';
 import { badRequest } from '../utils';
 
-const localHosts = /(^(localhost|127\.0\.0\.1|100\.115\.92|192\.168\.|10\.|172\.16\.)|(\.lan|\.local|\.internal|\.lxd)$)/;
+const localHosts =
+  /(^(localhost|127\.0\.0\.1|100\.115\.92|192\.168\.|10\.|172\.16\.)|(\.lan|\.local|\.internal|\.lxd)$)/;
 
 /**
  * Create a new API app. This is meant to be used by developers who create
@@ -25,9 +26,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   if (!localHosts.test(originUrl.hostname)) {
     badRequest(
       res,
-      `Can only register apps that match ${localHosts}, your host was ${
-        originUrl.hostname
-      }`
+      `Can only register apps that match ${localHosts}, your host was ${originUrl.hostname}`,
     );
     return;
   }
@@ -45,7 +44,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   let app: ApiApp = {
     ...request,
     origin: originUrl.origin,
-    dimApiKey: uuid()
+    dimApiKey: uuid(),
   };
 
   await transaction(async (client) => {
@@ -65,7 +64,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   // Only return the recovered app if it's for the same origin
   if (app.origin === originUrl.origin) {
     res.send({
-      app
+      app,
     });
   } else {
     badRequest(res, 'An app already exists with that id');
