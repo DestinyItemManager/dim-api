@@ -8,5 +8,6 @@
     {
       "files": "*.ejs"
     }
-  ]
+  ],
+  "plugins": ["prettier-plugin-organize-imports"]
 }

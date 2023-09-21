@@ -1,6 +1,6 @@
 import { ClientBase, QueryResult } from 'pg';
-import { ItemHashTag } from '../shapes/item-annotations';
-import { metrics } from '../metrics';
+import { metrics } from '../metrics/index.js';
+import { ItemHashTag } from '../shapes/item-annotations.js';
 
 /**
  * Get all of the hash tags for a particular platform_membership_id and destiny_version.

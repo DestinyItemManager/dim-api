@@ -1,13 +1,13 @@
 import asyncHandler from 'express-async-handler';
-import { transaction } from '../db';
-import { deleteSettings } from '../db/settings-queries';
-import { deleteAllLoadouts } from '../db/loadouts-queries';
-import { deleteAllItemAnnotations } from '../db/item-annotations-queries';
 import { ClientBase } from 'pg';
-import { DeleteAllResponse } from '../shapes/delete-all';
-import { deleteAllTrackedTriumphs } from '../db/triumphs-queries';
-import { deleteAllSearches } from '../db/searches-queries';
-import { deleteAllItemHashTags } from '../db/item-hash-tags-queries';
+import { transaction } from '../db/index.js';
+import { deleteAllItemAnnotations } from '../db/item-annotations-queries.js';
+import { deleteAllItemHashTags } from '../db/item-hash-tags-queries.js';
+import { deleteAllLoadouts } from '../db/loadouts-queries.js';
+import { deleteAllSearches } from '../db/searches-queries.js';
+import { deleteSettings } from '../db/settings-queries.js';
+import { deleteAllTrackedTriumphs } from '../db/triumphs-queries.js';
+import { DeleteAllResponse } from '../shapes/delete-all.js';
 
 /**
  * Delete My Data - this allows a user to wipe all their data from DIM storage.

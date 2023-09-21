@@ -1,5 +1,5 @@
-import { transaction, pool } from '.';
-import { setSetting, getSettings } from './settings-queries';
+import { pool, transaction } from './index.js';
+import { getSettings, setSetting } from './settings-queries.js';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;

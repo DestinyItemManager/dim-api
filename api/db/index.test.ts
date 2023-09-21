@@ -1,4 +1,4 @@
-import { pool, transaction, readTransaction } from '.';
+import { pool, readTransaction, transaction } from './index.js';
 
 beforeEach(async () => {
   try {

@@ -1,10 +1,10 @@
-import { transaction, pool } from '.';
+import { pool, transaction } from './index.js';
 import {
-  updateItemHashTag,
-  getItemHashTagsForProfile,
   deleteAllItemHashTags,
   deleteItemHashTag,
-} from './item-hash-tags-queries';
+  getItemHashTagsForProfile,
+  updateItemHashTag,
+} from './item-hash-tags-queries.js';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;

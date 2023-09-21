@@ -1,8 +1,8 @@
 import { ClientBase, QueryResult } from 'pg';
-import { metrics } from '../metrics';
-import { DestinyVersion } from '../shapes/general';
-import { Loadout, LoadoutItem } from '../shapes/loadouts';
-import { isValidItemId } from '../utils';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
+import { isValidItemId } from '../utils.js';
 
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.

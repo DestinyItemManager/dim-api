@@ -1,9 +1,9 @@
 import asyncHandler from 'express-async-handler';
-import { transaction } from '../db';
-import { CreateAppRequest, ApiApp } from '../shapes/app';
-import { insertApp, getAppById } from '../db/apps-queries';
 import { v4 as uuid } from 'uuid';
-import { badRequest } from '../utils';
+import { getAppById, insertApp } from '../db/apps-queries.js';
+import { transaction } from '../db/index.js';
+import { ApiApp, CreateAppRequest } from '../shapes/app.js';
+import { badRequest } from '../utils.js';
 
 const localHosts =
   /(^(localhost|127\.0\.0\.1|100\.115\.92|192\.168\.|10\.|172\.16\.)|(\.lan|\.local|\.internal|\.lxd)$)/;

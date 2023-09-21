@@ -1,26 +1,26 @@
 import asyncHandler from 'express-async-handler';
 import { ClientBase } from 'pg';
-import { transaction } from '../db';
+import { transaction } from '../db/index.js';
 import {
   deleteItemAnnotationList,
   updateItemAnnotation as updateItemAnnotationInDb,
-} from '../db/item-annotations-queries';
-import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
+} from '../db/item-annotations-queries.js';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries.js';
 import {
   deleteLoadout as deleteLoadoutInDb,
   updateLoadout as updateLoadoutInDb,
-} from '../db/loadouts-queries';
+} from '../db/loadouts-queries.js';
 import {
   deleteSearch as deleteSearchInDb,
   saveSearch as saveSearchInDb,
   updateUsedSearch,
-} from '../db/searches-queries';
-import { setSetting as setSettingInDb } from '../db/settings-queries';
-import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries';
-import { metrics } from '../metrics';
-import { DestinyVersion } from '../shapes/general';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { Loadout } from '../shapes/loadouts';
+} from '../db/searches-queries.js';
+import { setSetting as setSettingInDb } from '../db/settings-queries.js';
+import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries.js';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
 import {
   ItemHashTagUpdate,
   ProfileUpdateRequest,
@@ -28,14 +28,14 @@ import {
   SavedSearchUpdate,
   TrackTriumphUpdate,
   UsedSearchUpdate,
-} from '../shapes/profile';
-import { Settings } from '../shapes/settings';
+} from '../shapes/profile.js';
+import { Settings } from '../shapes/settings.js';
 import {
   badRequest,
   checkPlatformMembershipId,
   isValidItemId,
   isValidPlatformMembershipId,
-} from '../utils';
+} from '../utils.js';
 
 /**
  * Update profile information. This accepts a list of update operations and

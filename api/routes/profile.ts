@@ -1,17 +1,17 @@
 import * as Sentry from '@sentry/node';
 import asyncHandler from 'express-async-handler';
-import { readTransaction } from '../db';
-import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
-import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
-import { getLoadoutsForProfile } from '../db/loadouts-queries';
-import { getSearchesForProfile } from '../db/searches-queries';
-import { getSettings } from '../db/settings-queries';
-import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
-import { metrics } from '../metrics';
-import { DestinyVersion } from '../shapes/general';
-import { ProfileResponse } from '../shapes/profile';
-import { defaultSettings } from '../shapes/settings';
-import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils';
+import { readTransaction } from '../db/index.js';
+import { getItemAnnotationsForProfile } from '../db/item-annotations-queries.js';
+import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries.js';
+import { getLoadoutsForProfile } from '../db/loadouts-queries.js';
+import { getSearchesForProfile } from '../db/searches-queries.js';
+import { getSettings } from '../db/settings-queries.js';
+import { getTrackedTriumphsForProfile } from '../db/triumphs-queries.js';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ProfileResponse } from '../shapes/profile.js';
+import { defaultSettings } from '../shapes/settings.js';
+import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
 const validComponents = new Set([
   'settings',

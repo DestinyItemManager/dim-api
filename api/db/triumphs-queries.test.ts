@@ -1,11 +1,11 @@
-import { transaction, pool } from '.';
+import { pool, transaction } from './index.js';
 import {
-  getTrackedTriumphsForProfile,
+  deleteAllTrackedTriumphs,
   getAllTrackedTriumphsForUser,
+  getTrackedTriumphsForProfile,
   trackTriumph,
   unTrackTriumph,
-  deleteAllTrackedTriumphs,
-} from './triumphs-queries';
+} from './triumphs-queries.js';
 
 const appId = 'settings-queries-test-app';
 const platformMembershipId = '213512057';

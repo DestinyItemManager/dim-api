@@ -1,6 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { ApiApp } from './shapes/app';
-import { UserInfo } from './shapes/user';
+import { ApiApp } from './shapes/app.js';
+import { UserInfo } from './shapes/user.js';
 
 declare module 'express-serve-static-core' {
   interface Request {

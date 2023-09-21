@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import path from 'path';
-import { transaction } from '../db';
-import { getLoadoutShare, recordAccess } from '../db/loadout-share-queries';
+import { transaction } from '../db/index.js';
+import { getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 
 /**
  * Save a loadout to be shared via a dim.gg link.

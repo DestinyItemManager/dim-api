@@ -1,17 +1,17 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
-import slugify from 'slugify';
-import { transaction } from '../db';
-import { addLoadoutShare, getLoadoutShare, recordAccess } from '../db/loadout-share-queries';
-import { metrics } from '../metrics';
+import { transaction } from '../db/index.js';
+import { addLoadoutShare, getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
+import { metrics } from '../metrics/index.js';
 import {
   GetSharedLoadoutResponse,
   LoadoutShareRequest,
   LoadoutShareResponse,
-} from '../shapes/loadout-share';
-import { Loadout } from '../shapes/loadouts';
-import { validateLoadout } from './update';
+} from '../shapes/loadout-share.js';
+import { Loadout } from '../shapes/loadouts.js';
+import slugify from './slugify.js';
+import { validateLoadout } from './update.js';
 
 // Prevent it translating pipe to "or"
 slugify.extend({ '|': '-' });
@@ -43,6 +43,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
   const validationResult = validateLoadout('loadout_share', loadout);
   if (validationResult) {
     res.status(400).send(validationResult);
+    return;
   }
 
   const shareId = await transaction(async (client) => {
@@ -69,24 +70,20 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
         }
       }
     }
-    if (attempts >= 4) {
-      return 'ran-out';
-    }
+    return 'ran-out';
   });
 
   if (shareId === 'ran-out') {
     metrics.increment('loadout_share.ranOutOfAttempts.count');
-    if (validationResult) {
-      res.status(500).send({
-        status: 'RanOutOfIDs',
-        message: "We couldn't generate a share URL",
-      });
-      return;
-    }
+    res.status(500).send({
+      status: 'RanOutOfIDs',
+      message: "We couldn't generate a share URL",
+    });
+    return;
   }
 
   const result: LoadoutShareResponse = {
-    shareUrl: getShareURL(loadout, shareId!),
+    shareUrl: getShareURL(loadout, shareId),
   };
 
   res.send(result);

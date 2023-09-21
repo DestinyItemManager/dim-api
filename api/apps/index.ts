@@ -1,10 +1,10 @@
-import { pool } from '../db';
-import { ApiApp } from '../shapes/app';
-import { getAllApps } from '../db/apps-queries';
-import { metrics } from '../metrics';
-import _ from 'lodash';
-import { RequestHandler } from 'express';
 import * as Sentry from '@sentry/node';
+import { RequestHandler } from 'express';
+import _ from 'lodash';
+import { getAllApps } from '../db/apps-queries.js';
+import { pool } from '../db/index.js';
+import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 
 /**
  * Express middleware that requires an API key be provided in a header
