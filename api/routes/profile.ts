@@ -50,7 +50,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
   if (components.some((c) => !validComponents.has(c))) {
     badRequest(
       res,
-      `[${components.filter((c) => !validComponents.has(c)).join(', ')}] are not valid components`
+      `[${components.filter((c) => !validComponents.has(c)).join(', ')}] are not valid components`,
     );
     return;
   }
@@ -102,7 +102,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId,
         platformMembershipId,
-        destinyVersion
+        destinyVersion,
       );
       metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
       metrics.timing('profile.loadouts', start);
@@ -118,7 +118,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId,
         platformMembershipId,
-        destinyVersion
+        destinyVersion,
       );
       metrics.timing('profile.tags.numReturned', response.tags.length);
       metrics.timing('profile.tags', start);
@@ -140,7 +140,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
       response.triumphs = await getTrackedTriumphsForProfile(
         client,
         bungieMembershipId,
-        platformMembershipId
+        platformMembershipId,
       );
       metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
       metrics.timing('profile.triumphs', start);

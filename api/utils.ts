@@ -37,7 +37,7 @@ function isNumberSequence(str: string) {
 export function checkPlatformMembershipId(
   platformMembershipId: string | undefined,
   profileIds: string[],
-  metricsPrefix: string
+  metricsPrefix: string,
 ) {
   // For now, don't enforce that the JWT includes profile IDs, but track whether they would
   if (platformMembershipId) {
@@ -47,7 +47,7 @@ export function checkPlatformMembershipId(
           '.profileIds.' +
           (profileIds.includes(platformMembershipId) ? 'match' : 'noMatch') +
           '.count',
-        1
+        1,
       );
     } else {
       metrics.increment(metricsPrefix + '.profileIds.missing.count', 1);

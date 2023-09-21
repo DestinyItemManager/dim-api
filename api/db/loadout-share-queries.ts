@@ -8,7 +8,7 @@ import { cleanItem, convertLoadout } from './loadouts-queries';
  */
 export async function getLoadoutShare(
   client: ClientBase,
-  shareId: string
+  shareId: string,
 ): Promise<Loadout | undefined> {
   try {
     const results = await client.query<Loadout>({
@@ -35,7 +35,7 @@ export async function addLoadoutShare(
   bungieMembershipId: number,
   platformMembershipId: string,
   shareId: string,
-  loadout: Loadout
+  loadout: Loadout,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -75,10 +75,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 /**
  * Touch the last_accessed_at and visits fields to keep track of access.
  */
-export async function recordAccess(
-  client: ClientBase,
-  shareId: string
-): Promise<QueryResult<any>> {
+export async function recordAccess(client: ClientBase, shareId: string): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
       name: 'loadout_share_record_access',

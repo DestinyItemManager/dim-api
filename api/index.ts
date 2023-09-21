@@ -24,7 +24,7 @@ app.set('x-powered-by', false);
 app.use(
   Sentry.Handlers.requestHandler({
     user: ['bungieMembershipId'],
-  })
+  }),
 );
 // TracingHandler creates a trace for every incoming request
 app.use(Sentry.Handlers.tracingHandler());
@@ -54,14 +54,14 @@ switch (process.env.VHOST) {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://beta.destinyitemmanager.com' + req.originalUrl);
-        })
+        }),
       );
       app.use(
         vhost('app.dim.gg', (req, res) => {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://app.destinyitemmanager.com' + req.originalUrl);
-        })
+        }),
       );
     }
     break;

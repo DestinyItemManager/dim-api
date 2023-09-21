@@ -76,7 +76,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         loadout.platformMembershipId,
         loadout.destinyVersion,
-        loadout
+        loadout,
       );
     }
 
@@ -88,7 +88,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         annotation.platformMembershipId,
         annotation.destinyVersion,
-        annotation
+        annotation,
       );
     }
 
@@ -105,7 +105,7 @@ export const importHandler = asyncHandler(async (req, res) => {
               appId,
               bungieMembershipId,
               triumphData.platformMembershipId,
-              triumph
+              triumph,
             );
             numTriumphs++;
           }
@@ -122,7 +122,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         search.search.query,
         search.search.saved,
         search.search.lastUsage,
-        search.search.usageCount
+        search.search.usageCount,
       );
     }
   });
@@ -155,7 +155,7 @@ function subtractObject(obj: object | undefined, defaults: object) {
 function extractSettings(importData: DimData | ExportResponse): Settings {
   return subtractObject(
     importData.settings || importData['settings-v1.0'],
-    defaultSettings
+    defaultSettings,
   ) as Settings;
 }
 
@@ -260,6 +260,6 @@ function extractItemAnnotations(importData: DimData | ExportResponse): PlatformI
 function extractSearches(importData: ExportResponse | DimData): ExportResponse['searches'] {
   return (importData.searches || []).filter(
     // Filter out pre-filled searches that were never used
-    (s) => s.search.usageCount > 0
+    (s) => s.search.usageCount > 0,
   );
 }

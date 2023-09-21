@@ -8,12 +8,10 @@ const app: ApiApp = {
   id: 'apps-queries-test-app',
   bungieApiKey: 'foo',
   origin: 'https://localhost',
-  dimApiKey: uuid()
+  dimApiKey: uuid(),
 };
 
-beforeEach(() =>
-  pool.query({ text: 'delete from apps where id = $1', values: [appId] })
-);
+beforeEach(() => pool.query({ text: 'delete from apps where id = $1', values: [appId] }));
 
 afterAll(() => pool.end());
 

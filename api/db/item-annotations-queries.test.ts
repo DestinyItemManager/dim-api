@@ -15,7 +15,7 @@ const bungieMembershipId = 4321;
 beforeEach(() =>
   transaction(async (client) => {
     await deleteAllItemAnnotations(client, bungieMembershipId);
-  })
+  }),
 );
 
 afterAll(() => pool.end());
@@ -32,7 +32,7 @@ it('can insert tags where none exist before', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations[0]).toEqual({
       id: '123456',
@@ -60,7 +60,7 @@ it('can update tags where none exist before', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations[0]).toEqual({
       id: '123456',
@@ -87,7 +87,7 @@ it('can update tags clearing value', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations[0]).toEqual({
       id: '123456',
@@ -110,7 +110,7 @@ it('can delete tags', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations).toEqual([]);
   });
@@ -134,7 +134,7 @@ it('can delete tags by setting both values to null/empty', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations).toEqual([]);
   });
@@ -152,7 +152,7 @@ it('can insert tags with a variant', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations[0]).toEqual({
       id: '123456',
@@ -170,7 +170,7 @@ it('can insert tags with a variant', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations2[0]).toEqual({
       id: '123456',
@@ -200,7 +200,7 @@ it('can clear tags', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
     expect(annotations).toEqual([]);
   });

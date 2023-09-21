@@ -48,7 +48,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
         // Sort the primary membership ID so it's always the first one (if it
         // exists?). The only reason someone would have multiple accounts is if
         // they don't have cross-save enabled.
-        (membershipId) => (membershipId === primaryMembershipId ? 0 : 1)
+        (membershipId) => (membershipId === primaryMembershipId ? 0 : 1),
       );
       if (profileIds.length === 0) {
         Sentry.captureMessage('Empty profileIds', (scope) => {
@@ -78,7 +78,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
           issuer: apiApp.dimApiKey,
           expiresIn: TOKEN_EXPIRES_IN,
           // TODO: save all profile memberships
-        }
+        },
       );
 
       const response: AuthTokenResponse = {
@@ -106,7 +106,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       Sentry.captureException(e);
       console.error('Error issuing auth token', e);
       throw new Error(
-        `Error from Bungie.net while verifying token: ${e.response?.body.ErrorStatus}: ${e.response?.body.Message}`
+        `Error from Bungie.net while verifying token: ${e.response?.body.ErrorStatus}: ${e.response?.body.Message}`,
       );
     }
   }

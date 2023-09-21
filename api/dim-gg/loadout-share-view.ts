@@ -46,7 +46,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
     (loadout.parameters.query ||
       loadout.parameters.exoticArmorHash ||
       loadout.parameters.statConstraints?.some(
-        (s) => s.maxTier !== undefined || s.minTier !== undefined
+        (s) => s.maxTier !== undefined || s.minTier !== undefined,
       ));
   const numItems = loadout.equipped.length + loadout.unequipped.length - (hasSubclass ? 1 : 0);
 

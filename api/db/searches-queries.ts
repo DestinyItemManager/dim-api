@@ -25,7 +25,7 @@ const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentcha
     saved: false,
     usageCount: 0,
     lastUsage: 0,
-  })
+  }),
 );
 /*
  * Searches are stored in a single table, scoped by Bungie.net account and destiny version (D1 searches are separate from D2 searches).
@@ -42,7 +42,7 @@ const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentcha
 export async function getSearchesForProfile(
   client: ClientBase,
   bungieMembershipId: number,
-  destinyVersion: DestinyVersion
+  destinyVersion: DestinyVersion,
 ): Promise<Search[]> {
   try {
     const results = await client.query({
@@ -55,7 +55,7 @@ export async function getSearchesForProfile(
       results.rows
         .map(convertSearch)
         .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
-      (s) => s.query
+      (s) => s.query,
     );
   } catch (e) {
     throw new Error(e.name + ': ' + e.message);
@@ -67,7 +67,7 @@ export async function getSearchesForProfile(
  */
 export async function getSearchesForUser(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<ExportResponse['searches']> {
   // TODO: this isn't indexed!
   try {
@@ -104,7 +104,7 @@ export async function updateUsedSearch(
   appId: string,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  query: string
+  query: string,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -137,7 +137,7 @@ export async function saveSearch(
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
   query: string,
-  saved?: boolean
+  saved?: boolean,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -174,7 +174,7 @@ export async function importSearch(
   query: string,
   saved: boolean,
   lastUsage: number,
-  usageCount: number
+  usageCount: number,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -211,7 +211,7 @@ export async function deleteSearch(
   client: ClientBase,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  query: string
+  query: string,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
@@ -229,7 +229,7 @@ export async function deleteSearch(
  */
 export async function deleteAllSearches(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({

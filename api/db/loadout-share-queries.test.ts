@@ -1,11 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { pool, transaction } from '.';
 import { Loadout, LoadoutItem } from '../shapes/loadouts';
-import {
-  addLoadoutShare,
-  getLoadoutShare,
-  recordAccess,
-} from './loadout-share-queries';
+import { addLoadoutShare, getLoadoutShare, recordAccess } from './loadout-share-queries';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
@@ -16,7 +12,7 @@ const shareID = 'ABCDEFG';
 beforeEach(() =>
   transaction(async (client) => {
     await client.query("delete from loadout_shares where id = 'ABCDEFG'");
-  })
+  }),
 );
 
 afterAll(() => pool.end());
@@ -52,7 +48,7 @@ it('can record a shared loadout', async () => {
       bungieMembershipId,
       platformMembershipId,
       shareID,
-      loadout
+      loadout,
     );
 
     const sharedLoadout = await getLoadoutShare(client, shareID);
@@ -69,7 +65,7 @@ it('rejects multiple shares with the same ID', async () => {
       bungieMembershipId,
       platformMembershipId,
       shareID,
-      loadout
+      loadout,
     );
 
     try {
@@ -79,7 +75,7 @@ it('rejects multiple shares with the same ID', async () => {
         bungieMembershipId,
         platformMembershipId,
         shareID,
-        loadout
+        loadout,
       );
       fail('Expected this to throw an error');
     } catch (e) {}
@@ -94,7 +90,7 @@ it('can record visits', async () => {
       bungieMembershipId,
       platformMembershipId,
       shareID,
-      loadout
+      loadout,
     );
 
     await recordAccess(client, shareID);

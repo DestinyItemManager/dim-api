@@ -10,7 +10,7 @@ const platformMembershipId = '213512057';
 beforeEach(() =>
   transaction(async (client) => {
     await client.query(`delete from loadouts where membership_id = ${bungieMembershipId}`);
-  })
+  }),
 );
 
 afterAll(() => pool.end());
@@ -51,7 +51,7 @@ it('can record a loadout', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
 
     expect(loadouts.length).toBe(1);
@@ -82,7 +82,7 @@ it('can update a loadout', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
 
     expect(loadouts.length).toBe(1);
@@ -102,7 +102,7 @@ it('can delete a loadout', async () => {
       client,
       bungieMembershipId,
       platformMembershipId,
-      2
+      2,
     );
 
     expect(loadouts.length).toBe(0);

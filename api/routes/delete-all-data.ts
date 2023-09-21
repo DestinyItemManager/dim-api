@@ -28,16 +28,14 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
 
 export async function deleteAllData(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<DeleteAllResponse['deleted']> {
   return {
     settings: (await deleteSettings(client, bungieMembershipId)).rowCount,
     loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount,
     tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount,
-    itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId))
-      .rowCount,
-    triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId))
-      .rowCount,
+    itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId)).rowCount,
+    triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId)).rowCount,
     searches: (await deleteAllSearches(client, bungieMembershipId)).rowCount,
   };
 }

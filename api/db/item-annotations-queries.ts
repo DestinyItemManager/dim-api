@@ -10,7 +10,7 @@ export async function getItemAnnotationsForProfile(
   client: ClientBase,
   bungieMembershipId: number,
   platformMembershipId: string,
-  destinyVersion: DestinyVersion
+  destinyVersion: DestinyVersion,
 ): Promise<ItemAnnotation[]> {
   try {
     const results = await client.query({
@@ -29,7 +29,7 @@ export async function getItemAnnotationsForProfile(
  */
 export async function getAllItemAnnotationsForUser(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<
   {
     platformMembershipId: string;
@@ -82,7 +82,7 @@ export async function updateItemAnnotation(
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  itemAnnotation: ItemAnnotation
+  itemAnnotation: ItemAnnotation,
 ): Promise<QueryResult<any>> {
   const tagValue = clearValue(itemAnnotation.tag);
   // Variant will only be set when tag is set and only for "keep" values
@@ -147,7 +147,7 @@ function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | 
  */
 function variantValue(
   tag: TagValue | 'clear' | null,
-  v: TagVariant | undefined
+  v: TagVariant | undefined,
 ): TagVariant | 0 | null {
   if (tag === 'keep') {
     return v ?? 0;
@@ -166,7 +166,7 @@ function variantValue(
 export async function deleteItemAnnotation(
   client: ClientBase,
   bungieMembershipId: number,
-  inventoryItemId: string
+  inventoryItemId: string,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
@@ -185,7 +185,7 @@ export async function deleteItemAnnotation(
 export async function deleteItemAnnotationList(
   client: ClientBase,
   bungieMembershipId: number,
-  inventoryItemIds: string[]
+  inventoryItemIds: string[],
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
@@ -203,7 +203,7 @@ export async function deleteItemAnnotationList(
  */
 export async function deleteAllItemAnnotations(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({

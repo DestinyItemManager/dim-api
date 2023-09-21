@@ -7,13 +7,12 @@ import { metrics } from '../metrics';
  */
 export async function getItemHashTagsForProfile(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<ItemHashTag[]> {
   try {
     const results = await client.query({
       name: 'get_item_hash_tags',
-      text:
-        'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
+      text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map(convertItemHashTag);
@@ -42,7 +41,7 @@ export async function updateItemHashTag(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  itemHashTag: ItemHashTag
+  itemHashTag: ItemHashTag,
 ): Promise<QueryResult<any>> {
   const tagValue = clearValue(itemHashTag.tag);
   const notesValue = clearValue(itemHashTag.notes);
@@ -58,13 +57,7 @@ export async function updateItemHashTag(
 values ($1, $2, (CASE WHEN $3 = 'clear'::item_tag THEN NULL ELSE $3 END)::item_tag, (CASE WHEN $4 = 'clear' THEN NULL ELSE $4 END), $5, $5)
 on conflict (membership_id, item_hash)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 'clear' THEN NULL WHEN $3 IS NULL THEN item_hash_tags.tag ELSE $3 END), (CASE WHEN $4 = 'clear' THEN NULL WHEN $4 IS NULL THEN item_hash_tags.notes ELSE $4 END), current_timestamp, $5)`,
-      values: [
-        bungieMembershipId,
-        itemHashTag.hash,
-        tagValue,
-        notesValue,
-        appId,
-      ],
+      values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
     });
 
     if (response.rowCount < 1) {
@@ -100,7 +93,7 @@ function clearValue(val: string | null | undefined) {
 export async function deleteItemHashTag(
   client: ClientBase,
   bungieMembershipId: number,
-  itemHash: number
+  itemHash: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
@@ -118,7 +111,7 @@ export async function deleteItemHashTag(
  */
 export async function deleteAllItemHashTags(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
