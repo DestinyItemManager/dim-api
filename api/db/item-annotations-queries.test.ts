@@ -1,12 +1,12 @@
-import { pool, transaction } from '.';
-import { TagVariant } from '../shapes/item-annotations';
+import { TagVariant } from '../shapes/item-annotations.js';
+import { pool, transaction } from './index.js';
 import {
   deleteAllItemAnnotations,
   deleteItemAnnotation,
   deleteItemAnnotationList,
   getItemAnnotationsForProfile,
   updateItemAnnotation,
-} from './item-annotations-queries';
+} from './item-annotations-queries.js';
 
 const appId = 'settings-queries-test-app';
 const platformMembershipId = '213512057';

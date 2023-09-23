@@ -1,12 +1,12 @@
 import asyncHandler from 'express-async-handler';
-import { readTransaction } from '../db';
-import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries';
-import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
-import { getAllLoadoutsForUser } from '../db/loadouts-queries';
-import { getSearchesForUser } from '../db/searches-queries';
-import { getSettings } from '../db/settings-queries';
-import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries';
-import { ExportResponse } from '../shapes/export';
+import { readTransaction } from '../db/index.js';
+import { getAllItemAnnotationsForUser } from '../db/item-annotations-queries.js';
+import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries.js';
+import { getAllLoadoutsForUser } from '../db/loadouts-queries.js';
+import { getSearchesForUser } from '../db/searches-queries.js';
+import { getSettings } from '../db/settings-queries.js';
+import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries.js';
+import { ExportResponse } from '../shapes/export.js';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user!;

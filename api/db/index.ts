@@ -1,9 +1,9 @@
-import { ClientBase, Pool } from 'pg';
-import { metrics } from '../metrics';
+import pg, { ClientBase } from 'pg';
+import { metrics } from '../metrics/index.js';
 
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
-export const pool = new Pool({
+export const pool = new pg.Pool({
   max: 2, // We get 25 connections per 1GB of RAM (we have 4GB), minus 3 connections for maintenance = 97. We run a variable number of DIM services.
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,

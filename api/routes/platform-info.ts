@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
-import { pool } from '../db';
-import { defaultGlobalSettings, GlobalSettings } from '../shapes/global-settings';
-import { camelize } from '../utils';
+import { pool } from '../db/index.js';
+import { defaultGlobalSettings, GlobalSettings } from '../shapes/global-settings.js';
+import { camelize } from '../utils.js';
 
 export const platformInfoHandler = asyncHandler(async (req, res) => {
   const flavor = (req.query.flavor as string) ?? 'app';

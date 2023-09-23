@@ -4,15 +4,15 @@ import _ from 'lodash';
 import supertest from 'supertest';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
-import { refreshApps } from './apps';
-import { pool } from './db';
-import { app } from './server';
-import { ExportResponse } from './shapes/export';
-import { GlobalSettings } from './shapes/global-settings';
-import { LoadoutShareRequest } from './shapes/loadout-share';
-import { Loadout, LoadoutItem } from './shapes/loadouts';
-import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
-import { defaultSettings } from './shapes/settings';
+import { refreshApps } from './apps/index.js';
+import { pool } from './db/index.js';
+import { app } from './server.js';
+import { ExportResponse } from './shapes/export.js';
+import { GlobalSettings } from './shapes/global-settings.js';
+import { LoadoutShareRequest } from './shapes/loadout-share.js';
+import { Loadout, LoadoutItem } from './shapes/loadouts.js';
+import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile.js';
+import { defaultSettings } from './shapes/settings.js';
 
 const request = supertest(app);
 

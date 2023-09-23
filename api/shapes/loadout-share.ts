@@ -1,4 +1,4 @@
-import { Loadout } from './loadouts';
+import { Loadout } from './loadouts.js';
 
 /**
  * A loadout to share.

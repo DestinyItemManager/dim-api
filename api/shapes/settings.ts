@@ -1,7 +1,7 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
-import { CustomStatDef } from './custom-stats';
-import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts';
+import { CustomStatDef } from './custom-stats.js';
+import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
 
 export type CharacterOrder = 'mostRecent' | 'mostRecentReverse' | 'fixed' | 'custom';
 

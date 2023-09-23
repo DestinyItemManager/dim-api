@@ -1,7 +1,7 @@
-import { pool, transaction } from '.';
-import { insertApp, getAppById, getAllApps } from './apps-queries';
 import { v4 as uuid } from 'uuid';
-import { ApiApp } from '../shapes/app';
+import { ApiApp } from '../shapes/app.js';
+import { getAllApps, getAppById, insertApp } from './apps-queries.js';
+import { pool, transaction } from './index.js';
 
 const appId = 'apps-queries-test-app';
 const app: ApiApp = {

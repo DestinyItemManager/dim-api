@@ -1,7 +1,7 @@
 import express from 'express';
-import { metrics } from '../metrics';
-import expressStatsd from '../metrics/express';
-import { loadoutShareViewHandler } from './loadout-share-view';
+import expressStatsd from '../metrics/express.js';
+import { metrics } from '../metrics/index.js';
+import { loadoutShareViewHandler } from './loadout-share-view.js';
 
 /** dim.gg - DIM share links server */
 

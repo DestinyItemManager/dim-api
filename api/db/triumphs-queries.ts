@@ -1,5 +1,5 @@
 import { ClientBase, QueryResult } from 'pg';
-import { metrics } from '../metrics';
+import { metrics } from '../metrics/index.js';
 
 /**
  * Get all of the tracked triumphs for a particular platform_membership_id.

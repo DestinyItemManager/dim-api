@@ -1,8 +1,8 @@
-import { Settings } from './settings';
-import { Loadout } from './loadouts';
-import { ItemAnnotation, ItemHashTag } from './item-annotations';
-import { DestinyVersion } from './general';
-import { Search } from './search';
+import { DestinyVersion } from './general.js';
+import { ItemAnnotation, ItemHashTag } from './item-annotations.js';
+import { Loadout } from './loadouts.js';
+import { Search } from './search.js';
+import { Settings } from './settings.js';
 
 export interface ProfileResponse {
   settings?: Settings;

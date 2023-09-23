@@ -1,7 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
-import { metrics } from '../metrics';
-import { Loadout } from '../shapes/loadouts';
-import { cleanItem, convertLoadout } from './loadouts-queries';
+import { metrics } from '../metrics/index.js';
+import { Loadout } from '../shapes/loadouts.js';
+import { cleanItem, convertLoadout } from './loadouts-queries.js';
 
 /**
  * Get a specific loadout share by its share ID.

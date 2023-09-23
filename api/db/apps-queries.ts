@@ -1,6 +1,6 @@
 import { ClientBase, QueryResult } from 'pg';
-import { ApiApp } from '../shapes/app';
-import { camelize } from '../utils';
+import { ApiApp } from '../shapes/app.js';
+import { camelize } from '../utils.js';
 
 /**
  * Get all registered apps.

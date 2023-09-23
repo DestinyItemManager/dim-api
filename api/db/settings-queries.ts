@@ -1,5 +1,5 @@
 import { ClientBase, QueryResult } from 'pg';
-import { Settings } from '../shapes/settings';
+import { Settings } from '../shapes/settings.js';
 
 /**
  * Get settings for a particular account.

@@ -3,16 +3,16 @@ import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
 import asyncHandler from 'express-async-handler';
 import superagent from 'superagent';
 import util from 'util';
-import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth';
+import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 
-import { Secret, sign, SignOptions } from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import _ from 'lodash';
-import { metrics } from '../metrics';
-import { badRequest } from '../utils';
+import { metrics } from '../metrics/index.js';
+import { badRequest } from '../utils.js';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
-const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, string>(sign);
+const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, string>(jwt.sign);
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;

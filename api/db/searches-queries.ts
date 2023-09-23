@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import { ClientBase, QueryResult } from 'pg';
-import { metrics } from '../metrics';
-import { ExportResponse } from '../shapes/export';
-import { DestinyVersion } from '../shapes/general';
-import { Search } from '../shapes/search';
+import { metrics } from '../metrics/index.js';
+import { ExportResponse } from '../shapes/export.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { Search } from '../shapes/search.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.

@@ -1,7 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
-import { metrics } from '../metrics';
-import { DestinyVersion } from '../shapes/general';
-import { ItemAnnotation, TagValue, TagVariant } from '../shapes/item-annotations';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ItemAnnotation, TagValue, TagVariant } from '../shapes/item-annotations.js';
 
 /**
  * Get all of the item annotations for a particular platform_membership_id and destiny_version.

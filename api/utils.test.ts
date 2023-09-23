@@ -1,4 +1,4 @@
-import { camelize } from './utils';
+import { camelize } from './utils.js';
 
 describe('camelize', () => {
   it('camel-cases objects', () => {

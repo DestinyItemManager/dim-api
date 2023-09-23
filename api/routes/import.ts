@@ -1,20 +1,20 @@
 import asyncHandler from 'express-async-handler';
 import _ from 'lodash';
-import { transaction } from '../db';
-import { updateItemAnnotation } from '../db/item-annotations-queries';
-import { updateItemHashTag } from '../db/item-hash-tags-queries';
-import { updateLoadout } from '../db/loadouts-queries';
-import { importSearch } from '../db/searches-queries';
-import { replaceSettings } from '../db/settings-queries';
-import { trackTriumph } from '../db/triumphs-queries';
-import { ExportResponse } from '../shapes/export';
-import { DestinyVersion } from '../shapes/general';
-import { ImportResponse } from '../shapes/import';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { Loadout } from '../shapes/loadouts';
-import { defaultSettings, Settings } from '../shapes/settings';
-import { badRequest } from '../utils';
-import { deleteAllData } from './delete-all-data';
+import { transaction } from '../db/index.js';
+import { updateItemAnnotation } from '../db/item-annotations-queries.js';
+import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
+import { updateLoadout } from '../db/loadouts-queries.js';
+import { importSearch } from '../db/searches-queries.js';
+import { replaceSettings } from '../db/settings-queries.js';
+import { trackTriumph } from '../db/triumphs-queries.js';
+import { ExportResponse } from '../shapes/export.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ImportResponse } from '../shapes/import.js';
+import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
+import { defaultSettings, Settings } from '../shapes/settings.js';
+import { badRequest } from '../utils.js';
+import { deleteAllData } from './delete-all-data.js';
 
 export interface DimData {
   // The last selected platform membership ID

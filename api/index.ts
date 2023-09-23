@@ -1,15 +1,15 @@
-const http = require('http');
+import http from 'http';
 import { createTerminus } from '@godaddy/terminus';
 import * as Sentry from '@sentry/node';
 import * as Tracing from '@sentry/tracing';
 import express from 'express';
 import morgan from 'morgan';
 import vhost from 'vhost';
-import { refreshApps, stopAppsRefresh } from './apps';
-import { pool } from './db';
-import { app as dimGgApp } from './dim-gg/server';
-import { metrics } from './metrics';
-import { app as dimApiApp } from './server';
+import { refreshApps, stopAppsRefresh } from './apps/index.js';
+import { pool } from './db/index.js';
+import { app as dimGgApp } from './dim-gg/server.js';
+import { metrics } from './metrics/index.js';
+import { app as dimApiApp } from './server.js';
 
 const port = 3000;
 

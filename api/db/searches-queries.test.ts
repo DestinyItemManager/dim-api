@@ -1,13 +1,13 @@
-import { transaction, pool } from '.';
+import { pool, transaction } from './index.js';
 import {
   deleteAllSearches,
+  deleteSearch,
   getSearchesForProfile,
   getSearchesForUser,
-  updateUsedSearch,
-  saveSearch,
-  deleteSearch,
   importSearch,
-} from './searches-queries';
+  saveSearch,
+  updateUsedSearch,
+} from './searches-queries.js';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
