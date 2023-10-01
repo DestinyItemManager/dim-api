@@ -1,6 +1,6 @@
 export type TagValue = 'favorite' | 'keep' | 'infuse' | 'junk' | 'archive';
 
-export enum TagVariant {
+export const enum TagVariant {
   PVP = 1,
   PVE = 2,
 }
