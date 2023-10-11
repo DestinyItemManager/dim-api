@@ -124,8 +124,8 @@ app.use((req, _, next) => {
 
 // Validate that the auth token and the API key in the header match.
 app.use((req, res, next) => {
-  if (req.dimApp && req.dimApp.dimApiKey !== req.jwt!.iss) {
-    console.warn('ApiKeyMismatch', req.dimApp?.id, req.dimApp?.dimApiKey, req.jwt!.iss);
+  if (req.dimApp && req.dimApp.dimApiKey !== req.jwt.iss) {
+    console.warn('ApiKeyMismatch', req.dimApp?.id, req.dimApp?.dimApiKey, req.jwt.iss);
     metrics.increment('apiKey.mismatch.count');
     res.status(401).send({
       error: 'ApiKeyMismatch',

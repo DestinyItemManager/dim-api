@@ -4,7 +4,6 @@
   "files.trimTrailingWhitespace": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.formatOnSave": true,
-  "eslint.packageManager": "yarn",
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll": true
@@ -14,7 +13,7 @@
       "source.organizeImports": false
     }
   },
-  "jest.jestCommandLine": "yarn test",
+  "jest.jestCommandLine": "pnpm test",
   "cSpell.enabledLanguageIds": ["jsonc", "json", "markdown"],
   "cSpell.allowCompoundWords": true,
   "cSpell.ignorePaths": [
