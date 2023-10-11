@@ -25,13 +25,16 @@ jobs:
         with:
           fetch-depth: 2 # So sentry can get the previous commit
 
+      - uses: pnpm/action-setup@v2
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
+          cache: pnpm
 
-      - name: yarn install
-        run: yarn install --frozen-lockfile --prefer-offline
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
@@ -50,7 +53,7 @@ jobs:
       - name: Add IP address to trusted source (managed database)
         uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
         with:
-          action: "add"
+          action: 'add'
           database_id: ${{ secrets.DATABASE_ID }}
           digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
@@ -68,12 +71,12 @@ jobs:
         continue-on-error: true
         uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
         with:
-          action: "remove"
+          action: 'remove'
           database_id: ${{ secrets.DATABASE_ID }}
           digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
       - name: Build and deploy
-        run: yarn deploy
+        run: pnpm deploy
 
       - name: Create Sentry release
         uses: getsentry/action-release@v1

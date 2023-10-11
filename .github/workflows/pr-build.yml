@@ -28,17 +28,32 @@ jobs:
           --health-retries 5
 
     steps:
-
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          cache: yarn
+          cache: pnpm
 
       - name: Install
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Migrate Test DB
+        run: |
+          pushd api
+          npx db-migrate up -e test
+          popd
+
+      - run: cp build/.env.travis .env
+
+      - name: Build API
+        run: pnpm build:api
 
       - name: Test
-        run: build/travis_build.sh
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm run lint-check

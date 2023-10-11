@@ -4,7 +4,7 @@ ROOT=$(git rev-parse --show-toplevel)
 COMMITHASH=${GITHUB_SHA:-$(git rev-parse HEAD)}
 IMAGE="destinyitemmanager/dim-api:$COMMITHASH"
 
-rm -rf dist && yarn build:api && docker buildx build --platform linux/amd64 --push -t "$IMAGE" "$ROOT"
+rm -rf dist && pnpm build:api && docker buildx build --platform linux/amd64 --push -t "$IMAGE" "$ROOT"
 
 mkdir -p "$ROOT/deployment"
 
