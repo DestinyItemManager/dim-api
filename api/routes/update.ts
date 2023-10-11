@@ -44,8 +44,8 @@ import {
  * Note that you can't mix updates for multiple profiles - you'll have to make multiple requests.
  */
 export const updateHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId, profileIds } = req.user!;
-  const { id: appId } = req.dimApp!;
+  const { bungieMembershipId, profileIds } = req.user;
+  const { id: appId } = req.dimApp;
   metrics.increment('update.app.' + appId, 1);
   const request = req.body as ProfileUpdateRequest;
   const { platformMembershipId, updates } = request;

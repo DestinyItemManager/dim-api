@@ -9,7 +9,7 @@ import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 
 export const exportHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
+  const { bungieMembershipId } = req.user;
 
   const response = await readTransaction(async (client) => {
     const settings = await getSettings(client, bungieMembershipId);

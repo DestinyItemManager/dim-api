@@ -13,7 +13,7 @@ import { DeleteAllResponse } from '../shapes/delete-all.js';
  * Delete My Data - this allows a user to wipe all their data from DIM storage.
  */
 export const deleteAllDataHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
+  const { bungieMembershipId } = req.user;
 
   const result = await transaction(async (client) => {
     const deleted = await deleteAllData(client, bungieMembershipId);

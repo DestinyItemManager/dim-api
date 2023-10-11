@@ -25,8 +25,8 @@ const getShareURL = (loadout: Loadout, shareId: string) => {
  * Save a loadout to be shared via a dim.gg link.
  */
 export const loadoutShareHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
+  const { bungieMembershipId } = req.user;
+  const { id: appId } = req.dimApp;
   metrics.increment('loadout_share.app.' + appId, 1);
   const request = req.body as LoadoutShareRequest;
   const { platformMembershipId, loadout } = request;

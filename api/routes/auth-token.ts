@@ -16,7 +16,7 @@ const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, st
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
-  const apiApp = req.dimApp!;
+  const apiApp = req.dimApp;
 
   if (!bungieAccessToken) {
     badRequest(res, 'No bungieAccessToken provided');

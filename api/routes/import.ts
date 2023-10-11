@@ -32,8 +32,8 @@ export interface DimData {
 }
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
+  const { bungieMembershipId } = req.user;
+  const { id: appId } = req.dimApp;
 
   // Support both old DIM exports and new API exports
   const importData = req.body as DimData | ExportResponse;

@@ -23,8 +23,8 @@ const validComponents = new Set([
 ]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId, profileIds } = req.user!;
-  const { id: appId } = req.dimApp!;
+  const { bungieMembershipId, profileIds } = req.user;
+  const { id: appId } = req.dimApp;
   metrics.increment('profile.app.' + appId, 1);
 
   const platformMembershipId = req.query.platformMembershipId?.toString();
