@@ -49,6 +49,7 @@ spec:
         - www.dim.gg
         - app.dim.gg
         - beta.dim.gg
+        - pr.dim.gg
       secretName: dim-gg-tls
   rules:
     - host: dim.gg
@@ -72,6 +73,16 @@ spec:
                 port:
                   number: 80
     - host: app.dim.gg
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: dim-api
+                port:
+                  number: 80
+    - host: pr.dim.gg
       http:
         paths:
           - pathType: Prefix

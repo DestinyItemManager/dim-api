@@ -1,8 +1,8 @@
-import http from 'http';
 import { createTerminus } from '@godaddy/terminus';
 import * as Sentry from '@sentry/node';
 import * as Tracing from '@sentry/tracing';
 import express from 'express';
+import http from 'http';
 import morgan from 'morgan';
 import vhost from 'vhost';
 import { refreshApps, stopAppsRefresh } from './apps/index.js';
@@ -61,6 +61,13 @@ switch (process.env.VHOST) {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://app.destinyitemmanager.com' + req.originalUrl);
+        }),
+      );
+      app.use(
+        vhost('pr.dim.gg', (req, res) => {
+          // Instruct CF to cache for 15 minutes
+          res.set('Cache-Control', 'max-age=900');
+          res.redirect('https://pr.destinyitemmanager.com' + req.originalUrl);
         }),
       );
     }
