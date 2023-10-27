@@ -76,7 +76,7 @@ jobs:
           digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
       - name: Build and deploy
-        run: pnpm deploy
+        run: pnpm run deploy
 
       - name: Create Sentry release
         uses: getsentry/action-release@v1
