@@ -181,6 +181,12 @@ export interface LoadoutParameters {
    * if this DIM loadout is saved to an in-game slot
    */
   inGameIdentifiers?: InGameLoadoutIdentifiers;
+
+  /**
+   * When calculating loadout stats, should "Font of ..." mods be assumed active
+   * and their runtime bonus stats be included?
+   */
+  includeRuntimeStatBenefits?: boolean;
 }
 
 /**
@@ -200,6 +206,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
   mods: [],
   assumeArmorMasterwork: AssumeArmorMasterwork.None,
   autoStatMods: true,
+  includeRuntimeStatBenefits: true,
 };
 
 /** A constraint on the values an armor stat can take */
