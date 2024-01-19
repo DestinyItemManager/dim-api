@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import superagent from 'superagent';
 
-const donationUrl = 'https://bungiefoundation.donordrive.com/api/1.3/participants/19805';
+const donationUrl = 'https://bungiefoundation.donordrive.com/api/1.3/participants/22881';
 
 // Temporary proxy for donor drive API
 export const donateHandler = asyncHandler(async (_req, res) => {
