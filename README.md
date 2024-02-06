@@ -3,6 +3,7 @@
 [Destiny Item Manager (DIM)](https://destinyitemmanager.com) primarily uses the [Bungie.net API](https://github.com/Bungie-net/api) to read information about Destiny game state, and to move or change items. However, DIM offers features beyond what Bungie.net's API does: tags and notes for items, saved loadouts, etc. To allow users to save this data and sync it between different clients (mobile, desktop, etc), we built our own API, which is branded as "DIM Sync" in our application. While this API was developed with DIM in mind, _it is not exclusive to DIM_. We designed it to be used by other Destiny community tools, and we welcome them to use it. Today, these other applications make use of DIM Sync:
 
 - [D2Checklist](https://d2checklist.com) - You can sync your notes and tags between DIM and D2Checklist.
+- [light.gg](https://light.gg) - You can sync your tags with their [Roll Appraiser](https://light.gg/god-roll/roll-appraiser/) tool. It can also automatically tag rolls that are popular among the community.
 
 ### API Types
 
