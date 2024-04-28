@@ -70,6 +70,13 @@ switch (process.env.VHOST) {
           res.redirect('https://pr.destinyitemmanager.com' + req.originalUrl);
         }),
       );
+      app.use(
+        vhost('guide.dim.gg', (req, res) => {
+          // Instruct CF to cache for 15 minutes
+          res.set('Cache-Control', 'max-age=900');
+          res.redirect('https://github.com/DestinyItemManager/DIM/wiki' + req.originalUrl);
+        }),
+      );
     }
     break;
 }
