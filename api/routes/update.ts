@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { ClientBase } from 'pg';
 import { transaction } from '../db/index.js';
 import {
-  deleteItemAnnotationList,
+  // deleteItemAnnotationList,
   updateItemAnnotation as updateItemAnnotationInDb,
 } from '../db/item-annotations-queries.js';
 import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries.js';
