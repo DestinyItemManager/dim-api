@@ -108,7 +108,8 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'tag_cleanup':
-          result = await tagCleanup(client, bungieMembershipId, update.payload);
+          // TEMPORARY: Disable tag cleanup while bungie.net is being weird
+          // result = await tagCleanup(client, bungieMembershipId, update.payload);
           break;
 
         case 'item_hash_tag':
