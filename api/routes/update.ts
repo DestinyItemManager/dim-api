@@ -362,17 +362,18 @@ async function updateItemAnnotation(
 }
 
 async function tagCleanup(
-  client: ClientBase,
-  bungieMembershipId: number,
-  inventoryItemIds: string[],
+  _client: ClientBase,
+  _bungieMembershipId: number,
+  _inventoryItemIds: string[],
 ): Promise<ProfileUpdateResult> {
-  const start = new Date();
-  await deleteItemAnnotationList(
-    client,
-    bungieMembershipId,
-    inventoryItemIds.filter(isValidItemId),
-  );
-  metrics.timing('update.tagCleanup', start);
+  // TEMPORARY: Disable tag cleanup while bungie.net is being weird
+  //const start = new Date();
+  //await deleteItemAnnotationList(
+  //  client,
+  //  bungieMembershipId,
+  //  inventoryItemIds.filter(isValidItemId),
+  //);
+  //metrics.timing('update.tagCleanup', start);
 
   return { status: 'Success' };
 }
