@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import { ClientBase } from 'pg';
 import { transaction } from '../db/index.js';
 import {
-  // deleteItemAnnotationList,
+  deleteItemAnnotationList,
   updateItemAnnotation as updateItemAnnotationInDb,
 } from '../db/item-annotations-queries.js';
 import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries.js';
@@ -362,18 +362,17 @@ async function updateItemAnnotation(
 }
 
 async function tagCleanup(
-  _client: ClientBase,
-  _bungieMembershipId: number,
-  _inventoryItemIds: string[],
+  client: ClientBase,
+  bungieMembershipId: number,
+  inventoryItemIds: string[],
 ): Promise<ProfileUpdateResult> {
-  // TEMPORARY: Disable tag cleanup while bungie.net is being weird
-  //const start = new Date();
-  //await deleteItemAnnotationList(
-  //  client,
-  //  bungieMembershipId,
-  //  inventoryItemIds.filter(isValidItemId),
-  //);
-  //metrics.timing('update.tagCleanup', start);
+  const start = new Date();
+  await deleteItemAnnotationList(
+    client,
+    bungieMembershipId,
+    inventoryItemIds.filter(isValidItemId),
+  );
+  metrics.timing('update.tagCleanup', start);
 
   return { status: 'Success' };
 }
