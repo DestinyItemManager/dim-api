@@ -16,27 +16,12 @@ import { defaultSettings, Settings } from '../shapes/settings.js';
 import { badRequest } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
-export interface DimData {
-  // The last selected platform membership ID
-  membershipId?: string;
-  destinyVersion?: DestinyVersion;
-  // membership IDs of ignored DTR reviewers
-  ignoredUsers?: readonly string[];
-  // loadout ids
-  'loadouts-v3.0'?: readonly string[];
-  'settings-v1.0'?: Readonly<Partial<Settings>>; // settings
-
-  // dimItemInfo-m${account.membershipId}-d${account.destinyVersion}
-  // [`info.${id}`]
-  [key: string]: any;
-}
-
 export const importHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId } = req.user;
   const { id: appId } = req.dimApp;
 
-  // Support both old DIM exports and new API exports
-  const importData = req.body as DimData | ExportResponse;
+  // Support only new API exports
+  const importData = req.body as ExportResponse;
 
   const settings = extractSettings(importData);
   const loadouts = extractLoadouts(importData);
@@ -152,11 +137,8 @@ function subtractObject(obj: object | undefined, defaults: object) {
   return result;
 }
 
-function extractSettings(importData: DimData | ExportResponse): Settings {
-  return subtractObject(
-    importData.settings || importData['settings-v1.0'],
-    defaultSettings,
-  ) as Settings;
+function extractSettings(importData: ExportResponse): Settings {
+  return subtractObject(importData.settings, defaultSettings) as Settings;
 }
 
 type PlatformLoadout = Loadout & {
@@ -164,62 +146,14 @@ type PlatformLoadout = Loadout & {
   destinyVersion: DestinyVersion;
 };
 
-function extractLoadouts(importData: DimData | ExportResponse): PlatformLoadout[] {
-  if (importData.loadouts) {
-    return importData.loadouts.map((l) => ({
+function extractLoadouts(importData: ExportResponse): PlatformLoadout[] {
+  return (
+    importData.loadouts?.map((l) => ({
       ...l.loadout,
       platformMembershipId: l.platformMembershipId,
       destinyVersion: l.destinyVersion,
-    }));
-  }
-
-  const ids = importData['loadouts-v3.0'];
-  if (!ids) {
-    return [];
-  }
-  return ids
-    .map((id) => importData[id])
-    .filter(Boolean)
-    .map((rawLoadout) => ({
-      platformMembershipId: rawLoadout.membershipId,
-      destinyVersion: rawLoadout.destinyVersion,
-      id: rawLoadout.id,
-      name: rawLoadout.name,
-      classType: convertLoadoutClassType(rawLoadout.classType),
-      clearSpace: rawLoadout.clearSpace || false,
-      equipped: rawLoadout.items
-        .filter((i) => i.equipped)
-        .map((item) => ({ id: item.id, hash: item.hash, amount: item.amount })),
-      unequipped: rawLoadout.items
-        .filter((i) => !i.equipped)
-        .map((item) => ({ id: item.id, hash: item.hash, amount: item.amount })),
-    }));
-}
-
-/** Legacy loadout class assignment */
-export enum LoadoutClass {
-  any = -1,
-  warlock = 0,
-  titan = 1,
-  hunter = 2,
-}
-
-export const loadoutClassToClassType = {
-  [LoadoutClass.hunter]: 1,
-  [LoadoutClass.titan]: 0,
-  [LoadoutClass.warlock]: 2,
-  [LoadoutClass.any]: 3,
-};
-
-export const classTypeToLoadoutClass = {
-  1: LoadoutClass.hunter,
-  0: LoadoutClass.titan,
-  2: LoadoutClass.warlock,
-  3: LoadoutClass.any,
-};
-
-function convertLoadoutClassType(loadoutClassType: LoadoutClass) {
-  return loadoutClassToClassType[loadoutClassType ?? LoadoutClass.any];
+    })) ?? []
+  );
 }
 
 type PlatformItemAnnotation = ItemAnnotation & {
@@ -227,37 +161,17 @@ type PlatformItemAnnotation = ItemAnnotation & {
   destinyVersion: DestinyVersion;
 };
 
-function extractItemAnnotations(importData: DimData | ExportResponse): PlatformItemAnnotation[] {
-  if (importData.tags) {
-    return importData.tags.map((t) => ({
+function extractItemAnnotations(importData: ExportResponse): PlatformItemAnnotation[] {
+  return (
+    importData.tags?.map((t) => ({
       ...t.annotation,
       platformMembershipId: t.platformMembershipId,
       destinyVersion: t.destinyVersion || 2,
-    }));
-  }
-
-  const annotations: PlatformItemAnnotation[] = [];
-  for (const key in importData) {
-    const match = /^dimItemInfo-m(\d+)-d(1|2)$/.exec(key);
-    if (match) {
-      const platformMembershipId = match[1];
-      const destinyVersion = parseInt(match[2], 10) as DestinyVersion;
-      for (const id in importData[key]) {
-        const value = importData[key][id];
-        annotations.push({
-          platformMembershipId,
-          destinyVersion,
-          id,
-          tag: value.tag,
-          notes: value.notes,
-        });
-      }
-    }
-  }
-  return annotations;
+    })) ?? []
+  );
 }
 
-function extractSearches(importData: ExportResponse | DimData): ExportResponse['searches'] {
+function extractSearches(importData: ExportResponse): ExportResponse['searches'] {
   return (importData.searches || []).filter(
     // Filter out pre-filled searches that were never used
     (s) => s.search.usageCount > 0,
