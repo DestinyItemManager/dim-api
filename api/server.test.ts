@@ -12,6 +12,7 @@ import { GlobalSettings } from './shapes/global-settings.js';
 import { LoadoutShareRequest } from './shapes/loadout-share.js';
 import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile.js';
+import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
 
 const request = supertest(app);
@@ -891,6 +892,7 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
       ],
@@ -920,12 +922,14 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
         {
           action: 'save_search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
             saved: true,
           },
         },

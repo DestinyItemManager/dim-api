@@ -116,7 +116,7 @@ export async function updateUsedSearch(
       text: `insert INTO searches (membership_id, destiny_version, query, search_type, created_by, last_updated_by)
 values ($1, $2, $3, $5, $4, $4)
 on conflict (membership_id, destiny_version, qhash)
-do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $5, $4)`,
+do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $4)`,
       values: [bungieMembershipId, destinyVersion, query, appId, type],
     });
 
