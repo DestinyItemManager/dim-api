@@ -1,5 +1,5 @@
 import { SearchType } from '../shapes/search.js';
-import { pool, transaction } from './index.js';
+import { closeDbPool, transaction } from './index.js';
 import {
   deleteAllSearches,
   deleteSearch,
@@ -19,7 +19,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can record a used search where none was recorded before', async () => {
   await transaction(async (client) => {

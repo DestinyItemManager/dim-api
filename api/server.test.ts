@@ -5,7 +5,7 @@ import supertest from 'supertest';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
 import { refreshApps } from './apps/index.js';
-import { pool } from './db/index.js';
+import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
 import { ExportResponse } from './shapes/export.js';
 import { GlobalSettings } from './shapes/global-settings.js';
@@ -34,7 +34,7 @@ beforeAll(async () => {
   });
 });
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint
