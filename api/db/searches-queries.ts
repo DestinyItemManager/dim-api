@@ -50,7 +50,7 @@ export async function getSearchesForProfile(
     const results = await client.query({
       name: 'get_searches',
       // TODO: order by frecency
-      text: 'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
+      text: 'SELECT query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
       values: [bungieMembershipId, destinyVersion],
     });
     return _.uniqBy(
@@ -75,7 +75,7 @@ export async function getSearchesForUser(
   try {
     const results = await client.query({
       name: 'get_all_searches',
-      text: 'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
+      text: 'SELECT destiny_version, query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => ({
