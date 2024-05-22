@@ -1,4 +1,4 @@
-import { pool, transaction } from './index.js';
+import { closeDbPool, transaction } from './index.js';
 import {
   deleteAllTrackedTriumphs,
   getAllTrackedTriumphsForUser,
@@ -17,7 +17,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can track a triumph where none was tracked before', async () => {
   await transaction(async (client) => {

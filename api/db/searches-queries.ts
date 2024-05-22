@@ -3,7 +3,7 @@ import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
-import { Search } from '../shapes/search.js';
+import { Search, SearchType } from '../shapes/search.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -17,6 +17,7 @@ const cannedSearchesForD2: Search[] = [
   saved: false,
   usageCount: 0,
   lastUsage: 0,
+  type: SearchType.Item,
 }));
 
 const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentchar'].map(
@@ -25,6 +26,7 @@ const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentcha
     saved: false,
     usageCount: 0,
     lastUsage: 0,
+    type: SearchType.Item,
   }),
 );
 /*
@@ -48,7 +50,7 @@ export async function getSearchesForProfile(
     const results = await client.query({
       name: 'get_searches',
       // TODO: order by frecency
-      text: 'SELECT query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
+      text: 'SELECT query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
       values: [bungieMembershipId, destinyVersion],
     });
     return _.uniqBy(
@@ -73,7 +75,7 @@ export async function getSearchesForUser(
   try {
     const results = await client.query({
       name: 'get_all_searches',
-      text: 'SELECT destiny_version, query, saved, usage_count, last_updated_at FROM searches WHERE membership_id = $1',
+      text: 'SELECT destiny_version, query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1',
       values: [bungieMembershipId],
     });
     return results.rows.map((row) => ({
@@ -91,6 +93,7 @@ function convertSearch(row: any): Search {
     usageCount: row.usage_count,
     saved: row.saved,
     lastUsage: row.last_updated_at.getTime(),
+    type: row.search_type,
   };
 }
 
@@ -105,15 +108,16 @@ export async function updateUsedSearch(
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
   query: string,
+  type: SearchType,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
       name: 'upsert_search',
-      text: `insert INTO searches (membership_id, destiny_version, query, created_by, last_updated_by)
-values ($1, $2, $3, $4, $4)
+      text: `insert INTO searches (membership_id, destiny_version, query, search_type, created_by, last_updated_by)
+values ($1, $2, $3, $5, $4, $4)
 on conflict (membership_id, destiny_version, qhash)
 do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $4)`,
-      values: [bungieMembershipId, destinyVersion, query, appId],
+      values: [bungieMembershipId, destinyVersion, query, appId, type],
     });
 
     if (response.rowCount < 1) {
@@ -137,6 +141,7 @@ export async function saveSearch(
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
   query: string,
+  type: SearchType,
   saved?: boolean,
 ): Promise<QueryResult<any>> {
   try {
@@ -151,9 +156,9 @@ export async function saveSearch(
       metrics.increment('db.searches.noRowUpdated.count', 1);
       const insertSavedResponse = await client.query({
         name: 'insert_search_fallback',
-        text: `insert INTO searches (membership_id, destiny_version, query, saved, created_by, last_updated_by)
-  values ($1, $2, $3, true, $4, $4)`,
-        values: [bungieMembershipId, destinyVersion, query, appId],
+        text: `insert INTO searches (membership_id, destiny_version, query, search_type, saved, created_by, last_updated_by)
+  values ($1, $2, $3, $5, true, $4, $4)`,
+        values: [bungieMembershipId, destinyVersion, query, appId, type],
       });
       return insertSavedResponse;
     }
@@ -175,12 +180,13 @@ export async function importSearch(
   saved: boolean,
   lastUsage: number,
   usageCount: number,
+  type: SearchType,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
       name: 'insert_search',
-      text: `insert INTO searches (membership_id, destiny_version, query, saved, usage_count, last_used, created_by, last_updated_by)
-values ($1, $2, $3, $4, $5, $6, $7, $7)`,
+      text: `insert INTO searches (membership_id, destiny_version, query, saved, search_type, usage_count, last_used, created_by, last_updated_by)
+values ($1, $2, $3, $4, $8, $5, $6, $7, $7)`,
       values: [
         bungieMembershipId,
         destinyVersion,
@@ -189,6 +195,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $7)`,
         usageCount,
         new Date(lastUsage),
         appId,
+        type,
       ],
     });
 
@@ -212,12 +219,13 @@ export async function deleteSearch(
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
   query: string,
+  type: SearchType,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
       name: 'delete_search',
-      text: `delete from searches where membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3`,
-      values: [bungieMembershipId, destinyVersion, query],
+      text: `delete from searches where membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
+      values: [bungieMembershipId, destinyVersion, query, type],
     });
   } catch (e) {
     throw new Error(e.name + ': ' + e.message);

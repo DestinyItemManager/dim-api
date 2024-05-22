@@ -1,7 +1,7 @@
 import { DestinyVersion } from './general.js';
 import { ItemAnnotation, ItemHashTag } from './item-annotations.js';
 import { Loadout } from './loadouts.js';
-import { Search } from './search.js';
+import { Search, SearchType } from './search.js';
 import { Settings } from './settings.js';
 
 export interface ProfileResponse {
@@ -87,6 +87,7 @@ export interface UsedSearchUpdate {
   action: 'search';
   payload: {
     query: string;
+    type: SearchType;
   };
 }
 
@@ -97,6 +98,7 @@ export interface SavedSearchUpdate {
   action: 'save_search';
   payload: {
     query: string;
+    type: SearchType;
     /**
      * Whether the search should be saved
      */
@@ -111,6 +113,7 @@ export interface DeleteSearchUpdate {
   action: 'delete_search';
   payload: {
     query: string;
+    type: SearchType;
   };
 }
 

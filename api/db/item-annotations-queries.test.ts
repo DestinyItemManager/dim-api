@@ -1,5 +1,5 @@
 import { TagVariant } from '../shapes/item-annotations.js';
-import { pool, transaction } from './index.js';
+import { closeDbPool, transaction } from './index.js';
 import {
   deleteAllItemAnnotations,
   deleteItemAnnotation,
@@ -18,7 +18,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can insert tags where none exist before', async () => {
   await transaction(async (client) => {
