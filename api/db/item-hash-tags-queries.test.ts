@@ -1,4 +1,4 @@
-import { pool, transaction } from './index.js';
+import { closeDbPool, transaction } from './index.js';
 import {
   deleteAllItemHashTags,
   deleteItemHashTag,
@@ -15,7 +15,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can insert item hash tags where none exist before', async () => {
   await transaction(async (client) => {

@@ -5,13 +5,14 @@ import supertest from 'supertest';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
 import { refreshApps } from './apps/index.js';
-import { pool } from './db/index.js';
+import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
 import { ExportResponse } from './shapes/export.js';
 import { GlobalSettings } from './shapes/global-settings.js';
 import { LoadoutShareRequest } from './shapes/loadout-share.js';
 import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile.js';
+import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
 
 const request = supertest(app);
@@ -34,7 +35,7 @@ beforeAll(async () => {
   });
 });
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint
@@ -891,6 +892,7 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
       ],
@@ -920,12 +922,14 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
         {
           action: 'save_search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
             saved: true,
           },
         },

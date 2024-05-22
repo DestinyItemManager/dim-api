@@ -22,6 +22,7 @@ import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import {
+  DeleteSearchUpdate,
   ItemHashTagUpdate,
   ProfileUpdateRequest,
   ProfileUpdateResult,
@@ -29,6 +30,7 @@ import {
   TrackTriumphUpdate,
   UsedSearchUpdate,
 } from '../shapes/profile.js';
+import { SearchType } from '../shapes/search.js';
 import { Settings } from '../shapes/settings.js';
 import {
   badRequest,
@@ -146,12 +148,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'delete_search':
-          result = await deleteSearch(
-            client,
-            bungieMembershipId,
-            destinyVersion,
-            update.payload.query,
-          );
+          result = await deleteSearch(client, bungieMembershipId, destinyVersion, update.payload);
           break;
 
         default:
@@ -428,7 +425,14 @@ async function recordSearch(
   }
 
   const start = new Date();
-  await updateUsedSearch(client, appId, bungieMembershipId, destinyVersion, payload.query);
+  await updateUsedSearch(
+    client,
+    appId,
+    bungieMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
   metrics.timing('update.recordSearch', start);
 
   return { status: 'Success' };
@@ -461,6 +465,7 @@ async function saveSearch(
     bungieMembershipId,
     destinyVersion,
     payload.query,
+    payload.type ?? SearchType.Item,
     payload.saved,
   );
   metrics.timing('update.saveSearch', start);
@@ -472,10 +477,16 @@ async function deleteSearch(
   client: ClientBase,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  query: string,
+  payload: DeleteSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  await deleteSearchInDb(client, bungieMembershipId, destinyVersion, query);
+  await deleteSearchInDb(
+    client,
+    bungieMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
   metrics.timing('update.deleteSearch', start);
 
   return { status: 'Success' };

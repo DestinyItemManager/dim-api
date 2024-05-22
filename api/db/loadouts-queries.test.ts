@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
-import { pool, transaction } from './index.js';
+import { closeDbPool, transaction } from './index.js';
 import { deleteLoadout, getLoadoutsForProfile, updateLoadout } from './loadouts-queries.js';
 
 const appId = 'settings-queries-test-app';
@@ -13,7 +13,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 const loadout: Loadout = {
   id: uuid(),

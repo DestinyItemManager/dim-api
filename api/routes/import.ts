@@ -12,6 +12,7 @@ import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
 import { ItemAnnotation } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
+import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { badRequest } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
@@ -108,6 +109,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         search.search.saved,
         search.search.lastUsage,
         search.search.usageCount,
+        search.search.type ?? SearchType.Item,
       );
     }
   });

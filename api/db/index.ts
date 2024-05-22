@@ -27,11 +27,16 @@ pool.on('remove', () => {
   metrics.increment('db.pool.remove.count');
 });
 
-setInterval(() => {
+const metricsInterval = setInterval(() => {
   metrics.gauge('db.pool.total', pool.totalCount);
   metrics.gauge('db.pool.idle', pool.idleCount);
   metrics.gauge('db.pool.waiting', pool.waitingCount);
 }, 10000);
+
+export async function closeDbPool() {
+  clearInterval(metricsInterval);
+  return pool.end();
+}
 
 /**
  * A helper that gets a connection from the pool and then executes fn within a transaction.

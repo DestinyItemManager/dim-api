@@ -1,4 +1,4 @@
-import { pool, readTransaction, transaction } from './index.js';
+import { closeDbPool, pool, readTransaction, transaction } from './index.js';
 
 beforeEach(async () => {
   try {
@@ -14,7 +14,7 @@ afterAll(async () => {
   try {
     await pool.query(`DROP TABLE transaction_test`);
   } catch {}
-  await pool.end();
+  await closeDbPool();
 });
 
 describe('transaction', () => {
