@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M2CXWQ23SV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-M2CXWQ23SV');
+    </script>
+    <meta charset="utf-8" />
+    <title><%= loadout.name %> | DIM Loadout</title>
+    <meta name="description" content="<%= description %>" />
+    <meta property="og:title" content="<%= loadout.name %>" />
+    <meta name="og:description" content="<%= description %>" />
+    <meta name="og:image" content="https://dim.gg/loadout-share-image-wide.png" />
+    <meta name="og:type" content="object" />
+    <meta name="og:site_name" content="DIM" />
+    <meta name="twitter:image" content="https://dim.gg/loadout-share-image.png" />
+    <meta name="twitter:site" content="@ThisIsDim" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="<%= loadout.name %>" />
+    <meta name="twitter:description" content="<%= description %>" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:200,400,700"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="/loadout-share.css" />
+  </head>
+  <body>
+    <div class="dim-page">
+      <h1><%= loadout.name %></h1>
+      <% if (loadout.notes) { %>
+      <p class="dim-notes"><%= loadout.notes %></p>
+      <% } %>
+      <p>
+        These build settings contain:
+        <ul>
+          <% if (numItems > 0) { %><li><%= numItems %> items - recipients will have to choose their own copies of these</li><% } %>
+          <% if (numMods > 0) { %><li><%= numMods %> mods</li><% } %>
+          <% if (hasFashion) { %><li>Fashion (shaders &amp; ornaments)</li><% } %>
+          <% if (hasSubclass) { %><li>Subclass customization</li><% } %>
+          <% if (hasLoParams) { %><li>Loadout Optimizer settings</li><% } %>
+        </ul>
+      </p>
+      <div class="dim-buttons">
+        <a class="dim-button" href="<%= appShareUrl %>"><img src="/favicon-release.svg" height="16" width="16" /> Open Loadout in DIM</a>
+        <a class="dim-button" href="<%= betaShareUrl %>"><img src="/favicon-beta.svg" height="16" width="16" /> Open Loadout in DIM Beta</a>
+      </div>
+    </div>
+  </body>
+</html>

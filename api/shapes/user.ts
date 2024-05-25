@@ -3,4 +3,6 @@ export interface UserInfo {
   bungieMembershipId: number;
   /** The DIM App API key this token was issued for */
   dimApiKey: string;
+  /** A list of Destiny 2 membership profiles this account can access. */
+  profileIds: string[];
 }

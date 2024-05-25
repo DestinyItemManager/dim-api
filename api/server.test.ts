@@ -1,17 +1,19 @@
-import { app } from './server';
 import { readFile } from 'fs';
-import { promisify } from 'util';
-import supertest from 'supertest';
 import { sign } from 'jsonwebtoken';
-import { ExportResponse } from './shapes/export';
-import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile';
 import _ from 'lodash';
-import { defaultSettings } from './shapes/settings';
+import supertest from 'supertest';
+import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
-import { LoadoutItem, Loadout } from './shapes/loadouts';
-import { GlobalSettings } from './shapes/global-settings';
-import { pool } from './db';
-import { refreshApps } from './apps';
+import { refreshApps } from './apps/index.js';
+import { closeDbPool } from './db/index.js';
+import { app } from './server.js';
+import { ExportResponse } from './shapes/export.js';
+import { GlobalSettings } from './shapes/global-settings.js';
+import { LoadoutShareRequest } from './shapes/loadout-share.js';
+import { Loadout, LoadoutItem } from './shapes/loadouts.js';
+import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile.js';
+import { SearchType } from './shapes/search.js';
+import { defaultSettings } from './shapes/settings.js';
 
 const request = supertest(app);
 
@@ -33,7 +35,7 @@ beforeAll(async () => {
   });
 });
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint
@@ -42,15 +44,25 @@ it('returns basic info from GET /', async () => {
   expect(response.status).toBe(200);
 });
 
-it('returns global info from GET /platform_info', async () => {
-  const response = await request
-    .get('/platform_info')
-    .expect('Content-Type', /json/)
-    .expect(200);
+describe('platform_info', () => {
+  it('returns global info from GET /platform_info', async () => {
+    const response = await request.get('/platform_info').expect('Content-Type', /json/).expect(200);
 
-  const platformInfo = response.body.settings as GlobalSettings;
+    const platformInfo = response.body.settings as GlobalSettings;
 
-  expect(platformInfo.dimApiEnabled).toBe(true);
+    expect(platformInfo.dimApiEnabled).toBe(true);
+  });
+
+  it('can return info from an unknown flavor', async () => {
+    const response = await request
+      .get('/platform_info?flavor=foo')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    const platformInfo = response.body.settings as GlobalSettings;
+
+    expect(platformInfo.dimApiEnabled).toBe(true);
+  });
 });
 
 it('can create new apps idempotently', async () => {
@@ -90,7 +102,7 @@ describe('profile', () => {
 
   it('can retrieve all profile data', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -108,9 +120,7 @@ describe('profile', () => {
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -128,7 +138,7 @@ describe('profile', () => {
 
   it('can retrieve only loadouts', async () => {
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -165,9 +175,7 @@ describe('settings', () => {
   beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('returns default settings', async () => {
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -189,9 +197,7 @@ describe('settings', () => {
     await postRequestAuthed('/profile').send(request).expect(200);
 
     // Read settings back
-    const response = await getRequestAuthed(
-      '/profile?components=settings'
-    ).expect(200);
+    const response = await getRequestAuthed('/profile?components=settings').expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
@@ -237,15 +243,13 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -273,9 +277,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -291,15 +293,13 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -320,9 +320,7 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -338,15 +336,13 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read loadouts back
     const response = await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`
+      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -373,15 +369,13 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -409,9 +403,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -431,15 +423,13 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -467,15 +457,13 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile')
-      .send(request3)
-      .expect(200);
+    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
 
     expect(updateResult3.body.results[0].status).toBe('Success');
 
     // Read tags back after deleting the tag
     const response2 = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse2 = response2.body as ProfileResponse;
@@ -504,9 +492,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -526,15 +512,13 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -566,9 +550,7 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
     expect(updateResult.body.results[1].status).toBe('Success');
@@ -585,15 +567,13 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -618,15 +598,13 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -652,9 +630,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -672,15 +648,13 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -706,15 +680,13 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile')
-      .send(request3)
-      .expect(200);
+    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
 
     expect(updateResult3.body.results[0].status).toBe('Success');
 
     // Read tags back after deleting the tag
     const response2 = await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse2 = response2.body as ProfileResponse;
@@ -741,9 +713,7 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -763,15 +733,13 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult2.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`
+      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -798,15 +766,13 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -830,9 +796,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -850,9 +814,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -860,7 +822,7 @@ describe('triumphs', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -883,9 +845,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -903,9 +863,7 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile')
-      .send(request2)
-      .expect(200);
+    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
@@ -913,7 +871,7 @@ describe('triumphs', () => {
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`
+      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
@@ -934,27 +892,24 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(
-      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
-    ).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].usageCount).toBe(1);
   });
@@ -967,37 +922,49 @@ describe('searches', () => {
           action: 'search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
           },
         },
         {
           action: 'save_search',
           payload: {
             query: 'tag:favorite',
+            type: SearchType.Item,
             saved: true,
           },
         },
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile')
-      .send(request)
-      .expect(200);
+    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
 
     expect(updateResult.body.results[0].status).toBe('Success');
 
     // Read tags back
     const response = await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`
+      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
     ).expect(200);
 
     const profileResponse = response.body as ProfileResponse;
 
-    expect(
-      profileResponse.searches?.filter((s) => s.usageCount > 0)?.length
-    ).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].saved).toBe(true);
     expect(profileResponse.searches![0].usageCount).toBe(1);
+  });
+});
+
+describe('loadouts', () => {
+  it('can share a loadout', async () => {
+    const request: LoadoutShareRequest = {
+      platformMembershipId,
+      loadout,
+    };
+
+    const updateResult = await postRequestAuthed('/loadout_share').send(request).expect(200);
+
+    console.log(updateResult.body.shareUrl);
+    expect(updateResult.body.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
   });
 });
 
@@ -1018,9 +985,7 @@ async function createApp() {
 }
 
 async function importData() {
-  const file = JSON.parse(
-    (await promisify(readFile)('./dim-data.json')).toString()
-  );
+  const file = JSON.parse((await promisify(readFile)('./dim-data.json')).toString());
 
   await postRequestAuthed('/import').send(file).expect(200);
 

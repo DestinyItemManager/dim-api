@@ -1,20 +1,21 @@
 import asyncHandler from 'express-async-handler';
-import { Settings, defaultSettings } from '../shapes/settings';
-import { transaction } from '../db';
-import { Loadout } from '../shapes/loadouts';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { replaceSettings } from '../db/settings-queries';
-import { updateLoadout } from '../db/loadouts-queries';
-import { updateItemAnnotation } from '../db/item-annotations-queries';
-import { deleteAllData } from './delete-all-data';
-import { DestinyVersion } from '../shapes/general';
-import { ExportResponse } from '../shapes/export';
-import { badRequest } from '../utils';
 import _ from 'lodash';
-import { ImportResponse } from '../shapes/import';
-import { trackTriumph } from '../db/triumphs-queries';
-import { importSearch } from '../db/searches-queries';
-import { updateItemHashTag } from '../db/item-hash-tags-queries';
+import { transaction } from '../db/index.js';
+import { updateItemAnnotation } from '../db/item-annotations-queries.js';
+import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
+import { updateLoadout } from '../db/loadouts-queries.js';
+import { importSearch } from '../db/searches-queries.js';
+import { replaceSettings } from '../db/settings-queries.js';
+import { trackTriumph } from '../db/triumphs-queries.js';
+import { ExportResponse } from '../shapes/export.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ImportResponse } from '../shapes/import.js';
+import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
+import { SearchType } from '../shapes/search.js';
+import { defaultSettings, Settings } from '../shapes/settings.js';
+import { badRequest } from '../utils.js';
+import { deleteAllData } from './delete-all-data.js';
 
 export interface DimData {
   // The last selected platform membership ID
@@ -32,8 +33,8 @@ export interface DimData {
 }
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
+  const { bungieMembershipId } = req.user;
+  const { id: appId } = req.dimApp;
 
   // Support both old DIM exports and new API exports
   const importData = req.body as DimData | ExportResponse;
@@ -76,7 +77,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         loadout.platformMembershipId,
         loadout.destinyVersion,
-        loadout
+        loadout,
       );
     }
 
@@ -88,7 +89,7 @@ export const importHandler = asyncHandler(async (req, res) => {
         bungieMembershipId,
         annotation.platformMembershipId,
         annotation.destinyVersion,
-        annotation
+        annotation,
       );
     }
 
@@ -105,7 +106,7 @@ export const importHandler = asyncHandler(async (req, res) => {
               appId,
               bungieMembershipId,
               triumphData.platformMembershipId,
-              triumph
+              triumph,
             );
             numTriumphs++;
           }
@@ -122,7 +123,8 @@ export const importHandler = asyncHandler(async (req, res) => {
         search.search.query,
         search.search.saved,
         search.search.lastUsage,
-        search.search.usageCount
+        search.search.usageCount,
+        search.search.type ?? SearchType.Item,
       );
     }
   });
@@ -155,7 +157,7 @@ function subtractObject(obj: object | undefined, defaults: object) {
 function extractSettings(importData: DimData | ExportResponse): Settings {
   return subtractObject(
     importData.settings || importData['settings-v1.0'],
-    defaultSettings
+    defaultSettings,
   ) as Settings;
 }
 
@@ -164,9 +166,7 @@ type PlatformLoadout = Loadout & {
   destinyVersion: DestinyVersion;
 };
 
-function extractLoadouts(
-  importData: DimData | ExportResponse
-): PlatformLoadout[] {
+function extractLoadouts(importData: DimData | ExportResponse): PlatformLoadout[] {
   if (importData.loadouts) {
     return importData.loadouts.map((l) => ({
       ...l.loadout,
@@ -229,9 +229,7 @@ type PlatformItemAnnotation = ItemAnnotation & {
   destinyVersion: DestinyVersion;
 };
 
-function extractItemAnnotations(
-  importData: DimData | ExportResponse
-): PlatformItemAnnotation[] {
+function extractItemAnnotations(importData: DimData | ExportResponse): PlatformItemAnnotation[] {
   if (importData.tags) {
     return importData.tags.map((t) => ({
       ...t.annotation,
@@ -261,11 +259,9 @@ function extractItemAnnotations(
   return annotations;
 }
 
-function extractSearches(
-  importData: ExportResponse | DimData
-): ExportResponse['searches'] {
+function extractSearches(importData: ExportResponse | DimData): ExportResponse['searches'] {
   return (importData.searches || []).filter(
     // Filter out pre-filled searches that were never used
-    (s) => s.search.usageCount > 0
+    (s) => s.search.usageCount > 0,
   );
 }

@@ -1,10 +1,10 @@
-import { transaction, pool } from '.';
-import { setSetting, getSettings } from './settings-queries';
+import { closeDbPool, transaction } from './index.js';
+import { getSettings, setSetting } from './settings-queries.js';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can insert settings where none exist before', async () => {
   await transaction(async (client) => {

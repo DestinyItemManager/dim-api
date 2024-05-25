@@ -1,39 +1,43 @@
 import asyncHandler from 'express-async-handler';
-import { transaction } from '../db';
+import { ClientBase } from 'pg';
+import { transaction } from '../db/index.js';
 import {
+  deleteItemAnnotationList,
+  updateItemAnnotation as updateItemAnnotationInDb,
+} from '../db/item-annotations-queries.js';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries.js';
+import {
+  deleteLoadout as deleteLoadoutInDb,
+  updateLoadout as updateLoadoutInDb,
+} from '../db/loadouts-queries.js';
+import {
+  deleteSearch as deleteSearchInDb,
+  saveSearch as saveSearchInDb,
+  updateUsedSearch,
+} from '../db/searches-queries.js';
+import { setSetting as setSettingInDb } from '../db/settings-queries.js';
+import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries.js';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
+import {
+  DeleteSearchUpdate,
+  ItemHashTagUpdate,
   ProfileUpdateRequest,
   ProfileUpdateResult,
+  SavedSearchUpdate,
   TrackTriumphUpdate,
   UsedSearchUpdate,
-  SavedSearchUpdate,
-  ItemHashTagUpdate,
-} from '../shapes/profile';
-import { badRequest } from '../utils';
-import { ClientBase } from 'pg';
-import { Settings } from '../shapes/settings';
-import { DestinyVersion } from '../shapes/general';
-import { Loadout } from '../shapes/loadouts';
-import { setSetting as setSettingInDb } from '../db/settings-queries';
+} from '../shapes/profile.js';
+import { SearchType } from '../shapes/search.js';
+import { Settings } from '../shapes/settings.js';
 import {
-  updateLoadout as updateLoadoutInDb,
-  deleteLoadout as deleteLoadoutInDb,
-} from '../db/loadouts-queries';
-import {
-  updateItemAnnotation as updateItemAnnotationInDb,
-  deleteItemAnnotationList,
-} from '../db/item-annotations-queries';
-import { ItemAnnotation } from '../shapes/item-annotations';
-import { metrics } from '../metrics';
-import {
-  trackTriumph as trackTriumphInDb,
-  unTrackTriumph,
-} from '../db/triumphs-queries';
-import {
-  updateUsedSearch,
-  saveSearch as saveSearchInDb,
-  deleteSearch as deleteSearchInDb,
-} from '../db/searches-queries';
-import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries';
+  badRequest,
+  checkPlatformMembershipId,
+  isValidItemId,
+  isValidPlatformMembershipId,
+} from '../utils.js';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -42,16 +46,33 @@ import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags
  * Note that you can't mix updates for multiple profiles - you'll have to make multiple requests.
  */
 export const updateHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
-  metrics.counter('update.app.' + appId, 1);
+  const { bungieMembershipId, profileIds } = req.user;
+  const { id: appId } = req.dimApp;
+  metrics.increment('update.app.' + appId, 1);
   const request = req.body as ProfileUpdateRequest;
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
 
-  const results: ProfileUpdateResult[] = [];
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+    return;
+  }
 
-  await transaction(async (client) => {
+  checkPlatformMembershipId(platformMembershipId, profileIds, 'update');
+
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    return;
+  }
+
+  if (!Array.isArray(updates)) {
+    badRequest(res, `updates must be an array`);
+    return;
+  }
+
+  const results = await transaction(async (client) => {
+    const results: ProfileUpdateResult[] = [];
+
     for (const update of updates) {
       let result: ProfileUpdateResult;
 
@@ -59,12 +80,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
 
       switch (update.action) {
         case 'setting':
-          result = await updateSetting(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateSetting(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'loadout':
@@ -74,16 +90,12 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
         case 'delete_loadout':
-          result = await deleteLoadout(
-            client,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await deleteLoadout(client, bungieMembershipId, update.payload);
           break;
 
         case 'tag':
@@ -93,7 +105,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             bungieMembershipId,
             platformMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -102,12 +114,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           break;
 
         case 'item_hash_tag':
-          result = await updateItemHashTag(
-            client,
-            appId,
-            bungieMembershipId,
-            update.payload
-          );
+          result = await updateItemHashTag(client, appId, bungieMembershipId, update.payload);
           break;
 
         case 'track_triumph':
@@ -116,7 +123,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             platformMembershipId,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -126,7 +133,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
@@ -136,25 +143,29 @@ export const updateHandler = asyncHandler(async (req, res) => {
             appId,
             bungieMembershipId,
             destinyVersion,
-            update.payload
+            update.payload,
           );
           break;
 
         case 'delete_search':
-          result = await deleteSearch(
-            client,
-            bungieMembershipId,
-            destinyVersion,
-            update.payload.query
-          );
+          result = await deleteSearch(client, bungieMembershipId, destinyVersion, update.payload);
           break;
 
         default:
-          badRequest(res, `Unknown action type ${(update as any).action}`);
-          return;
+          console.warn(
+            `Unknown action type: ${(update as any).action} from ${appId}, ${req.header(
+              'User-Agent',
+            )}, ${req.header('Referer')}`,
+          );
+          result = {
+            status: 'InvalidArgument',
+            message: `Unknown action type: ${(update as any).action}`,
+          };
       }
       results.push(result);
     }
+
+    return results;
   });
 
   res.send({
@@ -166,7 +177,7 @@ async function updateSetting(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  settings: Partial<Settings>
+  settings: Partial<Settings>,
 ): Promise<ProfileUpdateResult> {
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
@@ -183,7 +194,7 @@ async function updateLoadout(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  loadout: Loadout
+  loadout: Loadout,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -193,49 +204,9 @@ async function updateLoadout(
     };
   }
 
-  if (!loadout.name) {
-    metrics.increment('update.validation.loadoutNameMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout name missing',
-    };
-  }
-  if (loadout.name && loadout.name.length > 120) {
-    metrics.increment('update.validation.loadoutNameTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout names must be under 120 characters',
-    };
-  }
-
-  if (!loadout.id) {
-    metrics.increment('update.loadoutIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout id missing',
-    };
-  }
-  if (loadout.id && loadout.id.length > 120) {
-    metrics.increment('update.validation.loadoutIdTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout ids must be under 120 characters',
-    };
-  }
-
-  if (!Number.isFinite(loadout.classType)) {
-    metrics.increment('update.validation.classTypeMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type missing or malformed',
-    };
-  }
-  if (loadout.classType < 0 || loadout.classType > 3) {
-    metrics.increment('update.validation.classTypeOutOfRange.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadout class type out of range',
-    };
+  const validationResult = validateLoadout('update', loadout);
+  if (validationResult) {
+    return validationResult;
   }
 
   const start = new Date();
@@ -245,24 +216,84 @@ async function updateLoadout(
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
-    loadout
+    loadout,
   );
   metrics.timing('update.loadout', start);
 
   return { status: 'Success' };
 }
 
+export function validateLoadout(metricPrefix: string, loadout: Loadout) {
+  if (!loadout.name) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout name missing',
+    };
+  }
+  if (loadout.name.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutNameTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout names must be under 120 characters',
+    };
+  }
+
+  if (loadout.notes && loadout.notes.length > 2048) {
+    metrics.increment(metricPrefix + '.validation.loadoutNotesTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout notes must be under 2048 characters',
+    };
+  }
+
+  if (!loadout.id) {
+    metrics.increment(metricPrefix + '.loadoutIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout id missing',
+    };
+  }
+  if (loadout.id && loadout.id.length > 120) {
+    metrics.increment(metricPrefix + '.validation.loadoutIdTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout ids must be under 120 characters',
+    };
+  }
+
+  if (!Number.isFinite(loadout.classType)) {
+    metrics.increment(metricPrefix + '.validation.classTypeMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type missing or malformed',
+    };
+  }
+  if (loadout.classType < 0 || loadout.classType > 3) {
+    metrics.increment(metricPrefix + '.validation.classTypeOutOfRange.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadout class type out of range',
+    };
+  }
+  if ([...loadout.equipped, ...loadout.unequipped].some((i) => i.id && !isValidItemId(i.id))) {
+    metrics.increment(metricPrefix + '.validation.itemIdFormat.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Item ID is invalid',
+    };
+  }
+
+  return undefined;
+}
+
 async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
-  loadoutId: string
+  loadoutId: string,
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  const loadout = await deleteLoadoutInDb(
-    client,
-    bungieMembershipId,
-    loadoutId
-  );
+  const loadout = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
   metrics.timing('update.deleteLoadout', start);
   if (loadout == null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
@@ -277,7 +308,7 @@ async function updateItemAnnotation(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  itemAnnotation: ItemAnnotation
+  itemAnnotation: ItemAnnotation,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -287,7 +318,7 @@ async function updateItemAnnotation(
     };
   }
 
-  if (itemAnnotation.id.includes('E+') || itemAnnotation.id.includes('-')) {
+  if (!isValidItemId(itemAnnotation.id)) {
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
@@ -297,9 +328,7 @@ async function updateItemAnnotation(
 
   if (
     itemAnnotation.tag &&
-    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(
-      itemAnnotation.tag
-    )
+    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(itemAnnotation.tag)
   ) {
     metrics.increment('update.validation.tagNotRecognized.count');
     return {
@@ -322,7 +351,7 @@ async function updateItemAnnotation(
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
-    itemAnnotation
+    itemAnnotation,
   );
   metrics.timing('update.tag', start);
 
@@ -332,13 +361,13 @@ async function updateItemAnnotation(
 async function tagCleanup(
   client: ClientBase,
   bungieMembershipId: number,
-  inventoryItemIds: string[]
+  inventoryItemIds: string[],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await deleteItemAnnotationList(
     client,
     bungieMembershipId,
-    inventoryItemIds.filter((i) => !i.includes('-') && !i.includes('E+'))
+    inventoryItemIds.filter(isValidItemId),
   );
   metrics.timing('update.tagCleanup', start);
 
@@ -350,7 +379,7 @@ async function trackTriumph(
   appId: string,
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
-  payload: TrackTriumphUpdate['payload']
+  payload: TrackTriumphUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -367,14 +396,9 @@ async function trackTriumph(
         appId,
         bungieMembershipId,
         platformMembershipId,
-        payload.recordHash
+        payload.recordHash,
       )
-    : await unTrackTriumph(
-        client,
-        bungieMembershipId,
-        platformMembershipId,
-        payload.recordHash
-      );
+    : await unTrackTriumph(client, bungieMembershipId, platformMembershipId, payload.recordHash);
   metrics.timing('update.trackTriumph', start);
 
   return { status: 'Success' };
@@ -385,15 +409,29 @@ async function recordSearch(
   appId: string,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  payload: UsedSearchUpdate['payload']
+  payload: UsedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
   await updateUsedSearch(
     client,
     appId,
     bungieMembershipId,
     destinyVersion,
-    payload.query
+    payload.query,
+    payload.type ?? SearchType.Item,
   );
   metrics.timing('update.recordSearch', start);
 
@@ -405,8 +443,21 @@ async function saveSearch(
   appId: string,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  payload: SavedSearchUpdate['payload']
+  payload: SavedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
+  // TODO: I did a silly thing and made the query part of the search table's
+  // primary key, instead of using a fixed-size hash of the query. This limits
+  // how big a query we can store (and bloats the index). I'll need to do some
+  // surgery to fix that, but we should probably just generally refuse to save
+  // long queries.
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
   const start = new Date();
   await saveSearchInDb(
     client,
@@ -414,7 +465,8 @@ async function saveSearch(
     bungieMembershipId,
     destinyVersion,
     payload.query,
-    payload.saved
+    payload.type ?? SearchType.Item,
+    payload.saved,
   );
   metrics.timing('update.saveSearch', start);
 
@@ -425,10 +477,16 @@ async function deleteSearch(
   client: ClientBase,
   bungieMembershipId: number,
   destinyVersion: DestinyVersion,
-  query: string
+  payload: DeleteSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
-  await deleteSearchInDb(client, bungieMembershipId, destinyVersion, query);
+  await deleteSearchInDb(
+    client,
+    bungieMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
   metrics.timing('update.deleteSearch', start);
 
   return { status: 'Success' };
@@ -438,7 +496,7 @@ async function updateItemHashTag(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  payload: ItemHashTagUpdate['payload']
+  payload: ItemHashTagUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);

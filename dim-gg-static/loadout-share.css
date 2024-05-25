@@ -1,0 +1,84 @@
+@font-face {
+  font-family: 'Destiny Symbols';
+  src: url('/fonts/DestinySymbols.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: fallback;
+}
+
+a {
+  color: #ddd;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+h2,
+h3 {
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+html, body {
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background-color: #313233;
+  color: white;
+  font-family: 'Open Sans', sans-serif, 'Destiny Symbols';
+  font-size: 12px;
+  background-image: radial-gradient(
+  circle at 50% 70px,
+  hsl(240, 20%, 28%) 0%,
+  hsl(240, 27%, 12%) 100%);
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+.dim-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1em;
+}
+
+/* Button */
+
+.dim-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.dim-button {
+  cursor: pointer;
+  padding: 4px 10px;
+  display: inline-block;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 12px;
+  font-family: 'Open Sans', sans-serif, 'Destiny Symbols';
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
+  border: 1px solid transparent;
+  transition: all 150ms ease-out;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.dim-button img {
+  vertical-align: bottom;
+}
+
+.dim-button:hover,
+.dim-button:active,
+.dim-button.selected {
+  background-color: #e8a534 !important;
+  color: black !important;
+}
+
+.dim-notes {
+  white-space: pre-line;
+}

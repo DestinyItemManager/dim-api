@@ -1,39 +1,24 @@
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import jwt from 'express-jwt';
-import { authTokenHandler } from './routes/auth-token';
-import { platformInfoHandler } from './routes/platform-info';
-import { metrics } from './metrics';
-import { importHandler } from './routes/import';
-import { deleteAllDataHandler } from './routes/delete-all-data';
-import { exportHandler } from './routes/export';
-import { profileHandler } from './routes/profile';
-import { createAppHandler } from './routes/create-app';
-import { apiKey, isAppOrigin } from './apps';
-import { updateHandler } from './routes/update';
-import { setRouteNameForStats } from './metrics/express';
 import * as Sentry from '@sentry/node';
+import cors from 'cors';
+import express from 'express';
+import { expressjwt as jwt } from 'express-jwt';
+import { apiKey, isAppOrigin } from './apps/index.js';
+import expressStatsd from './metrics/express.js';
+import { metrics } from './metrics/index.js';
+import { authTokenHandler } from './routes/auth-token.js';
+import { createAppHandler } from './routes/create-app.js';
+import { deleteAllDataHandler } from './routes/delete-all-data.js';
+import { donateHandler } from './routes/donate.js';
+import { exportHandler } from './routes/export.js';
+import { importHandler } from './routes/import.js';
+import { getLoadoutShareHandler, loadoutShareHandler } from './routes/loadout-share.js';
+import { platformInfoHandler } from './routes/platform-info.js';
+import { profileHandler } from './routes/profile.js';
+import { updateHandler } from './routes/update.js';
 
 export const app = express();
 
-app.set('trust proxy', true); // enable x-forwarded-for
-app.set('x-powered-by', false);
-
-// The request handler must be the first middleware on the app
-app.use(
-  Sentry.Handlers.requestHandler({
-    user: ['bungieMembershipId'],
-  })
-);
-// TracingHandler creates a trace for every incoming request
-app.use(Sentry.Handlers.tracingHandler());
-// The error handler must be before any other error middleware
-app.use(Sentry.Handlers.errorHandler());
-
-app.use(setRouteNameForStats); // fix path names for next middleware
-app.use(metrics.helpers.getExpressMiddleware('http', { timeByUrl: true })); // metrics
-app.use(morgan('combined')); // logging
+app.use(expressStatsd({ client: metrics, prefix: 'http' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
 
 /** CORS config that allows any origin to call */
@@ -43,18 +28,19 @@ const permissiveCors = cors({
 
 // These paths can be accessed by any caller
 app.options('/', permissiveCors);
-app.get('/', permissiveCors, (_, res) =>
-  res.send({ message: 'Hello from DIM!!!' })
-);
+app.get('/', permissiveCors, (_, res) => res.send({ message: 'Hello from DIM!!!' }));
 app.post('/', permissiveCors, (_, res) => res.status(404).send('Not Found'));
-app.get('/favicon.ico', permissiveCors, (_, res) =>
-  res.status(404).send('Not Found')
-);
+app.get('/favicon.ico', permissiveCors, (_, res) => res.status(404).send('Not Found'));
 
 app.options('/platform_info', permissiveCors);
 app.get('/platform_info', permissiveCors, platformInfoHandler);
 app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
+// Get a shared loadout
+app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
+
+// Proxy the donation info from donordrive
+app.get('/donate', permissiveCors, donateHandler);
 
 /* ****** API KEY REQUIRED ****** */
 /* Any routes declared below this will require an API Key in X-API-Key header */
@@ -81,17 +67,8 @@ app.use(apiKeyCors);
 
 // Validate that the API key in the header is valid for this origin.
 app.use((req, res, next) => {
-  if (
-    req.dimApp &&
-    req.headers.origin &&
-    req.dimApp.origin !== req.headers.origin
-  ) {
-    console.warn(
-      'OriginMismatch',
-      req.dimApp?.id,
-      req.dimApp?.origin,
-      req.headers.origin
-    );
+  if (req.dimApp && req.headers.origin && req.dimApp.origin !== req.headers.origin) {
+    console.warn('OriginMismatch', req.dimApp?.id, req.dimApp?.origin, req.headers.origin);
     metrics.increment('apiKey.wrongOrigin.count');
     // TODO: sentry
     res.status(401).send({
@@ -116,9 +93,9 @@ app.all(
   '*',
   jwt({
     secret: process.env.JWT_SECRET!,
-    userProperty: 'jwt',
+    requestProperty: 'jwt',
     algorithms: ['HS256'],
-  })
+  }),
 );
 
 // Copy info from the auth token into a "user" parameter on the request.
@@ -127,9 +104,19 @@ app.use((req, _, next) => {
     console.error('JWT expected', req.path);
     next(new Error('Expected JWT info'));
   } else {
+    if (req.jwt.exp) {
+      const nowSecs = Date.now() / 1000;
+      if (req.jwt.exp > nowSecs) {
+        metrics.timing('authToken.age', req.jwt.exp - nowSecs);
+      } else {
+        metrics.increment('authToken.expired.count');
+      }
+    }
+
     req.user = {
-      bungieMembershipId: parseInt(req.jwt.sub, 10),
-      dimApiKey: req.jwt.iss,
+      bungieMembershipId: parseInt(req.jwt.sub!, 10),
+      dimApiKey: req.jwt.iss!,
+      profileIds: req.jwt['profileIds'] ?? [],
     };
     next();
   }
@@ -137,13 +124,8 @@ app.use((req, _, next) => {
 
 // Validate that the auth token and the API key in the header match.
 app.use((req, res, next) => {
-  if (req.dimApp && req.dimApp.dimApiKey !== req.jwt!.iss) {
-    console.warn(
-      'ApiKeyMismatch',
-      req.dimApp?.id,
-      req.dimApp?.dimApiKey,
-      req.jwt!.iss
-    );
+  if (req.dimApp && req.dimApp.dimApiKey !== req.jwt.iss) {
+    console.warn('ApiKeyMismatch', req.dimApp?.id, req.dimApp?.dimApiKey, req.jwt.iss);
     metrics.increment('apiKey.mismatch.count');
     res.status(401).send({
       error: 'ApiKeyMismatch',
@@ -166,9 +148,13 @@ app.post('/import', importHandler);
 app.get('/export', exportHandler);
 // Delete all data for an account
 app.post('/delete_all_data', deleteAllDataHandler);
+// Share a loadout
+app.post('/loadout_share', loadoutShareHandler);
 
 app.use((err: Error, req, res, _next) => {
   Sentry.captureException(err);
+  // Allow any origin to see the response
+  res.header('Access-Control-Allow-Origin', '*');
   if (err.name === 'UnauthorizedError') {
     console.warn('Unauthorized', req.dimApp?.id, req.originalUrl, err);
     res.status(401).send({
@@ -182,7 +168,7 @@ app.use((err: Error, req, res, _next) => {
       req.method,
       req.originalUrl,
       req.user?.bungieMembershipId,
-      err
+      err,
     );
     res.status(500).send({
       error: err.name,

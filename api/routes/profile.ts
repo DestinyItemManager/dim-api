@@ -1,27 +1,59 @@
+import * as Sentry from '@sentry/node';
 import asyncHandler from 'express-async-handler';
-import { readTransaction } from '../db';
-import { getSettings } from '../db/settings-queries';
-import { getLoadoutsForProfile } from '../db/loadouts-queries';
-import { getItemAnnotationsForProfile } from '../db/item-annotations-queries';
-import { badRequest } from '../utils';
-import { ProfileResponse } from '../shapes/profile';
-import { DestinyVersion } from '../shapes/general';
-import { defaultSettings } from '../shapes/settings';
-import { getTrackedTriumphsForProfile } from '../db/triumphs-queries';
-import { getSearchesForProfile } from '../db/searches-queries';
-import { metrics } from '../metrics';
-import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries';
+import { readTransaction } from '../db/index.js';
+import { getItemAnnotationsForProfile } from '../db/item-annotations-queries.js';
+import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries.js';
+import { getLoadoutsForProfile } from '../db/loadouts-queries.js';
+import { getSearchesForProfile } from '../db/searches-queries.js';
+import { getSettings } from '../db/settings-queries.js';
+import { getTrackedTriumphsForProfile } from '../db/triumphs-queries.js';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { ProfileResponse } from '../shapes/profile.js';
+import { defaultSettings } from '../shapes/settings.js';
+import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
+
+const validComponents = new Set([
+  'settings',
+  'loadouts',
+  'tags',
+  'hashtags',
+  'triumphs',
+  'searches',
+]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user!;
-  const { id: appId } = req.dimApp!;
-  metrics.counter('profile.app.' + appId, 1);
+  const { bungieMembershipId, profileIds } = req.user;
+  const { id: appId } = req.dimApp;
+  metrics.increment('profile.app.' + appId, 1);
 
-  const platformMembershipId = req.query.platformMembershipId as string;
+  const platformMembershipId = req.query.platformMembershipId?.toString();
+
+  if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
+    badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
+    return;
+  }
+
+  checkPlatformMembershipId(platformMembershipId, profileIds, 'profile');
+
   const destinyVersion: DestinyVersion = req.query.destinyVersion
     ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
     : 2;
-  const components = ((req.query.components as string) || '').split(/\s*,\s*/);
+
+  if (destinyVersion !== 1 && destinyVersion !== 2) {
+    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    return;
+  }
+
+  const components = (req.query.components?.toString() || '').split(/\s*,\s*/);
+
+  if (components.some((c) => !validComponents.has(c))) {
+    badRequest(
+      res,
+      `[${components.filter((c) => !validComponents.has(c)).join(', ')}] are not valid components`,
+    );
+    return;
+  }
 
   if (!components) {
     badRequest(res, 'No components provided');
@@ -29,10 +61,11 @@ export const profileHandler = asyncHandler(async (req, res) => {
   }
 
   // TODO: Maybe do parallel non-transactional reads instead
-  await readTransaction(async (client) => {
+  const response = await readTransaction(async (client) => {
     const response: ProfileResponse = {};
 
     if (components.includes('settings')) {
+      // TODO: should settings be stored under profile too?? maybe primary profile ID?
       const start = new Date();
       const storedSettings = await getSettings(client, bungieMembershipId);
 
@@ -69,7 +102,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId,
         platformMembershipId,
-        destinyVersion
+        destinyVersion,
       );
       metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
       metrics.timing('profile.loadouts', start);
@@ -77,10 +110,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('tags')) {
       if (!platformMembershipId) {
-        badRequest(
-          res,
-          'Need a platformMembershipId to return item annotations'
-        );
+        badRequest(res, 'Need a platformMembershipId to return item annotations');
         return;
       }
       const start = new Date();
@@ -88,7 +118,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
         client,
         bungieMembershipId,
         platformMembershipId,
-        destinyVersion
+        destinyVersion,
       );
       metrics.timing('profile.tags.numReturned', response.tags.length);
       metrics.timing('profile.tags', start);
@@ -96,14 +126,8 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('hashtags')) {
       const start = new Date();
-      response.itemHashTags = await getItemHashTagsForProfile(
-        client,
-        bungieMembershipId
-      );
-      metrics.timing(
-        'profile.hashtags.numReturned',
-        response.itemHashTags.length
-      );
+      response.itemHashTags = await getItemHashTagsForProfile(client, bungieMembershipId);
+      metrics.timing('profile.hashtags.numReturned', response.itemHashTags.length);
       metrics.timing('profile.hashtags', start);
     }
 
@@ -116,7 +140,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
       response.triumphs = await getTrackedTriumphsForProfile(
         client,
         bungieMembershipId,
-        platformMembershipId
+        platformMembershipId,
       );
       metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
       metrics.timing('profile.triumphs', start);
@@ -124,17 +148,27 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
     if (components.includes('searches')) {
       const start = new Date();
-      response.searches = await getSearchesForProfile(
-        client,
-        bungieMembershipId,
-        destinyVersion
-      );
+      response.searches = await getSearchesForProfile(client, bungieMembershipId, destinyVersion);
       metrics.timing('profile.searches.numReturned', response.searches.length);
       metrics.timing('profile.searches', start);
     }
 
-    // Instruct CF not to cache this
-    res.set('Cache-Control', 'no-cache, max-age=0');
-    res.send(response);
+    if ((response.tags?.length ?? 0) > 1000) {
+      Sentry.captureMessage('User with a lot of tags', {
+        extra: {
+          bungieMembershipId,
+          destinyVersion,
+          appId,
+          tagsLength: response.tags?.length,
+        },
+      });
+    }
+
+    return response;
   });
+
+  // Instruct CF not to cache this for longer than a minute
+  res.set('Cache-Control', 'public, max-age=60');
+  res.set('Expires', new Date(Date.now() + 60 * 1000).toUTCString());
+  res.send(response);
 });

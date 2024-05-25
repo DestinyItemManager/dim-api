@@ -1,6 +1,6 @@
 import { ClientBase, QueryResult } from 'pg';
-import { ApiApp } from '../shapes/app';
-import { camelize } from '../utils';
+import { ApiApp } from '../shapes/app.js';
+import { camelize } from '../utils.js';
 
 /**
  * Get all registered apps.
@@ -20,10 +20,7 @@ export async function getAllApps(client: ClientBase): Promise<ApiApp[]> {
 /**
  * Get an app by its ID.
  */
-export async function getAppById(
-  client: ClientBase,
-  id: string
-): Promise<ApiApp | null> {
+export async function getAppById(client: ClientBase, id: string): Promise<ApiApp | null> {
   try {
     const results = await client.query<ApiApp>({
       name: 'get_apps',
@@ -43,10 +40,7 @@ export async function getAppById(
 /**
  * Insert a new app into the list of registered apps.
  */
-export async function insertApp(
-  client: ClientBase,
-  app: ApiApp
-): Promise<QueryResult<any>> {
+export async function insertApp(client: ClientBase, app: ApiApp): Promise<QueryResult<any>> {
   try {
     return client.query({
       name: 'insert_app',

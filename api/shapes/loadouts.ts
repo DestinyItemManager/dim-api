@@ -12,6 +12,19 @@ export interface LoadoutItem {
    * (by it's hash) is supposed to be socketed into the given socket index.
    */
   socketOverrides?: { [socketIndex: number]: number };
+  /**
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
+   * match up items that have changed instance ID from being reshaped since they
+   * were added to the loadout.
+   */
+  craftedDate?: number;
+}
+
+/** normally found inside DestinyLoadoutComponent, mapped to respective definition tables */
+export interface InGameLoadoutIdentifiers {
+  colorHash: number;
+  iconHash: number;
+  nameHash: number;
 }
 
 export interface Loadout {
@@ -30,13 +43,20 @@ export interface Loadout {
   classType: DestinyClass;
   /**
    * DestinyInventoryItemDefinition hash of an emblem to use as
-   * an icon for this loadout
+   * an icon for this loadout.
+   *
+   * @deprecated this was added for Little Light but never used by DIM.
    */
   emblemHash?: number;
+  /**
+   * Whether to clear out other items when applying this loadout
+   * @deprecated in favor of parameters.clearWeapons and parameters.clearArmor
+   */
   /** Whether to clear out other items when applying this loadout */
   clearSpace: boolean;
-  /** Lists of equipped and unequipped items in the loadout */
+  /** List of equipped items in the loadout */
   equipped: LoadoutItem[];
+  /** List of unequipped items in the loadout */
   unequipped: LoadoutItem[];
   /** Information about the desired properties of this loadout - used to drive the Loadout Optimizer or apply Mod Loadouts */
   parameters?: LoadoutParameters;
@@ -50,23 +70,26 @@ export interface Loadout {
    * out all over again every time (especially since our algorithm might
    * change). Combine this list and parameters.mods when displaying or actually
    * applying the loadout.
+   *
+   * @deprecated we just throw away stat mods when using LO auto stats
    */
   autoStatMods?: number[];
 }
 
-/** The level of upgrades the user is willing to perform in order to fit mods into their loadout or hit stats. */
-export enum UpgradeSpendTier {
-  Nothing,
-  LegendaryShards,
-  EnhancementPrisms,
-  AscendantShardsNotExotic,
-  AscendantShards,
-  AscendantShardsNotMasterworked,
-  /**
-   * @deprecated
-   * No longer needed with the lock energy toggle, treat this as if it was the Nothing option.
-   */
-  AscendantShardsLockEnergyType,
+/** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
+export const enum AssumeArmorMasterwork {
+  /** No armor will have assumed masterworked stats. */
+  None = 1,
+  /** Only legendary armor will have assumed masterworked stats. */
+  Legendary,
+  /** All armor (legendary & exotic) will have assumed masterworked stats. */
+  All,
+}
+
+/** How the loadouts menu and page should be sorted */
+export const enum LoadoutSort {
+  ByEditTime,
+  ByName,
 }
 
 /**
@@ -75,6 +98,11 @@ export enum UpgradeSpendTier {
  * This can be used to re-load a loadout into Loadout Optimizer with its
  * settings intact, or to equip the right mods when applying a loadout if AWA is
  * ever released.
+ *
+ * Originally this was meant to model parameters independent of specific items,
+ * as a means of sharing Loadout Optimizer settings between users, but now we
+ * just share whole loadouts, so this can be used for any sort of parameter we
+ * want to add to loadouts.
  *
  * All properties are optional, but most have defaults specified in
  * defaultLoadoutParameters that should be used if they are undefined.
@@ -98,6 +126,17 @@ export interface LoadoutParameters {
   mods?: number[];
 
   /**
+   * If set, after applying the mods above, all other mods will be removed from armor.
+   */
+  clearMods?: boolean;
+
+  /** Whether to clear out other weapons when applying this loadout */
+  clearWeapons?: boolean;
+
+  /** Whether to clear out other weapons when applying this loadout */
+  clearArmor?: boolean;
+
+  /**
    * Mods that must be applied to a specific bucket hash. In general, prefer to
    * use the flat mods list above, and rely on the loadout function to assign
    * mods automatically. However there are some mods like shaders which can't
@@ -106,6 +145,14 @@ export interface LoadoutParameters {
    */
   modsByBucket?: {
     [bucketHash: number]: number[];
+  };
+
+  /** The artifact unlocks relevant to this build. */
+  artifactUnlocks?: {
+    /** The item hashes of the unlocked artifact perk items. */
+    unlockedItemHashes: number[];
+    /** The season this set of artifact unlocks was chosen from. */
+    seasonNumber: number;
   };
 
   /**
@@ -118,18 +165,11 @@ export interface LoadoutParameters {
    * which constrains the items that can be in the loadout.
    */
   query?: string;
-  /**
-   * When generating the loadout, did we assume all items were at their
-   * masterworked stats, or did we use their current stats?
-   *
-   * @deprecated use upgradeSpendTier
-   */
-  assumeMasterworked?: boolean;
 
   /**
-   * What upgrades are the user willing to shell out for?
+   * Whether armor of this type will have assumed materwork stats in the Loadout Optimizer.
    */
-  upgradeSpendTier?: UpgradeSpendTier;
+  assumeArmorMasterwork?: AssumeArmorMasterwork;
 
   /**
    * The InventoryItemHash of the pinned exotic, if any was chosen.
@@ -137,9 +177,16 @@ export interface LoadoutParameters {
   exoticArmorHash?: number;
 
   /**
-   * Don't change energy type of armor in order to fit mods.
+   * a user may optionally specify which icon/color/name will be used,
+   * if this DIM loadout is saved to an in-game slot
    */
-  lockItemEnergyType?: boolean;
+  inGameIdentifiers?: InGameLoadoutIdentifiers;
+
+  /**
+   * When calculating loadout stats, should "Font of ..." mods be assumed active
+   * and their runtime bonus stats be included?
+   */
+  includeRuntimeStatBenefits?: boolean;
 }
 
 /**
@@ -157,10 +204,9 @@ export const defaultLoadoutParameters: LoadoutParameters = {
     { statHash: 4244567218 }, //Strength
   ],
   mods: [],
-  assumeMasterworked: false,
-  upgradeSpendTier: UpgradeSpendTier.Nothing,
-  lockItemEnergyType: false,
+  assumeArmorMasterwork: AssumeArmorMasterwork.None,
   autoStatMods: true,
+  includeRuntimeStatBenefits: true,
 };
 
 /** A constraint on the values an armor stat can take */

@@ -1,14 +1,11 @@
 // Synced with the definitions in DIM/src/app/settings/reducer.ts
 
-import { LoadoutParameters, StatConstraint } from './loadouts';
+import { CustomStatDef } from './custom-stats.js';
+import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
 
-export type CharacterOrder =
-  | 'mostRecent'
-  | 'mostRecentReverse'
-  | 'fixed'
-  | 'custom';
+export type CharacterOrder = 'mostRecent' | 'mostRecentReverse' | 'fixed' | 'custom';
 
-export enum InfuseDirection {
+export const enum InfuseDirection {
   /** infuse something into the query (query = target) */
   INFUSE,
   /** infuse the query into the target (query = source) */
@@ -24,6 +21,8 @@ export interface Settings {
   readonly characterOrder: CharacterOrder;
   /** Custom sorting properties, in order of application */
   readonly itemSortOrderCustom: string[];
+  /** supplements itemSortOrderCustom by allowing each sort to be reversed */
+  readonly itemSortReversals: string[];
   /** How many columns to display character buckets */
   readonly charCol: number;
   /** How many columns to display character buckets on Mobile */
@@ -66,7 +65,7 @@ export interface Settings {
    */
   readonly loParameters: Exclude<
     LoadoutParameters,
-    'mods' | 'query' | 'exoticArmorHash'
+    'mods' | 'query' | 'exoticArmorHash' | 'statConstraints' | 'clearMods'
   >;
 
   /**
@@ -96,6 +95,43 @@ export interface Settings {
 
   /** Badge the app icon with the number of postmaster items on the current character */
   readonly badgePostmaster: boolean;
+
+  /** Display perks as a list instead of a grid. */
+  readonly perkList: boolean;
+
+  /** How the loadouts menu and page should be sorted */
+  readonly loadoutSort: LoadoutSort;
+
+  /** Hide tagged items in the Item Feed */
+  readonly itemFeedHideTagged: boolean;
+
+  /** Show the Item Feed */
+  readonly itemFeedExpanded: boolean;
+
+  /** Pull from postmaster is an irreversible action and some people don't want to accidentally hit it. */
+  readonly hidePullFromPostmaster: boolean;
+
+  /** Select descriptions to display */
+  readonly descriptionsToDisplay: 'bungie' | 'community' | 'both';
+
+  /** Plug the T10 masterwork into D2Y2+ random roll weapons for comparison purposes. */
+  readonly compareWeaponMasterwork: boolean;
+
+  /**
+   * Cutoff point; the instance ID of the newest item that isn't shown in
+   * the item feed anymore after the user presses the "clear" button.
+   */
+  readonly itemFeedWatermark: string;
+
+  /**
+   * a set of user-defined custom stat totals.
+   * this will supercede customTotalStatsByClass.
+   * it defaults below to empty, which in DIM, initiates fallback to customTotalStatsByClass
+   */
+  readonly customStats: CustomStatDef[];
+
+  /** Automatically sync lock status with tag */
+  readonly autoLockTagged: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -106,6 +142,7 @@ export const defaultSettings: Settings = {
   // Sort characters (mostRecent, mostRecentReverse, fixed)
   characterOrder: 'mostRecent',
   itemSortOrderCustom: ['primStat', 'name'],
+  itemSortReversals: [],
   // How many columns to display character buckets
   charCol: 3,
   // How many columns to display character buckets on Mobile
@@ -170,4 +207,14 @@ export const defaultSettings: Settings = {
 
   singleCharacter: false,
   badgePostmaster: true,
+  perkList: true,
+  loadoutSort: LoadoutSort.ByEditTime,
+  itemFeedHideTagged: true,
+  itemFeedExpanded: false,
+  hidePullFromPostmaster: false,
+  descriptionsToDisplay: 'both',
+  compareWeaponMasterwork: false,
+  itemFeedWatermark: '0',
+  customStats: [],
+  autoLockTagged: false,
 };

@@ -1,0 +1,8 @@
+{
+  "comments": false,
+  "presets": [
+    ["@babel/preset-env", { "modules": false, "bugfixes": true }],
+    ["@babel/preset-typescript", { "optimizeConstEnums": true }]
+  ],
+  "plugins": ["@babel/transform-class-properties", "@babel/transform-object-rest-spread"]
+}

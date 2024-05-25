@@ -1,10 +1,10 @@
-import { transaction, pool } from '.';
+import { closeDbPool, transaction } from './index.js';
 import {
-  updateItemHashTag,
-  getItemHashTagsForProfile,
   deleteAllItemHashTags,
   deleteItemHashTag,
-} from './item-hash-tags-queries';
+  getItemHashTagsForProfile,
+  updateItemHashTag,
+} from './item-hash-tags-queries.js';
 
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
@@ -12,10 +12,10 @@ const bungieMembershipId = 4321;
 beforeEach(() =>
   transaction(async (client) => {
     await deleteAllItemHashTags(client, bungieMembershipId);
-  })
+  }),
 );
 
-afterAll(() => pool.end());
+afterAll(() => closeDbPool());
 
 it('can insert item hash tags where none exist before', async () => {
   await transaction(async (client) => {
@@ -25,10 +25,7 @@ it('can insert item hash tags where none exist before', async () => {
       notes: 'the best',
     });
 
-    const annotations = await getItemHashTagsForProfile(
-      client,
-      bungieMembershipId
-    );
+    const annotations = await getItemHashTagsForProfile(client, bungieMembershipId);
     expect(annotations[0]).toEqual({
       hash: 2926662838,
       tag: 'favorite',
@@ -51,10 +48,7 @@ it('can update item hash tags where none exist before', async () => {
       notes: 'the worst',
     });
 
-    const annotations = await getItemHashTagsForProfile(
-      client,
-      bungieMembershipId
-    );
+    const annotations = await getItemHashTagsForProfile(client, bungieMembershipId);
     expect(annotations[0]).toEqual({
       hash: 2926662838,
       tag: 'junk',
@@ -76,10 +70,7 @@ it('can update item hash tags clearing value', async () => {
       tag: null,
     });
 
-    const annotations = await getItemHashTagsForProfile(
-      client,
-      bungieMembershipId
-    );
+    const annotations = await getItemHashTagsForProfile(client, bungieMembershipId);
     expect(annotations[0]).toEqual({
       hash: 2926662838,
       notes: 'the best',
@@ -97,10 +88,7 @@ it('can delete item hash tags', async () => {
 
     await deleteItemHashTag(client, bungieMembershipId, 2926662838);
 
-    const annotations = await getItemHashTagsForProfile(
-      client,
-      bungieMembershipId
-    );
+    const annotations = await getItemHashTagsForProfile(client, bungieMembershipId);
     expect(annotations).toEqual([]);
   });
 });
@@ -119,10 +107,7 @@ it('can delete item hash tags by setting both values to null/empty', async () =>
       notes: '',
     });
 
-    const annotations = await getItemHashTagsForProfile(
-      client,
-      bungieMembershipId
-    );
+    const annotations = await getItemHashTagsForProfile(client, bungieMembershipId);
     expect(annotations).toEqual([]);
   });
 });

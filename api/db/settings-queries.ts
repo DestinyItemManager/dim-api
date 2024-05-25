@@ -1,12 +1,12 @@
 import { ClientBase, QueryResult } from 'pg';
-import { Settings } from '../shapes/settings';
+import { Settings } from '../shapes/settings.js';
 
 /**
  * Get settings for a particular account.
  */
 export async function getSettings(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<Partial<Settings>> {
   try {
     const results = await client.query<{ settings: Settings }>({
@@ -27,7 +27,7 @@ export async function replaceSettings(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  settings: Settings
+  settings: Settings,
 ): Promise<QueryResult<any>> {
   try {
     const result = await client.query({
@@ -51,7 +51,7 @@ export async function setSetting(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  settings: Partial<Settings>
+  settings: Partial<Settings>,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({
@@ -72,7 +72,7 @@ do update set (settings, last_updated_at, last_updated_by) = (settings.settings 
  */
 export async function deleteSettings(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({

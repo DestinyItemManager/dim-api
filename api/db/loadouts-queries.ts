@@ -1,7 +1,8 @@
-import { Loadout, LoadoutItem } from '../shapes/loadouts';
 import { ClientBase, QueryResult } from 'pg';
-import { DestinyVersion } from '../shapes/general';
-import { metrics } from '../metrics';
+import { metrics } from '../metrics/index.js';
+import { DestinyVersion } from '../shapes/general.js';
+import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
+import { isValidItemId } from '../utils.js';
 
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.
@@ -10,7 +11,7 @@ export async function getLoadoutsForProfile(
   client: ClientBase,
   bungieMembershipId: number,
   platformMembershipId: string,
-  destinyVersion: DestinyVersion
+  destinyVersion: DestinyVersion,
 ): Promise<Loadout[]> {
   try {
     const results = await client.query<Loadout>({
@@ -29,7 +30,7 @@ export async function getLoadoutsForProfile(
  */
 export async function getAllLoadoutsForUser(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<
   {
     platformMembershipId: string;
@@ -56,7 +57,7 @@ export async function getAllLoadoutsForUser(
   }
 }
 
-function convertLoadout(row: any): Loadout {
+export function convertLoadout(row: any): Loadout {
   const loadout: Loadout = {
     id: row.id,
     name: row.name,
@@ -64,8 +65,8 @@ function convertLoadout(row: any): Loadout {
     clearSpace: row.clear_space,
     equipped: row.items.equipped || [],
     unequipped: row.items.unequipped || [],
-    createdAt: row.created_at,
-    lastUpdatedAt: row.last_updated_at,
+    createdAt: row.created_at.getTime(),
+    lastUpdatedAt: row.last_updated_at?.getTime(),
   };
   if (row.notes) {
     loadout.notes = row.notes;
@@ -88,7 +89,7 @@ export async function updateLoadout(
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  loadout: Loadout
+  loadout: Loadout,
 ): Promise<QueryResult<any>> {
   try {
     const response = await client.query({
@@ -131,7 +132,7 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
 /**
  * Make sure items are stored minimally and extra properties don't sneak in
  */
-function cleanItem(item: LoadoutItem): LoadoutItem {
+export function cleanItem(item: LoadoutItem): LoadoutItem {
   const hash = item.hash;
   if (!Number.isFinite(hash)) {
     throw new Error('hash must be a number');
@@ -146,7 +147,7 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
   }
 
   if (item.id) {
-    if (!/^\d{1,32}$/.test(item.id)) {
+    if (!isValidItemId(item.id)) {
       throw new Error(`item ID ${item.id} is not in the right format`);
     }
     result.id = item.id;
@@ -154,6 +155,10 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
 
   if (item.socketOverrides) {
     result.socketOverrides = item.socketOverrides;
+  }
+
+  if (item.craftedDate && Number.isFinite(item.craftedDate)) {
+    result.craftedDate = item.craftedDate;
   }
 
   return result;
@@ -165,7 +170,7 @@ function cleanItem(item: LoadoutItem): LoadoutItem {
 export async function deleteLoadout(
   client: ClientBase,
   bungieMembershipId: number,
-  loadoutId: string
+  loadoutId: string,
 ): Promise<Loadout | null> {
   try {
     const response = await client.query({
@@ -189,7 +194,7 @@ export async function deleteLoadout(
  */
 export async function deleteAllLoadouts(
   client: ClientBase,
-  bungieMembershipId: number
+  bungieMembershipId: number,
 ): Promise<QueryResult<any>> {
   try {
     return client.query({

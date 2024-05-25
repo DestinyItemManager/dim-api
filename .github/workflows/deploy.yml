@@ -1,0 +1,93 @@
+name: Deploy dim-api
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/deploy.yml'
+      - 'api/**'
+      - 'dim-gg-static/**'
+      - 'kubernetes/dim-api-deployment.yaml'
+      - 'kubernetes/deploy.sh'
+      - 'Dockerfile'
+      - '.babelrc'
+      - 'package.json'
+      - 'tsconfig.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # So sentry can get the previous commit
+
+      - uses: pnpm/action-setup@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: pnpm
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{secrets.K8S_CLUSTER}}
+
+      - name: Add IP address to trusted source (managed database)
+        uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
+        with:
+          action: 'add'
+          database_id: ${{ secrets.DATABASE_ID }}
+          digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+      - name: Run DB migrations
+        run: cd api && npx db-migrate up -e prod
+        env:
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+
+      - name: Remove IP address to trusted source (managed database)
+        if: always()
+        continue-on-error: true
+        uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
+        with:
+          action: 'remove'
+          database_id: ${{ secrets.DATABASE_ID }}
+          digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+      - name: Build and deploy
+        run: pnpm run deploy
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: destiny-item-manager
+          SENTRY_PROJECT: dim-api
+        with:
+          environment: production
+          version: ${{ env.GITHUB_SHA }}
+          ignore_missing: true
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/dim-api
