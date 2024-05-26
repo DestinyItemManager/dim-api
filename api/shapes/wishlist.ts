@@ -3,6 +3,7 @@
 import { DestinyItemSubType } from 'bungie-api-ts/destiny2';
 
 export type ItemHash = number;
+export type StatHash = number;
 
 export interface WishList {
   /**
@@ -139,6 +140,13 @@ interface Roll {
    * Implementers must ignore any invalid combination they can't match.
    */
   plugs: ItemHash[][];
+
+  /**
+   * Optionally, one or more masterwork stats can be chosen which must also be
+   * present for this roll to match. This is more convenient than having to
+   * specify 10 plug hashes per masterwork stat.
+   */
+  masterworkStats?: StatHash[];
 
   /**
    * Tag for the current combination. This can be used to show special flair on
