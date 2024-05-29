@@ -82,15 +82,18 @@ describe('import/export', () => {
     const exportResponse = response.body as ExportResponse;
 
     expect(exportResponse.settings.itemSortOrderCustom).toEqual([
+      'sunset',
       'tag',
-      'rarity',
       'primStat',
+      'season',
+      'ammoType',
+      'rarity',
       'typeName',
       'name',
     ]);
 
-    expect(exportResponse.loadouts.length).toBe(12);
-    expect(exportResponse.tags.length).toBe(51);
+    expect(exportResponse.loadouts.length).toBe(37);
+    expect(exportResponse.tags.length).toBe(592);
   });
 
   // TODO: other import formats, validation
@@ -108,15 +111,18 @@ describe('profile', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+      'sunset',
       'tag',
-      'rarity',
       'primStat',
+      'season',
+      'ammoType',
+      'rarity',
       'typeName',
       'name',
     ]);
-    expect(profileResponse.loadouts!.length).toBe(11);
-    expect(profileResponse.tags!.length).toBe(51);
-    expect(profileResponse.triumphs!.length).toBe(0);
+    expect(profileResponse.loadouts!.length).toBe(19);
+    expect(profileResponse.tags!.length).toBe(592);
+    expect(profileResponse.triumphs!.length).toBe(30);
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
@@ -125,9 +131,12 @@ describe('profile', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+      'sunset',
       'tag',
-      'rarity',
       'primStat',
+      'season',
+      'ammoType',
+      'rarity',
       'typeName',
       'name',
     ]);
@@ -144,7 +153,7 @@ describe('profile', () => {
     const profileResponse = response.body as ProfileResponse;
 
     expect(profileResponse.settings).toBeUndefined();
-    expect(profileResponse.loadouts!.length).toBe(11);
+    expect(profileResponse.loadouts!.length).toBe(19);
     expect(profileResponse.tags).toBeUndefined();
   });
 
@@ -152,12 +161,12 @@ describe('profile', () => {
     const response = await postRequestAuthed('/delete_all_data').expect(200);
 
     expect(response.body.deleted).toEqual({
+      itemHashTags: 71,
+      loadouts: 37,
+      searches: 205,
       settings: 1,
-      loadouts: 12,
-      tags: 51,
-      triumphs: 0,
-      searches: 0,
-      itemHashTags: 0,
+      tags: 592,
+      triumphs: 30,
     });
 
     // Now re-export and make sure it's all gone
