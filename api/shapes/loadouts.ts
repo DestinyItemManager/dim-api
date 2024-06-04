@@ -84,6 +84,8 @@ export const enum AssumeArmorMasterwork {
   Legendary,
   /** All armor (legendary & exotic) will have assumed masterworked stats. */
   All,
+  /** All armor (legendary & exotic) will have assumed masterworked stats, and Exotic Armor will be upgraded to have an artifice mod slot. */
+  ArtificeExotic,
 }
 
 /** How the loadouts menu and page should be sorted */
