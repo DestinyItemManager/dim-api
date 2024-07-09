@@ -1,9 +1,14 @@
 # The Destiny Item Manager API (DIM Sync)
 
-[Destiny Item Manager (DIM)](https://destinyitemmanager.com) primarily uses the [Bungie.net API](https://github.com/Bungie-net/api) to read information about Destiny game state, and to move or change items. However, DIM offers features beyond what Bungie.net's API does: tags and notes for items, saved loadouts, etc. To allow users to save this data and sync it between different clients (mobile, desktop, etc), we built our own API, which is branded as "DIM Sync" in our application. While this API was developed with DIM in mind, _it is not exclusive to DIM_. We designed it to be used by other Destiny community tools, and we welcome them to use it. Today, these other applications make use of DIM Sync:
+[Destiny Item Manager (DIM)](https://destinyitemmanager.com) uses the [Bungie.net API](https://github.com/Bungie-net/api) to read information about Destiny game state, and to move or change items. However, DIM offers other features that Bungie.net's API does not support: tags and notes for items, saved loadouts, etc. To allow users to save this data and sync it between different clients (mobile, desktop, etc), we built our own API, which is branded as "DIM Sync" in our application. While this API was developed with DIM in mind, _it is not exclusive to DIM_. We designed it to be used by other Destiny community tools, and we welcome them to use it. Today, these other applications make use of DIM Sync:
 
 - [D2Checklist](https://d2checklist.com) - You can sync your notes and tags between DIM and D2Checklist.
 - [light.gg](https://light.gg) - You can sync your tags with their [Roll Appraiser](https://light.gg/god-roll/roll-appraiser/) tool. It can also automatically tag rolls that are popular among the community.
+- [Destiny Recipes](https://destinyrecipes.com) - Their Vault Cleaner allows you to tag your items based on certain rules.
+
+### What this isn't
+
+This API is not the [Bungie.net API](https://github.com/Bungie-net/api)! You cannot load Destiny inventory or move items with this API - that's the Bungie.net API. You also cannot remote-control DIM with this - it does not support applying DIM loadouts, or initiating DIM's [Smart Moves](https://github.com/DestinyItemManager/DIM/wiki/Smart-Moves). This API is limited to saving and loading information about tags, notes, saved DIM loadouts, and other information that is not part of the Bungie.net API.
 
 ### API Types
 
@@ -13,11 +18,11 @@ Updating the package version in `dim-api-types/package.json` and pushing to `mas
 
 ### Get an API key
 
-To use the DIM API, you will need a DIM API key. Anyone can get an API key for localhost development — to get a production development token, join the [DIM Discord](https://t.co/70AKGCbEM5) and message `bhollis`.
+To use the DIM API, you will need a DIM API key. Anyone can get an API key for `localhost` development using the instructions below.
 
-Before interacting with the DIM API: This document assumes you have already set up your application to talk to the Bungie.net API. DIM's API piggybacks on Bungie.net's authentication: information is passed along, through the DIM API, to the Bungie.net API. So you will need to be ready with the [Bungie.net API information](https://www.bungie.net/en/Application) for your development application.
+Before you can interact with the DIM API you must set up your application to talk to the Bungie.net API. DIM's API piggybacks on Bungie.net's authentication: you need to have your users logged in via the Bungie.net API first, and then that token is used to get a token to talk to the DIM API. You will need to be ready with the [Bungie.net API information](https://www.bungie.net/en/Application) for your development application.
 
-Once your application is set up at Bungie.net, you can request a DIM API key for development. The payload is JSON, and requires three pieces of information:
+Once your application is set up at Bungie.net, you can generate a DIM API key for `localhost` development. The payload is JSON, and requires three pieces of information:
 
 - an id for your app (please use the format `username-dev`)
 - your Bungie.net API key
@@ -35,6 +40,8 @@ curl 'https://api.destinyitemmanager.com/new_app' \
 The response will contain a `dimApiKey` field - that's your DIM API key. If you ever forget it, make the request above again, and the same key will be returned to you.
 
 Alternatively, you can [set up DIM for local development](https://github.com/DestinyItemManager/DIM/blob/master/docs/CONTRIBUTING.md) — the "Enter API Credentials" step brings you to a developer page, which will have a button to fetch a DIM API key as well.
+
+Once you have finished developing your app locally and are ready to push it to a production domain, join the [DIM Discord](https://t.co/70AKGCbEM5) and message `bhollis` to get a production token. Be sure to explain what you're building and how it will use the DIM API - if you don't, your request will be ignored.
 
 ### Authenticating
 
@@ -84,6 +91,10 @@ As such, there's a single, central update endpoint:
 `POST https://api.destinyitemmanager.com/profile`
 
 The body is a JSON object containing the `destinyVersion` (DIM supports D1 still!), the `platformMembershipId`, and a list of `updates`. Each update is one of the [update types](https://github.com/DestinyItemManager/dim-api/blob/master/api/shapes/profile.ts#L31). So you can flush the local queue, and apply a series of changes consisting of different tag updates, loadouts, etc. — all interleaved together.
+
+### Loadout Shares
+
+You can create [shared loadouts](https://github.com/DestinyItemManager/DIM/wiki/Share-Loadouts), which are not part of a user's profile - these are globally accessible through `dim.gg` URLs. To create one, you can `POST https://api.destinyitemmanager.com/loadout_share` with a loadout document, and it will return the loadout's ID. If you `GET https://api.destinyitemmanager.com/loadout_share?shareId=XXXXX` you can retrieve a shared loadout based on its ID. It's best to read the DIM code related to shared loadouts to understand how to use them.
 
 # Cloud Architecture
 
