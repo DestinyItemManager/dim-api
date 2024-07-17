@@ -12,6 +12,16 @@ export const enum InfuseDirection {
   FUEL,
 }
 
+export const enum ItemPopupTab {
+  Overview,
+  Triage,
+}
+
+export const enum VaultWeaponGroupingStyle {
+  Lines,
+  Inline,
+}
+
 export interface Settings {
   /** Show item quality percentages */
   readonly itemQuality: boolean;
@@ -132,6 +142,24 @@ export interface Settings {
 
   /** Automatically sync lock status with tag */
   readonly autoLockTagged: boolean;
+
+  /** The currently chosen theme. */
+  theme: string;
+
+  /** Whether to sort triumphs on the records tab by their progression percentage. */
+  sortRecordProgression: boolean;
+
+  /** Whether to hide items that cost silver from the Vendors screen. */
+  vendorsHideSilverItems: boolean;
+
+  /** An additional layer of grouping for weapons in the vault. */
+  vaultWeaponGrouping: string;
+
+  /** How grouped weapons in the vault should be displayed. */
+  vaultWeaponGroupingStyle: VaultWeaponGroupingStyle;
+
+  /** The currently selected item popup tab. */
+  itemPopupTab: ItemPopupTab;
 }
 
 export const defaultSettings: Settings = {
@@ -217,4 +245,10 @@ export const defaultSettings: Settings = {
   itemFeedWatermark: '0',
   customStats: [],
   autoLockTagged: false,
+  theme: 'default',
+  sortRecordProgression: false,
+  vendorsHideSilverItems: false,
+  vaultWeaponGrouping: '',
+  vaultWeaponGroupingStyle: VaultWeaponGroupingStyle.Lines,
+  itemPopupTab: ItemPopupTab.Overview,
 };
