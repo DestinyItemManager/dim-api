@@ -18,8 +18,8 @@ export interface GlobalSettings {
 export const defaultGlobalSettings: GlobalSettings = {
   dimApiEnabled: true,
   destinyProfileMinimumRefreshInterval: 15,
-  destinyProfileRefreshInterval: 30,
-  autoRefresh: false,
+  destinyProfileRefreshInterval: 120,
+  autoRefresh: true,
   refreshProfileOnVisible: true,
   dimProfileMinimumRefreshInterval: 600,
   showIssueBanner: false,
