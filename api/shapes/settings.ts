@@ -253,6 +253,6 @@ export const defaultSettings: Settings = {
   vendorsHideSilverItems: false,
   vaultWeaponGrouping: '',
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle.Lines,
-  vaultArmorGroupingStyle: VaultWeaponGroupingStyle.Lines,
+  vaultArmorGroupingStyle: VaultWeaponGroupingStyle.Inline,
   itemPopupTab: ItemPopupTab.Overview,
 };
