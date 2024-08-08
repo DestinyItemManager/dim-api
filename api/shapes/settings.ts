@@ -158,6 +158,9 @@ export interface Settings {
   /** How grouped weapons in the vault should be displayed. */
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle;
 
+  /** How grouped armor (by class) in the vault should be displayed. */
+  vaultArmorGroupingStyle: VaultWeaponGroupingStyle;
+
   /** The currently selected item popup tab. */
   itemPopupTab: ItemPopupTab;
 }
