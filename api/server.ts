@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/node';
 import cors from 'cors';
-import express from 'express';
+import express, { ErrorRequestHandler } from 'express';
 import { expressjwt as jwt } from 'express-jwt';
+import { JwtPayload } from 'jsonwebtoken';
 import { apiKey, isAppOrigin } from './apps/index.js';
 import expressStatsd from './metrics/express.js';
 import { metrics } from './metrics/index.js';
@@ -15,6 +16,8 @@ import { getLoadoutShareHandler, loadoutShareHandler } from './routes/loadout-sh
 import { platformInfoHandler } from './routes/platform-info.js';
 import { profileHandler } from './routes/profile.js';
 import { updateHandler } from './routes/update.js';
+import { ApiApp } from './shapes/app.js';
+import { UserInfo } from './shapes/user.js';
 
 export const app = express();
 
@@ -67,8 +70,9 @@ app.use(apiKeyCors);
 
 // Validate that the API key in the header is valid for this origin.
 app.use((req, res, next) => {
-  if (req.dimApp && req.headers.origin && req.dimApp.origin !== req.headers.origin) {
-    console.warn('OriginMismatch', req.dimApp?.id, req.dimApp?.origin, req.headers.origin);
+  const dimApp = req.dimApp as ApiApp | undefined;
+  if (dimApp && req.headers.origin && dimApp.origin !== req.headers.origin) {
+    console.warn('OriginMismatch', dimApp?.id, dimApp?.origin, req.headers.origin);
     metrics.increment('apiKey.wrongOrigin.count');
     // TODO: sentry
     res.status(401).send({
@@ -104,19 +108,20 @@ app.use((req, _, next) => {
     console.error('JWT expected', req.path);
     next(new Error('Expected JWT info'));
   } else {
-    if (req.jwt.exp) {
+    const jwt = req.jwt as JwtPayload & { profileIds?: string[] };
+    if (jwt.exp) {
       const nowSecs = Date.now() / 1000;
-      if (req.jwt.exp > nowSecs) {
-        metrics.timing('authToken.age', req.jwt.exp - nowSecs);
+      if (jwt.exp > nowSecs) {
+        metrics.timing('authToken.age', jwt.exp - nowSecs);
       } else {
         metrics.increment('authToken.expired.count');
       }
     }
 
     req.user = {
-      bungieMembershipId: parseInt(req.jwt.sub, 10),
-      dimApiKey: req.jwt.iss!,
-      profileIds: req.jwt['profileIds'] ?? [],
+      bungieMembershipId: parseInt(jwt.sub!, 10),
+      dimApiKey: jwt.iss!,
+      profileIds: jwt.profileIds ?? [],
     };
     next();
   }
@@ -124,8 +129,10 @@ app.use((req, _, next) => {
 
 // Validate that the auth token and the API key in the header match.
 app.use((req, res, next) => {
-  if (req.dimApp && req.dimApp.dimApiKey !== req.jwt.iss) {
-    console.warn('ApiKeyMismatch', req.dimApp?.id, req.dimApp?.dimApiKey, req.jwt.iss);
+  const dimApp = req.dimApp as ApiApp | undefined;
+  const jwt = req.jwt as JwtPayload & { profileIds?: string[] };
+  if (dimApp && dimApp.dimApiKey !== jwt.iss) {
+    console.warn('ApiKeyMismatch', dimApp?.id, dimApp?.dimApiKey, jwt.iss);
     metrics.increment('apiKey.mismatch.count');
     res.status(401).send({
       error: 'ApiKeyMismatch',
@@ -151,28 +158,33 @@ app.post('/delete_all_data', deleteAllDataHandler);
 // Share a loadout
 app.post('/loadout_share', loadoutShareHandler);
 
-app.use((err: Error, req, res, _next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  const dimApp = req.dimApp as ApiApp | undefined;
+  const user = req.user as UserInfo | undefined;
   Sentry.captureException(err);
   // Allow any origin to see the response
   res.header('Access-Control-Allow-Origin', '*');
-  if (err.name === 'UnauthorizedError') {
-    console.warn('Unauthorized', req.dimApp?.id, req.originalUrl, err);
+  if (err instanceof Error && err.name === 'UnauthorizedError') {
+    console.warn('Unauthorized', dimApp?.id, req.originalUrl, err);
     res.status(401).send({
       error: err.name,
       message: err.message,
     });
   } else {
+    const e = err instanceof Error ? err : new Error(`${err}`);
+
     console.error(
       'ServerError',
-      req.dimApp?.id,
+      dimApp?.id,
       req.method,
       req.originalUrl,
-      req.user?.bungieMembershipId,
+      user?.bungieMembershipId,
       err,
     );
     res.status(500).send({
-      error: err.name,
-      message: err.message,
+      error: e.name,
+      message: e.message,
     });
   }
-});
+};
+app.use(errorHandler);

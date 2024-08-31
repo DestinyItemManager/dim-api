@@ -7,6 +7,7 @@ import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import _ from 'lodash';
 import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 import { badRequest } from '../utils.js';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
@@ -15,7 +16,7 @@ const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, st
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
-  const apiApp = req.dimApp;
+  const apiApp = req.dimApp as ApiApp;
 
   if (!bungieAccessToken) {
     badRequest(res, 'No bungieAccessToken provided');
@@ -41,8 +42,8 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
 
     if (!bungieResponse.ok) {
       // TODO: try/catch
-      const errorBody = await bungieResponse.json();
-      if (errorBody.ErrorStatus == 'WebAuthRequired') {
+      const errorBody = (await bungieResponse.json()) as ApiError;
+      if (errorBody.ErrorStatus === 'WebAuthRequired') {
         metrics.increment('authToken.webAuthRequired.count');
         res.status(401).send({
           error: 'WebAuthRequired',
@@ -122,3 +123,8 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     throw e;
   }
 });
+
+interface ApiError {
+  ErrorStatus: string;
+  Message: string;
+}

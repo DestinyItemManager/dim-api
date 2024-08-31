@@ -1,15 +1,18 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
+import { DatabaseError } from 'pg';
 import { transaction } from '../db/index.js';
 import { addLoadoutShare, getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 import {
   GetSharedLoadoutResponse,
   LoadoutShareRequest,
   LoadoutShareResponse,
 } from '../shapes/loadout-share.js';
 import { Loadout } from '../shapes/loadouts.js';
+import { UserInfo } from '../shapes/user.js';
 import slugify from './slugify.js';
 import { validateLoadout } from './update.js';
 
@@ -25,9 +28,9 @@ const getShareURL = (loadout: Loadout, shareId: string) => {
  * Save a loadout to be shared via a dim.gg link.
  */
 export const loadoutShareHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user;
-  const { id: appId } = req.dimApp;
-  metrics.increment('loadout_share.app.' + appId, 1);
+  const { bungieMembershipId } = req.user as UserInfo;
+  const { id: appId } = req.dimApp as ApiApp;
+  metrics.increment(`loadout_share.app.${appId}`, 1);
   const request = req.body as LoadoutShareRequest;
   const { platformMembershipId, loadout } = request;
 
@@ -47,7 +50,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
   }
 
   const shareId = await transaction(async (client) => {
-    const attempts = 0;
+    let attempts = 0;
     // We'll make three attempts to guess a random non-colliding number
     while (attempts < 4) {
       const shareId = generateRandomShareId();
@@ -63,12 +66,13 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
         return shareId;
       } catch (e) {
         // This is a unique constraint violation, generate another random share ID
-        if (e.code == '23505') {
+        if (e instanceof DatabaseError && e.code === '23505') {
           // try again!
         } else {
           throw e;
         }
       }
+      attempts++;
     }
     return 'ran-out';
   });

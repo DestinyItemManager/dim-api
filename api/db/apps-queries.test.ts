@@ -1,3 +1,4 @@
+import { DatabaseError } from 'pg';
 import { v4 as uuid } from 'uuid';
 import { ApiApp } from '../shapes/app.js';
 import { getAllApps, getAppById, insertApp } from './apps-queries.js';
@@ -32,7 +33,10 @@ it('cannot create a new app with the same name as an existing one', async () => 
     try {
       await insertApp(client, app);
     } catch (e) {
-      expect(e.code).toBe('23505');
+      if (!(e instanceof DatabaseError)) {
+        fail('should have thrown a DatabaseError');
+      }
+      expect((e).code).toBe('23505');
     }
   });
 });

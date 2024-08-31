@@ -7,9 +7,10 @@ import { getSearchesForUser } from '../db/searches-queries.js';
 import { getSettings } from '../db/settings-queries.js';
 import { getAllTrackedTriumphsForUser } from '../db/triumphs-queries.js';
 import { ExportResponse } from '../shapes/export.js';
+import { UserInfo } from '../shapes/user.js';
 
 export const exportHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user;
+  const { bungieMembershipId } = req.user as UserInfo;
 
   const response = await readTransaction(async (client) => {
     const settings = await getSettings(client, bungieMembershipId);

@@ -198,12 +198,12 @@ export interface LoadoutParameters {
  */
 export const defaultLoadoutParameters: LoadoutParameters = {
   statConstraints: [
-    { statHash: 2996146975 }, //Mobility
-    { statHash: 392767087 }, //Resilience
-    { statHash: 1943323491 }, //Recovery
-    { statHash: 1735777505 }, //Discipline
-    { statHash: 144602215 }, //Intellect
-    { statHash: 4244567218 }, //Strength
+    { statHash: 2996146975 }, // Mobility
+    { statHash: 392767087 }, // Resilience
+    { statHash: 1943323491 }, // Recovery
+    { statHash: 1735777505 }, // Discipline
+    { statHash: 144602215 }, // Intellect
+    { statHash: 4244567218 }, // Strength
   ],
   mods: [],
   assumeArmorMasterwork: AssumeArmorMasterwork.None,

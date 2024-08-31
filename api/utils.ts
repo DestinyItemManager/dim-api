@@ -2,7 +2,100 @@ import { Response } from 'express';
 import _ from 'lodash';
 import { metrics } from './metrics/index.js';
 
-export function camelize<T extends object>(data: object) {
+/**
+ * This is a utility function to extract the types of a subset of value types
+ * from an object based on an ordered set of keys. It's useful for typing a
+ * postgres insert.
+ * @example
+ * type MyArgsList = TypesForKeys<{a: string, b: number, c: boolean}, ['a', 'c']>;
+ */
+export type TypesForKeys<T extends Record<string, any>, K extends (keyof T)[]> = {
+  [Index in keyof K]: T[K[Index]];
+};
+
+/** Convert a snake_case string to camelCase */
+type CamelCase<S extends string> = S extends `${infer P1}_${infer P2}${infer P3}`
+  ? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<P3>}`
+  : Lowercase<S>;
+
+/**
+ * Convert an object to a new object with snake_case keys replaced with camelCase.
+ */
+export type KeysToCamelCase<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  [K in keyof T as CamelCase<string & K>]: T[K] extends {} ? KeysToCamelCase<T[K]> : T[K];
+};
+
+type UpperCaseLetters =
+  | 'A'
+  | 'B'
+  | 'C'
+  | 'D'
+  | 'E'
+  | 'F'
+  | 'G'
+  | 'H'
+  | 'I'
+  | 'J'
+  | 'K'
+  | 'L'
+  | 'M'
+  | 'N'
+  | 'O'
+  | 'P'
+  | 'Q'
+  | 'R'
+  | 'S'
+  | 'T'
+  | 'U'
+  | 'V'
+  | 'W'
+  | 'X'
+  | 'Y'
+  | 'Z'
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9';
+
+type SnakeCaseSeq<S extends string> = S extends `${infer P1}${infer P2}`
+  ? P1 extends UpperCaseLetters
+    ? `_${Lowercase<P1>}${SnakeCaseSeq<P2>}`
+    : `${P1}${SnakeCaseSeq<P2>}`
+  : Lowercase<S>;
+
+/**
+ * Convert a camelCase string to snake_case
+ */
+export type SnakeCase<S extends string> = S extends `${infer P1}${infer P2}`
+  ? `${Lowercase<P1>}${SnakeCaseSeq<P2>}`
+  : Lowercase<S>;
+
+type ObjectToSnakeCase<T> = {
+  [K in keyof T as SnakeCase<string & K>]: T[K] extends Record<string, any>
+    ? KeysToSnakeCase<T[K]>
+    : T[K];
+};
+
+/**
+ * Convert an object to a new object with camelCase keys replaced with snake_case.
+ */
+export type KeysToSnakeCase<T> = {
+  [K in keyof T as SnakeCase<string & K>]: T[K] extends any[]
+    ? KeysToSnakeCase<T[K][number]>[]
+    : ObjectToSnakeCase<T[K]>;
+};
+
+/**
+ * Convert an object to a new object with snake_case keys replaced with camelCase.
+ */
+export function camelize<T extends object>(data: KeysToSnakeCase<T>): T {
   return _.mapKeys(data, (_value, key) => _.camelCase(key)) as T;
 }
 
@@ -43,14 +136,13 @@ export function checkPlatformMembershipId(
   if (platformMembershipId) {
     if (profileIds.length) {
       metrics.increment(
-        metricsPrefix +
-          '.profileIds.' +
-          (profileIds.includes(platformMembershipId) ? 'match' : 'noMatch') +
-          '.count',
+        `${metricsPrefix}.profileIds.${
+          profileIds.includes(platformMembershipId) ? 'match' : 'noMatch'
+        }.count`,
         1,
       );
     } else {
-      metrics.increment(metricsPrefix + '.profileIds.missing.count', 1);
+      metrics.increment(`${metricsPrefix}.profileIds.missing.count`, 1);
     }
   }
 }

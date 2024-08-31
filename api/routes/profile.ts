@@ -8,9 +8,11 @@ import { getSearchesForProfile } from '../db/searches-queries.js';
 import { getSettings } from '../db/settings-queries.js';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries.js';
 import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
 import { defaultSettings } from '../shapes/settings.js';
+import { UserInfo } from '../shapes/user.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
 const validComponents = new Set([
@@ -23,9 +25,9 @@ const validComponents = new Set([
 ]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId, profileIds } = req.user;
-  const { id: appId } = req.dimApp;
-  metrics.increment('profile.app.' + appId, 1);
+  const { bungieMembershipId, profileIds } = req.user as UserInfo;
+  const { id: appId } = req.dimApp as ApiApp;
+  metrics.increment(`profile.app.${appId}`, 1);
 
   const platformMembershipId = req.query.platformMembershipId?.toString();
 
@@ -36,12 +38,13 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
   checkPlatformMembershipId(platformMembershipId, profileIds, 'profile');
 
-  const destinyVersion: DestinyVersion = req.query.destinyVersion
-    ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
-    : 2;
+  const destinyVersion: DestinyVersion =
+    req.query.destinyVersion && typeof req.query.destinyVersion === 'string'
+      ? (parseInt(req.query.destinyVersion.toString(), 10) as DestinyVersion)
+      : 2;
 
   if (destinyVersion !== 1 && destinyVersion !== 2) {
-    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    badRequest(res, `destinyVersion ${destinyVersion as number} is not in the right format`);
     return;
   }
 
@@ -70,20 +73,20 @@ export const profileHandler = asyncHandler(async (req, res) => {
       const storedSettings = await getSettings(client, bungieMembershipId);
 
       // Clean out deprecated settings (TODO purge from DB)
-      delete storedSettings['allowIdPostToDtr'];
-      delete storedSettings['colorA11y'];
-      delete storedSettings['itemDetails'];
-      delete storedSettings['itemPickerEquip'];
-      delete storedSettings['itemSort'];
-      delete storedSettings['loAssumeMasterwork'];
-      delete storedSettings['loLockItemEnergyType'];
-      delete storedSettings['loMinPower'];
-      delete storedSettings['loMinStatTotal'];
-      delete storedSettings['loStatSortOrder'];
-      delete storedSettings['loUpgradeSpendTier'];
-      delete storedSettings['reviewsModeSelection'];
-      delete storedSettings['reviewsPlatformSelectionV2'];
-      delete storedSettings['showReviews'];
+      delete (storedSettings as Record<string, unknown>).allowIdPostToDtr;
+      delete (storedSettings as Record<string, unknown>).colorA11y;
+      delete (storedSettings as Record<string, unknown>).itemDetails;
+      delete (storedSettings as Record<string, unknown>).itemPickerEquip;
+      delete (storedSettings as Record<string, unknown>).itemSort;
+      delete (storedSettings as Record<string, unknown>).loAssumeMasterwork;
+      delete (storedSettings as Record<string, unknown>).loLockItemEnergyType;
+      delete (storedSettings as Record<string, unknown>).loMinPower;
+      delete (storedSettings as Record<string, unknown>).loMinStatTotal;
+      delete (storedSettings as Record<string, unknown>).loStatSortOrder;
+      delete (storedSettings as Record<string, unknown>).loUpgradeSpendTier;
+      delete (storedSettings as Record<string, unknown>).reviewsModeSelection;
+      delete (storedSettings as Record<string, unknown>).reviewsPlatformSelectionV2;
+      delete (storedSettings as Record<string, unknown>).showReviews;
 
       response.settings = {
         ...defaultSettings,

@@ -7,6 +7,7 @@ import { updateLoadout } from '../db/loadouts-queries.js';
 import { importSearch } from '../db/searches-queries.js';
 import { replaceSettings } from '../db/settings-queries.js';
 import { trackTriumph } from '../db/triumphs-queries.js';
+import { ApiApp } from '../shapes/app.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
@@ -14,12 +15,13 @@ import { ItemAnnotation } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
+import { UserInfo } from '../shapes/user.js';
 import { badRequest } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user;
-  const { id: appId } = req.dimApp;
+  const { bungieMembershipId } = req.user as UserInfo;
+  const { id: appId } = req.dimApp as ApiApp;
 
   // Support only new API exports
   const importData = req.body as ExportResponse;
@@ -127,8 +129,8 @@ export const importHandler = asyncHandler(async (req, res) => {
 });
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
-function subtractObject(obj: object | undefined, defaults: object) {
-  const result = {};
+function subtractObject<T extends object>(obj: Partial<T>, defaults: T): T {
+  const result: Partial<T> = {};
   if (obj) {
     for (const key in defaults) {
       if (obj[key] !== undefined && obj[key] !== defaults[key]) {
@@ -136,11 +138,11 @@ function subtractObject(obj: object | undefined, defaults: object) {
       }
     }
   }
-  return result;
+  return result as T;
 }
 
 function extractSettings(importData: ExportResponse): Settings {
-  return subtractObject(importData.settings, defaultSettings) as Settings;
+  return subtractObject(importData.settings, defaultSettings);
 }
 
 type PlatformLoadout = Loadout & {
