@@ -120,7 +120,7 @@ do update set (usage_count, last_used, last_updated_at, last_updated_by) = (sear
       values: [bungieMembershipId, destinyVersion, query, appId, type],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.searches.noRowUpdated.count', 1);
       throw new Error('searches - No row was updated');
@@ -151,7 +151,7 @@ export async function saveSearch(
       values: [bungieMembershipId, destinyVersion, query, saved, appId],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // Someone saved a search they haven't used!
       metrics.increment('db.searches.noRowUpdated.count', 1);
       const insertSavedResponse = await client.query({
@@ -199,7 +199,7 @@ values ($1, $2, $3, $4, $8, $5, $6, $7, $7)`,
       ],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.searches.noRowUpdated.count', 1);
       throw new Error('searches - No row was updated');

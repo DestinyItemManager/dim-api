@@ -60,7 +60,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 
       values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.itemHashTags.noRowUpdated.count', 1);
       throw new Error('hash tags - No row was updated');

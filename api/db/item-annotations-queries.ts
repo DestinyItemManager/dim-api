@@ -113,7 +113,7 @@ do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE W
       ],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
       throw new Error('tags - No row was updated');

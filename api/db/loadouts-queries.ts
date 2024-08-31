@@ -117,7 +117,7 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
       ],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.loadouts.noRowUpdated.count', 1);
       throw new Error('loadouts - No row was updated');
@@ -179,7 +179,7 @@ export async function deleteLoadout(
       values: [bungieMembershipId, loadoutId],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       return null;
     }
 

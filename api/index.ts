@@ -50,28 +50,28 @@ switch (process.env.VHOST) {
       app.use(vhost('dim.gg', dimGgApp));
       // These are just redirects (for now?)
       app.use(
-        vhost('beta.dim.gg', (req, res) => {
+        vhost('beta.dim.gg', (req, res: express.Response) => {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://beta.destinyitemmanager.com' + req.originalUrl);
         }),
       );
       app.use(
-        vhost('app.dim.gg', (req, res) => {
+        vhost('app.dim.gg', (req, res: express.Response) => {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://app.destinyitemmanager.com' + req.originalUrl);
         }),
       );
       app.use(
-        vhost('pr.dim.gg', (req, res) => {
+        vhost('pr.dim.gg', (req, res: express.Response) => {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://pr.destinyitemmanager.com' + req.originalUrl);
         }),
       );
       app.use(
-        vhost('guide.dim.gg', (req, res) => {
+        vhost('guide.dim.gg', (req, res: express.Response) => {
           // Instruct CF to cache for 15 minutes
           res.set('Cache-Control', 'max-age=900');
           res.redirect('https://github.com/DestinyItemManager/DIM/wiki' + req.originalUrl);

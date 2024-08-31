@@ -16,7 +16,7 @@ export async function getLoadoutShare(
       text: 'SELECT id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at FROM loadout_shares WHERE id = $1',
       values: [shareId],
     });
-    if (results.rowCount === 1) {
+    if (results.rowCount! === 1) {
       return convertLoadout(results.rows[0]);
     } else {
       return undefined;
@@ -60,7 +60,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       ],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.loadoutShares.noRowUpdated.count', 1);
       throw new Error('loadout share - No row was updated');
@@ -83,7 +83,7 @@ export async function recordAccess(client: ClientBase, shareId: string): Promise
       values: [shareId],
     });
 
-    if (response.rowCount < 1) {
+    if (response.rowCount! < 1) {
       // This should never happen!
       metrics.increment('db.loadoutShares.noRowUpdated.count', 1);
       throw new Error('loadout share - No row was updated');

@@ -85,7 +85,7 @@ export async function unTrackTriumph(
     values: [bungieMembershipId, platformMembershipId, recordHash],
   });
 
-  if (response.rowCount < 1) {
+  if (response.rowCount! < 1) {
     // This should never happen but it's OK
     metrics.increment('db.triumphs.noRowDeleted.count', 1);
   }

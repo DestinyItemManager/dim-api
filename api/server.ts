@@ -114,7 +114,7 @@ app.use((req, _, next) => {
     }
 
     req.user = {
-      bungieMembershipId: parseInt(req.jwt.sub!, 10),
+      bungieMembershipId: parseInt(req.jwt.sub, 10),
       dimApiKey: req.jwt.iss!,
       profileIds: req.jwt['profileIds'] ?? [],
     };
