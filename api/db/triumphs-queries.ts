@@ -9,7 +9,7 @@ export async function getTrackedTriumphsForProfile(
   bungieMembershipId: number,
   platformMembershipId: string,
 ): Promise<number[]> {
-  const results = await client.query({
+  const results = await client.query<{ record_hash: string }>({
     name: 'get_tracked_triumphs',
     text: 'SELECT record_hash FROM tracked_triumphs WHERE membership_id = $1 and platform_membership_id = $2',
     values: [bungieMembershipId, platformMembershipId],
@@ -29,7 +29,7 @@ export async function getAllTrackedTriumphsForUser(
     triumphs: number[];
   }[]
 > {
-  const results = await client.query({
+  const results = await client.query<{ platform_membership_id: string; record_hash: string }>({
     name: 'get_all_tracked_triumphs',
     text: 'SELECT platform_membership_id, record_hash FROM tracked_triumphs WHERE membership_id = $1',
     values: [bungieMembershipId],
@@ -38,9 +38,7 @@ export async function getAllTrackedTriumphsForUser(
   const triumphsByAccount: { [platformMembershipId: string]: number[] } = {};
 
   for (const row of results.rows) {
-    triumphsByAccount[row.platform_membership_id] =
-      triumphsByAccount[row.platform_membership_id] || [];
-    triumphsByAccount[row.platform_membership_id].push(parseInt(row.record_hash, 10));
+    (triumphsByAccount[row.platform_membership_id] ||= []).push(parseInt(row.record_hash, 10));
   }
 
   return Object.entries(triumphsByAccount).map(([platformMembershipId, triumphs]) => ({
@@ -58,7 +56,7 @@ export async function trackTriumph(
   bungieMembershipId: number,
   platformMembershipId: string,
   recordHash: number,
-): Promise<QueryResult<any>> {
+): Promise<QueryResult> {
   const response = await client.query({
     name: 'insert_tracked_triumph',
     text: `insert INTO tracked_triumphs (membership_id, platform_membership_id, record_hash, created_by)
@@ -78,14 +76,14 @@ export async function unTrackTriumph(
   bungieMembershipId: number,
   platformMembershipId: string,
   recordHash: number,
-): Promise<QueryResult<any>> {
+): Promise<QueryResult> {
   const response = await client.query({
     name: 'delete_tracked_triumph',
     text: `delete from tracked_triumphs where membership_id = $1 and platform_membership_id = $2 and record_hash = $3`,
     values: [bungieMembershipId, platformMembershipId, recordHash],
   });
 
-  if (response.rowCount < 1) {
+  if (response.rowCount! < 1) {
     // This should never happen but it's OK
     metrics.increment('db.triumphs.noRowDeleted.count', 1);
   }
@@ -99,7 +97,7 @@ export async function unTrackTriumph(
 export async function deleteAllTrackedTriumphs(
   client: ClientBase,
   bungieMembershipId: number,
-): Promise<QueryResult<any>> {
+): Promise<QueryResult> {
   return client.query({
     name: 'delete_all_tracked_triumphs',
     text: `delete from tracked_triumphs where membership_id = $1`,

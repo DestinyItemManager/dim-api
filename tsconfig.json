@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
+    "strict": true,
     "esModuleInterop": true,
     "sourceMap": true,
-    "strictNullChecks": true,
-    "strictBindCallApply": true,
     "module": "NodeNext",
-    "target": "es2022",
+    "target": "ESNext",
     "moduleResolution": "NodeNext",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": true
   }
 }

@@ -1,30 +1,32 @@
 import { readFile } from 'fs';
 import { sign } from 'jsonwebtoken';
-import _ from 'lodash';
-import supertest from 'supertest';
+import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
 import { refreshApps } from './apps/index.js';
 import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
+import { ApiApp } from './shapes/app.js';
+import { DeleteAllResponse } from './shapes/delete-all.js';
 import { ExportResponse } from './shapes/export.js';
-import { GlobalSettings } from './shapes/global-settings.js';
-import { LoadoutShareRequest } from './shapes/loadout-share.js';
+import { PlatformInfoResponse } from './shapes/global-settings.js';
+import { ImportResponse } from './shapes/import.js';
+import { LoadoutShareRequest, LoadoutShareResponse } from './shapes/loadout-share.js';
 import { Loadout, LoadoutItem } from './shapes/loadouts.js';
-import { ProfileResponse, ProfileUpdateRequest } from './shapes/profile.js';
+import { ProfileResponse, ProfileUpdateRequest, ProfileUpdateResponse } from './shapes/profile.js';
 import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
 
-const request = supertest(app);
+const fetch = makeFetch(app);
 
 const bungieMembershipId = 1234;
 const platformMembershipId = '4611686018433092312';
-let testApiKey;
-let testUserToken;
+let testApiKey: string;
+let testUserToken: string;
 
 beforeAll(async () => {
   const appResponse = await createApp();
-  testApiKey = appResponse.body.app.dimApiKey;
+  testApiKey = appResponse.dimApiKey;
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
@@ -39,27 +41,30 @@ afterAll(() => closeDbPool());
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint
-  const response = await request.get('/');
+  const response = await fetch('/');
 
   expect(response.status).toBe(200);
 });
 
 describe('platform_info', () => {
   it('returns global info from GET /platform_info', async () => {
-    const response = await request.get('/platform_info').expect('Content-Type', /json/).expect(200);
+    const response = (await fetch('/platform_info')
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .json()) as PlatformInfoResponse;
 
-    const platformInfo = response.body.settings as GlobalSettings;
+    const platformInfo = response.settings;
 
     expect(platformInfo.dimApiEnabled).toBe(true);
   });
 
   it('can return info from an unknown flavor', async () => {
-    const response = await request
-      .get('/platform_info?flavor=foo')
+    const response = (await fetch('/platform_info?flavor=foo')
       .expect('Content-Type', /json/)
-      .expect(200);
+      .expect(200)
+      .json()) as PlatformInfoResponse;
 
-    const platformInfo = response.body.settings as GlobalSettings;
+    const platformInfo = response.settings;
 
     expect(platformInfo.dimApiEnabled).toBe(true);
   });
@@ -70,16 +75,14 @@ it('can create new apps idempotently', async () => {
   const response = await createApp();
 
   // Same API Key
-  expect(response.body.app.dimApiKey).toEqual(testApiKey);
+  expect(response.dimApiKey).toEqual(testApiKey);
 });
 
 describe('import/export', () => {
   it('can import and export data', async () => {
     await importData();
 
-    const response = await getRequestAuthed('/export').expect(200);
-
-    const exportResponse = response.body as ExportResponse;
+    const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
 
     expect(exportResponse.settings.itemSortOrderCustom).toEqual([
       'sunset',
@@ -104,11 +107,11 @@ describe('profile', () => {
   beforeEach(importData);
 
   it('can retrieve all profile data', async () => {
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
       'sunset',
@@ -126,9 +129,9 @@ describe('profile', () => {
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
-    const response = await getRequestAuthed('/profile?components=settings').expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    const profileResponse = (await getRequestAuthed('/profile?components=settings')
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
       'sunset',
@@ -146,11 +149,11 @@ describe('profile', () => {
   });
 
   it('can retrieve only loadouts', async () => {
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.settings).toBeUndefined();
     expect(profileResponse.loadouts!.length).toBe(19);
@@ -158,9 +161,11 @@ describe('profile', () => {
   });
 
   it('can delete all data with /delete_all_data', async () => {
-    const response = await postRequestAuthed('/delete_all_data').expect(200);
+    const response = (await postRequestAuthed('/delete_all_data')
+      .expect(200)
+      .json()) as DeleteAllResponse;
 
-    expect(response.body.deleted).toEqual({
+    expect(response.deleted).toEqual({
       itemHashTags: 71,
       loadouts: 37,
       searches: 205,
@@ -170,11 +175,9 @@ describe('profile', () => {
     });
 
     // Now re-export and make sure it's all gone
-    const exported = await getRequestAuthed('/export').expect(200);
+    const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
 
-    const exportResponse = exported.body as ExportResponse;
-
-    expect(_.size(exportResponse.settings)).toBe(0);
+    expect(Object.keys(exportResponse.settings).length).toBe(0);
     expect(exportResponse.loadouts.length).toBe(0);
     expect(exportResponse.tags.length).toBe(0);
   });
@@ -184,9 +187,9 @@ describe('settings', () => {
   beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
 
   it('returns default settings', async () => {
-    const response = await getRequestAuthed('/profile?components=settings').expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    const profileResponse = (await getRequestAuthed('/profile?components=settings')
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.settings).toEqual(defaultSettings);
   });
@@ -203,12 +206,12 @@ describe('settings', () => {
       ],
     };
 
-    await postRequestAuthed('/profile').send(request).expect(200);
+    await postRequestAuthed('/profile', request).expect(200);
 
     // Read settings back
-    const response = await getRequestAuthed('/profile?components=settings').expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    const profileResponse = (await getRequestAuthed('/profile?components=settings')
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.settings?.showNewItems).toBe(true);
   });
@@ -252,16 +255,18 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read loadouts back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.loadouts?.length).toBe(1);
     const resultLoadout = profileResponse.loadouts![0];
@@ -271,7 +276,7 @@ describe('loadouts', () => {
     expect(resultLoadout.clearSpace).toBe(loadout.clearSpace);
     expect(resultLoadout.equipped).toEqual(loadout.equipped);
     // This property should have been stripped
-    expect((resultLoadout.unequipped[0] as any).fizbuzz).toBeUndefined();
+    expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
   });
 
   it('can update a loadout', async () => {
@@ -286,9 +291,11 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Change name
     const request2: ProfileUpdateRequest = {
@@ -302,16 +309,18 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read loadouts back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.loadouts?.length).toBe(1);
     expect(profileResponse.loadouts![0].name).toBe('Updated Name');
@@ -329,9 +338,11 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Delete the loadout
     const request2: ProfileUpdateRequest = {
@@ -345,16 +356,18 @@ describe('loadouts', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read loadouts back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.loadouts?.length).toBe(0);
   });
@@ -378,16 +391,18 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(1);
     const resultTag = profileResponse.tags![0];
@@ -412,9 +427,11 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Change tag and notes
     const request2: ProfileUpdateRequest = {
@@ -432,16 +449,18 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(1);
     const resultTag = profileResponse.tags![0];
@@ -466,16 +485,18 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
+    const updateResult3 = (await postRequestAuthed('/profile', request3)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult3.body.results[0].status).toBe('Success');
+    expect(updateResult3.results[0].status).toBe('Success');
 
     // Read tags back after deleting the tag
-    const response2 = await getRequestAuthed(
+    const profileResponse2 = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse2 = response2.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse2.tags?.length).toBe(1);
     const resultTag2 = profileResponse2.tags![0];
@@ -501,9 +522,11 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // delete tag and notes
     const request2: ProfileUpdateRequest = {
@@ -521,16 +544,18 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(0);
   });
@@ -559,10 +584,12 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
-    expect(updateResult.body.results[1].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
+    expect(updateResult.results[1].status).toBe('Success');
 
     // cleanup tags by id
     const request2: ProfileUpdateRequest = {
@@ -576,16 +603,18 @@ describe('tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(0);
   });
@@ -607,16 +636,18 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.itemHashTags?.length).toBe(1);
     const resultTag = profileResponse.itemHashTags![0];
@@ -639,9 +670,11 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Change tag and notes
     const request2: ProfileUpdateRequest = {
@@ -657,16 +690,18 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.itemHashTags?.length).toBe(1);
     const resultTag = profileResponse.itemHashTags![0];
@@ -689,16 +724,18 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult3 = await postRequestAuthed('/profile').send(request3).expect(200);
+    const updateResult3 = (await postRequestAuthed('/profile', request3)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult3.body.results[0].status).toBe('Success');
+    expect(updateResult3.results[0].status).toBe('Success');
 
     // Read tags back after deleting the tag
-    const response2 = await getRequestAuthed(
+    const profileResponse2 = (await getRequestAuthed(
       `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse2 = response2.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse2.itemHashTags?.length).toBe(1);
     const resultTag2 = profileResponse2.itemHashTags![0];
@@ -722,9 +759,11 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // delete tag and notes
     const request2: ProfileUpdateRequest = {
@@ -742,16 +781,18 @@ describe('item hash tags', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.tags?.length).toBe(0);
   });
@@ -775,16 +816,18 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.triumphs?.length).toBe(1);
     expect(profileResponse.triumphs!).toEqual([1234]);
@@ -805,9 +848,11 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     const request2: ProfileUpdateRequest = {
       platformMembershipId,
@@ -823,18 +868,20 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.triumphs?.length).toBe(0);
   });
@@ -854,9 +901,11 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     const request2: ProfileUpdateRequest = {
       platformMembershipId,
@@ -872,18 +921,18 @@ describe('triumphs', () => {
       ],
     };
 
-    const updateResult2 = await postRequestAuthed('/profile').send(request2).expect(200);
+    const updateResult2 = (await postRequestAuthed('/profile', request2)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
-
-    expect(updateResult2.body.results[0].status).toBe('Success');
+    expect(updateResult2.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.triumphs?.length).toBe(1);
     expect(profileResponse.triumphs!).toEqual([1234]);
@@ -907,16 +956,18 @@ describe('searches', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
@@ -945,16 +996,18 @@ describe('searches', () => {
       ],
     };
 
-    const updateResult = await postRequestAuthed('/profile').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/profile', request)
+      .expect(200)
+      .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.body.results[0].status).toBe('Success');
+    expect(updateResult.results[0].status).toBe('Success');
 
     // Read tags back
-    const response = await getRequestAuthed(
+    const profileResponse = (await getRequestAuthed(
       `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
-    ).expect(200);
-
-    const profileResponse = response.body as ProfileResponse;
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
 
     expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
@@ -970,49 +1023,63 @@ describe('loadouts', () => {
       loadout,
     };
 
-    const updateResult = await postRequestAuthed('/loadout_share').send(request).expect(200);
+    const updateResult = (await postRequestAuthed('/loadout_share', request)
+      .expect(200)
+      .json()) as LoadoutShareResponse;
 
-    console.log(updateResult.body.shareUrl);
-    expect(updateResult.body.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
+    console.log(updateResult.shareUrl);
+    expect(updateResult.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
   });
 });
 
 async function createApp() {
-  const response = await request
-    .post('/new_app')
-    .send({
+  const response = (await fetch('/new_app', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
       id: 'test-app',
       bungieApiKey: 'test-api-key',
       origin: 'https://localhost:8080',
-    })
+    }),
+  })
     .expect('Content-Type', /json/)
-    .expect(200);
+    .expect(200)
+    .json()) as { app: ApiApp };
 
-  expect(response.body.app.dimApiKey).toBeDefined();
+  expect(response.app.dimApiKey).toBeDefined();
 
-  return response;
+  return response.app;
 }
 
 async function importData() {
-  const file = JSON.parse((await promisify(readFile)('./dim-data.json')).toString());
+  const file = JSON.parse(
+    (await promisify(readFile)('./dim-data.json')).toString(),
+  ) as ExportResponse;
 
-  await postRequestAuthed('/import').send(file).expect(200);
+  (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
 
   return file;
 }
 
 function getRequestAuthed(url: string) {
-  return request
-    .get(url)
-    .set('X-API-Key', testApiKey)
-    .set('Authorization', `Bearer ${testUserToken}`)
-    .expect('Content-Type', /json/);
+  return fetch(url, {
+    headers: {
+      'X-API-Key': testApiKey,
+      Authorization: `Bearer ${testUserToken}`,
+    },
+  }).expect('Content-Type', /json/);
 }
 
-function postRequestAuthed(url: string) {
-  return request
-    .post(url)
-    .set('X-API-Key', testApiKey)
-    .set('Authorization', `Bearer ${testUserToken}`)
-    .expect('Content-Type', /json/);
+function postRequestAuthed(url: string, body?: any) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': testApiKey,
+      Authorization: `Bearer ${testUserToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
+  }).expect('Content-Type', /json/);
 }

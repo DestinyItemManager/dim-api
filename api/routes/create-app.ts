@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import { DatabaseError } from 'pg-protocol';
 import { v4 as uuid } from 'uuid';
 import { getAppById, insertApp } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
@@ -52,7 +53,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
       await insertApp(client, app);
     } catch (e) {
       // This is a unique constraint violation, so just get the app!
-      if (e.code == '23505') {
+      if (e instanceof DatabaseError && e.code === '23505') {
         await client.query('ROLLBACK');
         app = (await getAppById(client, request.id))!;
       } else {

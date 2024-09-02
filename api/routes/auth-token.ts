@@ -1,13 +1,13 @@
 import * as Sentry from '@sentry/node';
 import { ServerResponse, UserMembershipData } from 'bungie-api-ts/user';
 import asyncHandler from 'express-async-handler';
-import superagent from 'superagent';
 import util from 'util';
 import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import _ from 'lodash';
 import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 import { badRequest } from '../utils.js';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
@@ -16,7 +16,7 @@ const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, st
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
-  const apiApp = req.dimApp;
+  const apiApp = req.dimApp as ApiApp;
 
   if (!bungieAccessToken) {
     badRequest(res, 'No bungieAccessToken provided');
@@ -30,12 +30,34 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
 
   // make request to bungie
   try {
-    const bungieResponse = await superagent
-      .get('https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/')
-      .set('X-API-Key', apiApp.bungieApiKey)
-      .set('Authorization', `Bearer ${bungieAccessToken}`);
+    const bungieResponse = await fetch(
+      'https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/',
+      {
+        headers: {
+          'X-API-Key': apiApp.bungieApiKey,
+          Authorization: `Bearer ${bungieAccessToken}`,
+        },
+      },
+    );
 
-    const responseData = bungieResponse.body as ServerResponse<UserMembershipData>;
+    if (!bungieResponse.ok) {
+      // TODO: try/catch
+      const errorBody = (await bungieResponse.json()) as ApiError;
+      if (errorBody.ErrorStatus === 'WebAuthRequired') {
+        metrics.increment('authToken.webAuthRequired.count');
+        res.status(401).send({
+          error: 'WebAuthRequired',
+          message: `Bungie.net token is not valid`,
+        });
+        return;
+      } else {
+        throw new Error(
+          `Error from Bungie.net while verifying token: ${errorBody.ErrorStatus}: ${errorBody.Message}`,
+        );
+      }
+    }
+
+    const responseData = (await bungieResponse.json()) as ServerResponse<UserMembershipData>;
 
     const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
     if (serverMembershipId === membershipId) {
@@ -96,18 +118,13 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       });
     }
   } catch (e) {
-    if (e.response && e.response.body.ErrorStatus == 'WebAuthRequired') {
-      metrics.increment('authToken.webAuthRequired.count');
-      res.status(401).send({
-        error: 'WebAuthRequired',
-        message: `Bungie.net token is not valid`,
-      });
-    } else {
-      Sentry.captureException(e);
-      console.error('Error issuing auth token', e);
-      throw new Error(
-        `Error from Bungie.net while verifying token: ${e.response?.body.ErrorStatus}: ${e.response?.body.Message}`,
-      );
-    }
+    Sentry.captureException(e);
+    console.error('Error issuing auth token', e);
+    throw e;
   }
 });
+
+interface ApiError {
+  ErrorStatus: string;
+  Message: string;
+}

@@ -3,6 +3,14 @@ import { metrics } from '../metrics/index.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, TagValue, TagVariant } from '../shapes/item-annotations.js';
 
+interface ItemAnnotationRow {
+  inventory_item_id: string;
+  tag: TagValue | null;
+  notes: string | null;
+  variant: TagVariant | null;
+  crafted_date: Date | null;
+}
+
 /**
  * Get all of the item annotations for a particular platform_membership_id and destiny_version.
  */
@@ -12,16 +20,12 @@ export async function getItemAnnotationsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
 ): Promise<ItemAnnotation[]> {
-  try {
-    const results = await client.query({
-      name: 'get_item_annotations',
-      text: 'SELECT inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
-      values: [bungieMembershipId, platformMembershipId, destinyVersion],
-    });
-    return results.rows.map(convertItemAnnotation);
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+  const results = await client.query<ItemAnnotationRow>({
+    name: 'get_item_annotations',
+    text: 'SELECT inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
+    values: [bungieMembershipId, platformMembershipId, destinyVersion],
+  });
+  return results.rows.map(convertItemAnnotation);
 }
 
 /**
@@ -37,24 +41,22 @@ export async function getAllItemAnnotationsForUser(
     annotation: ItemAnnotation;
   }[]
 > {
-  try {
-    // TODO: this isn't indexed!
-    const results = await client.query({
-      name: 'get_all_item_annotations',
-      text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1',
-      values: [bungieMembershipId],
-    });
-    return results.rows.map((row) => ({
-      platformMembershipId: row.platform_membership_id,
-      destinyVersion: row.destiny_version,
-      annotation: convertItemAnnotation(row),
-    }));
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+  // TODO: this isn't indexed!
+  const results = await client.query<
+    ItemAnnotationRow & { platform_membership_id: string; destiny_version: DestinyVersion }
+  >({
+    name: 'get_all_item_annotations',
+    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1',
+    values: [bungieMembershipId],
+  });
+  return results.rows.map((row) => ({
+    platformMembershipId: row.platform_membership_id,
+    destinyVersion: row.destiny_version,
+    annotation: convertItemAnnotation(row),
+  }));
 }
 
-function convertItemAnnotation(row: any): ItemAnnotation {
+function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
   const result: ItemAnnotation = {
     id: row.inventory_item_id,
   };
@@ -83,7 +85,7 @@ export async function updateItemAnnotation(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation,
-): Promise<QueryResult<any>> {
+): Promise<QueryResult> {
   const tagValue = clearValue(itemAnnotation.tag);
   // Variant will only be set when tag is set and only for "keep" values
   const variant = variantValue(tagValue, itemAnnotation.v);
@@ -92,37 +94,32 @@ export async function updateItemAnnotation(
   if (tagValue === 'clear' && notesValue === 'clear') {
     return deleteItemAnnotation(client, bungieMembershipId, itemAnnotation.id);
   }
-
-  try {
-    const response = await client.query({
-      name: 'upsert_item_annotation',
-      text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date, created_by, last_updated_by)
+  const response = await client.query({
+    name: 'upsert_item_annotation',
+    text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date, created_by, last_updated_by)
 values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $9, $8, $7, $7)
 on conflict (membership_id, inventory_item_id)
 do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), (CASE WHEN $9 = 0 THEN NULL WHEN $9 IS NULL THEN item_annotations.variant ELSE $9 END), current_timestamp, $7)`,
-      values: [
-        bungieMembershipId,
-        platformMembershipId,
-        destinyVersion,
-        itemAnnotation.id,
-        tagValue,
-        notesValue,
-        appId,
-        itemAnnotation.craftedDate ? new Date(itemAnnotation.craftedDate * 1000) : null,
-        variant,
-      ],
-    });
+    values: [
+      bungieMembershipId,
+      platformMembershipId,
+      destinyVersion,
+      itemAnnotation.id,
+      tagValue,
+      notesValue,
+      appId,
+      itemAnnotation.craftedDate ? new Date(itemAnnotation.craftedDate * 1000) : null,
+      variant,
+    ],
+  });
 
-    if (response.rowCount < 1) {
-      // This should never happen!
-      metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
-      throw new Error('tags - No row was updated');
-    }
-
-    return response;
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+  if (response.rowCount! < 1) {
+    // This should never happen!
+    metrics.increment('db.itemAnnotations.noRowUpdated.count', 1);
+    throw new Error('tags - No row was updated');
   }
+
+  return response;
 }
 
 /**
@@ -167,16 +164,12 @@ export async function deleteItemAnnotation(
   client: ClientBase,
   bungieMembershipId: number,
   inventoryItemId: string,
-): Promise<QueryResult<any>> {
-  try {
-    return client.query({
-      name: 'delete_item_annotation',
-      text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
-      values: [bungieMembershipId, inventoryItemId],
-    });
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+): Promise<QueryResult> {
+  return client.query({
+    name: 'delete_item_annotation',
+    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
+    values: [bungieMembershipId, inventoryItemId],
+  });
 }
 
 /**
@@ -186,16 +179,12 @@ export async function deleteItemAnnotationList(
   client: ClientBase,
   bungieMembershipId: number,
   inventoryItemIds: string[],
-): Promise<QueryResult<any>> {
-  try {
-    return client.query({
-      name: 'delete_item_annotation_list',
-      text: `delete from item_annotations where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
-      values: [bungieMembershipId, inventoryItemIds],
-    });
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+): Promise<QueryResult> {
+  return client.query({
+    name: 'delete_item_annotation_list',
+    text: `delete from item_annotations where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
+    values: [bungieMembershipId, inventoryItemIds],
+  });
 }
 
 /**
@@ -204,14 +193,10 @@ export async function deleteItemAnnotationList(
 export async function deleteAllItemAnnotations(
   client: ClientBase,
   bungieMembershipId: number,
-): Promise<QueryResult<any>> {
-  try {
-    return client.query({
-      name: 'delete_all_item_annotations',
-      text: `delete from item_annotations where membership_id = $1`,
-      values: [bungieMembershipId],
-    });
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+): Promise<QueryResult> {
+  return client.query({
+    name: 'delete_all_item_annotations',
+    text: `delete from item_annotations where membership_id = $1`,
+    values: [bungieMembershipId],
+  });
 }

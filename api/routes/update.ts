@@ -18,6 +18,7 @@ import {
 import { setSetting as setSettingInDb } from '../db/settings-queries.js';
 import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries.js';
 import { metrics } from '../metrics/index.js';
+import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
@@ -32,6 +33,7 @@ import {
 } from '../shapes/profile.js';
 import { SearchType } from '../shapes/search.js';
 import { Settings } from '../shapes/settings.js';
+import { UserInfo } from '../shapes/user.js';
 import {
   badRequest,
   checkPlatformMembershipId,
@@ -46,9 +48,9 @@ import {
  * Note that you can't mix updates for multiple profiles - you'll have to make multiple requests.
  */
 export const updateHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId, profileIds } = req.user;
-  const { id: appId } = req.dimApp;
-  metrics.increment('update.app.' + appId, 1);
+  const { bungieMembershipId, profileIds } = req.user as UserInfo;
+  const { id: appId } = req.dimApp as ApiApp;
+  metrics.increment(`update.app.${appId}`, 1);
   const request = req.body as ProfileUpdateRequest;
   const { platformMembershipId, updates } = request;
   const destinyVersion = request.destinyVersion ?? 2;
@@ -61,7 +63,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
   checkPlatformMembershipId(platformMembershipId, profileIds, 'update');
 
   if (destinyVersion !== 1 && destinyVersion !== 2) {
-    badRequest(res, `destinyVersion ${destinyVersion} is not in the right format`);
+    badRequest(res, `destinyVersion ${destinyVersion as number} is not in the right format`);
     return;
   }
 
@@ -76,7 +78,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
     for (const update of updates) {
       let result: ProfileUpdateResult;
 
-      metrics.increment('update.action.' + update.action + '.count');
+      metrics.increment(`update.action.${update.action}.count`);
 
       switch (update.action) {
         case 'setting':
@@ -153,13 +155,13 @@ export const updateHandler = asyncHandler(async (req, res) => {
 
         default:
           console.warn(
-            `Unknown action type: ${(update as any).action} from ${appId}, ${req.header(
+            `Unknown action type: ${(update as { action: string }).action} from ${appId}, ${req.header(
               'User-Agent',
             )}, ${req.header('Referer')}`,
           );
           result = {
             status: 'InvalidArgument',
-            message: `Unknown action type: ${(update as any).action}`,
+            message: `Unknown action type: ${(update as { action: string }).action}`,
           };
       }
       results.push(result);
@@ -225,14 +227,14 @@ async function updateLoadout(
 
 export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   if (!loadout.name) {
-    metrics.increment(metricPrefix + '.validation.loadoutNameMissing.count');
+    metrics.increment(`${metricPrefix}.validation.loadoutNameMissing.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout name missing',
     };
   }
   if (loadout.name.length > 120) {
-    metrics.increment(metricPrefix + '.validation.loadoutNameTooLong.count');
+    metrics.increment(`${metricPrefix}.validation.loadoutNameTooLong.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout names must be under 120 characters',
@@ -240,7 +242,7 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   }
 
   if (loadout.notes && loadout.notes.length > 2048) {
-    metrics.increment(metricPrefix + '.validation.loadoutNotesTooLong.count');
+    metrics.increment(`${metricPrefix}.validation.loadoutNotesTooLong.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout notes must be under 2048 characters',
@@ -248,14 +250,14 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   }
 
   if (!loadout.id) {
-    metrics.increment(metricPrefix + '.loadoutIdMissing.count');
+    metrics.increment(`${metricPrefix}.loadoutIdMissing.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout id missing',
     };
   }
   if (loadout.id && loadout.id.length > 120) {
-    metrics.increment(metricPrefix + '.validation.loadoutIdTooLong.count');
+    metrics.increment(`${metricPrefix}.validation.loadoutIdTooLong.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout ids must be under 120 characters',
@@ -263,21 +265,21 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   }
 
   if (!Number.isFinite(loadout.classType)) {
-    metrics.increment(metricPrefix + '.validation.classTypeMissing.count');
+    metrics.increment(`${metricPrefix}.validation.classTypeMissing.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout class type missing or malformed',
     };
   }
   if (loadout.classType < 0 || loadout.classType > 3) {
-    metrics.increment(metricPrefix + '.validation.classTypeOutOfRange.count');
+    metrics.increment(`${metricPrefix}.validation.classTypeOutOfRange.count`);
     return {
       status: 'InvalidArgument',
       message: 'Loadout class type out of range',
     };
   }
   if ([...loadout.equipped, ...loadout.unequipped].some((i) => i.id && !isValidItemId(i.id))) {
-    metrics.increment(metricPrefix + '.validation.itemIdFormat.count');
+    metrics.increment(`${metricPrefix}.validation.itemIdFormat.count`);
     return {
       status: 'InvalidArgument',
       message: 'Item ID is invalid',
@@ -295,7 +297,7 @@ async function deleteLoadout(
   const start = new Date();
   const loadout = await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
   metrics.timing('update.deleteLoadout', start);
-  if (loadout == null) {
+  if (loadout === null) {
     return { status: 'NotFound', message: 'No loadout found with that ID' };
   }
 
