@@ -17,7 +17,7 @@
     "docker:push": "docker push destinyitemmanager/dim-api:latest",
     "lint": "eslint --fix api",
     "lint-check": "eslint api",
-    "test": "jest --verbose --coverage api --forceExit",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --verbose --coverage api --forceExit",
     "test:watch": "jest --watch",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
