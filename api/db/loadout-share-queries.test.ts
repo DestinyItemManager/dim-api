@@ -78,7 +78,7 @@ it('rejects multiple shares with the same ID', async () => {
         loadout,
       );
       fail('Expected this to throw an error');
-    } catch (e) {}
+    } catch {}
   });
 });
 

@@ -21,7 +21,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
   if (!loadout) {
     // Instruct CF to cache for 15 minutes
     res.set('Cache-Control', 'max-age=900');
-    res.status(404).sendFile(path.join(__dirname + '/views/loadout404.html'));
+    res.status(404).sendFile(path.join(`${__dirname  }/views/loadout404.html`));
     return;
   }
 
@@ -52,7 +52,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
 
   const description = loadout.notes
     ? loadout.notes.length > 197
-      ? loadout.notes.substring(0, 197) + '...'
+      ? `${loadout.notes.substring(0, 197)  }...`
       : loadout.notes
     : 'Destiny 2 loadout settings shared from DIM';
 

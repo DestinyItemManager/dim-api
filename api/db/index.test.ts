@@ -10,6 +10,11 @@ beforeEach(async () => {
   )`);
 });
 
+interface TransactionTestRow {
+  id: number;
+  test: string;
+}
+
 afterAll(async () => {
   try {
     await pool.query(`DROP TABLE transaction_test`);
@@ -28,10 +33,10 @@ describe('transaction', () => {
       });
       fail('should have thrown an error');
     } catch (e) {
-      expect(e.message).toBe('oops');
+      expect((e as Error).message).toBe('oops');
     }
 
-    const result = await pool.query('select * from transaction_test');
+    const result = await pool.query<TransactionTestRow>('select * from transaction_test');
     expect(result.rows.length).toBe(1);
     expect(result.rows[0].id).toBe(1);
   });
@@ -41,7 +46,7 @@ describe('transaction', () => {
       await client.query("insert into transaction_test (id, test) values (3, 'testing commits')");
     });
 
-    const result = await pool.query('select * from transaction_test');
+    const result = await pool.query<TransactionTestRow>('select * from transaction_test');
     expect(result.rows.length).toBe(1);
     expect(result.rows[0].test).toBe('testing commits');
   });
@@ -61,7 +66,9 @@ describe('readTransaction', () => {
 
         // Now request that info from our original client.
         // should be read-committed, so we shouldn't see that update
-        const result = await client.query('select * from transaction_test where id = 1');
+        const result = await client.query<TransactionTestRow>(
+          'select * from transaction_test where id = 1',
+        );
         expect(result.rows[0].test).toBe('testing');
 
         // Commit the update
@@ -74,12 +81,16 @@ describe('readTransaction', () => {
       }
 
       // once that other transaction commits, we'll see its update
-      const result = await client.query('select * from transaction_test where id = 1');
+      const result = await client.query<TransactionTestRow>(
+        'select * from transaction_test where id = 1',
+      );
       expect(result.rows[0].test).toBe('updated');
     });
 
     // outside, we should still see the transactional update
-    const result = await pool.query('select * from transaction_test where id = 1');
+    const result = await pool.query<TransactionTestRow>(
+      'select * from transaction_test where id = 1',
+    );
     expect(result.rows[0].test).toBe('updated');
   });
 });

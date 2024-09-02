@@ -15,6 +15,10 @@ export const donateHandler = asyncHandler(async (_req, res) => {
   } catch (e) {
     res.set('Cache-Control', 'max-age=60');
     res.status(500);
-    res.send(e.message);
+    if (e instanceof Error) {
+      res.send(e.message);
+    } else {
+      res.send(`Unknown error: ${e as string}`);
+    }
   }
 });

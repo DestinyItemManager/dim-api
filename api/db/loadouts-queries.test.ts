@@ -62,8 +62,8 @@ it('can record a loadout', async () => {
     expect(firstLoadout.lastUpdatedAt).toBeDefined();
     delete firstLoadout.lastUpdatedAt;
     expect(firstLoadout.unequipped.length).toBe(1);
-    expect(firstLoadout.unequipped[0]['fizbuzz']).toBeUndefined();
-    firstLoadout.unequipped[0]['fizbuzz'] = 11;
+    expect((firstLoadout.unequipped[0] as { fizbuzz?: number }).fizbuzz).toBeUndefined();
+    (firstLoadout.unequipped[0] as { fizbuzz?: number }).fizbuzz = 11;
     expect(firstLoadout).toEqual(loadout);
   });
 });
@@ -96,7 +96,8 @@ it('can delete a loadout', async () => {
   await transaction(async (client) => {
     await updateLoadout(client, appId, bungieMembershipId, platformMembershipId, 2, loadout);
 
-    await deleteLoadout(client, bungieMembershipId, loadout.id);
+    const success = await deleteLoadout(client, bungieMembershipId, loadout.id);
+    expect(success).toBe(true);
 
     const loadouts = await getLoadoutsForProfile(
       client,

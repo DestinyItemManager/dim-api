@@ -3,6 +3,7 @@ shopt -s extglob
 
 # Prepare the generated source directory
 rm -f dim-api-types/*.js
+rm -f dim-api-types/*.cjs
 rm -f dim-api-types/*.ts
 rm -f api/shapes/index.ts
 rm -rf dim-api-types/esm

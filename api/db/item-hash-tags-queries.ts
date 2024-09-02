@@ -1,6 +1,12 @@
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
-import { ItemHashTag } from '../shapes/item-annotations.js';
+import { ItemHashTag, TagValue } from '../shapes/item-annotations.js';
+
+interface ItemHashTagRow {
+  item_hash: string;
+  tag: TagValue | null;
+  notes: string | null;
+}
 
 /**
  * Get all of the hash tags for a particular platform_membership_id and destiny_version.
@@ -9,19 +15,15 @@ export async function getItemHashTagsForProfile(
   client: ClientBase,
   bungieMembershipId: number,
 ): Promise<ItemHashTag[]> {
-  try {
-    const results = await client.query({
-      name: 'get_item_hash_tags',
-      text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
-      values: [bungieMembershipId],
-    });
-    return results.rows.map(convertItemHashTag);
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+  const results = await client.query({
+    name: 'get_item_hash_tags',
+    text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
+    values: [bungieMembershipId],
+  });
+  return results.rows.map(convertItemHashTag);
 }
 
-function convertItemHashTag(row: any): ItemHashTag {
+function convertItemHashTag(row: ItemHashTagRow): ItemHashTag {
   const result: ItemHashTag = {
     hash: parseInt(row.item_hash, 10),
   };
@@ -42,7 +44,7 @@ export async function updateItemHashTag(
   appId: string,
   bungieMembershipId: number,
   itemHashTag: ItemHashTag,
-): Promise<QueryResult<any>> {
+): Promise<QueryResult> {
   const tagValue = clearValue(itemHashTag.tag);
   const notesValue = clearValue(itemHashTag.notes);
 
@@ -50,26 +52,22 @@ export async function updateItemHashTag(
     return deleteItemHashTag(client, bungieMembershipId, itemHashTag.hash);
   }
 
-  try {
-    const response = await client.query({
-      name: 'upsert_hash_tag',
-      text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes, created_by, last_updated_by)
+  const response = await client.query({
+    name: 'upsert_hash_tag',
+    text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes, created_by, last_updated_by)
 values ($1, $2, (CASE WHEN $3 = 'clear'::item_tag THEN NULL ELSE $3 END)::item_tag, (CASE WHEN $4 = 'clear' THEN NULL ELSE $4 END), $5, $5)
 on conflict (membership_id, item_hash)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 'clear' THEN NULL WHEN $3 IS NULL THEN item_hash_tags.tag ELSE $3 END), (CASE WHEN $4 = 'clear' THEN NULL WHEN $4 IS NULL THEN item_hash_tags.notes ELSE $4 END), current_timestamp, $5)`,
-      values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
-    });
+    values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
+  });
 
-    if (response.rowCount < 1) {
-      // This should never happen!
-      metrics.increment('db.itemHashTags.noRowUpdated.count', 1);
-      throw new Error('hash tags - No row was updated');
-    }
-
-    return response;
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
+  if (response.rowCount! < 1) {
+    // This should never happen!
+    metrics.increment('db.itemHashTags.noRowUpdated.count', 1);
+    throw new Error('hash tags - No row was updated');
   }
+
+  return response;
 }
 
 /**
@@ -94,16 +92,12 @@ export async function deleteItemHashTag(
   client: ClientBase,
   bungieMembershipId: number,
   itemHash: number,
-): Promise<QueryResult<any>> {
-  try {
-    return client.query({
-      name: 'delete_item_hash_tag',
-      text: `delete from item_hash_tags where membership_id = $1 and item_hash = $2`,
-      values: [bungieMembershipId, itemHash],
-    });
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+): Promise<QueryResult> {
+  return client.query({
+    name: 'delete_item_hash_tag',
+    text: `delete from item_hash_tags where membership_id = $1 and item_hash = $2`,
+    values: [bungieMembershipId, itemHash],
+  });
 }
 
 /**
@@ -112,14 +106,10 @@ export async function deleteItemHashTag(
 export async function deleteAllItemHashTags(
   client: ClientBase,
   bungieMembershipId: number,
-): Promise<QueryResult<any>> {
-  try {
-    return client.query({
-      name: 'delete_all_item_hash_tags',
-      text: `delete from item_hash_tags where membership_id = $1`,
-      values: [bungieMembershipId],
-    });
-  } catch (e) {
-    throw new Error(e.name + ': ' + e.message);
-  }
+): Promise<QueryResult> {
+  return client.query({
+    name: 'delete_all_item_hash_tags',
+    text: `delete from item_hash_tags where membership_id = $1`,
+    values: [bungieMembershipId],
+  });
 }

@@ -12,7 +12,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
     values: [flavor],
   });
   const settings =
-    result.rowCount > 0
+    result.rowCount! > 0
       ? { ...defaultGlobalSettings, ...camelize(result.rows[0]) }
       : defaultGlobalSettings;
 

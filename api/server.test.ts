@@ -1,6 +1,5 @@
 import { readFile } from 'fs';
 import { sign } from 'jsonwebtoken';
-import _ from 'lodash';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
@@ -8,6 +7,7 @@ import { refreshApps } from './apps/index.js';
 import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
+import { DeleteAllResponse } from './shapes/delete-all.js';
 import { ExportResponse } from './shapes/export.js';
 import { PlatformInfoResponse } from './shapes/global-settings.js';
 import { ImportResponse } from './shapes/import.js';
@@ -161,9 +161,11 @@ describe('profile', () => {
   });
 
   it('can delete all data with /delete_all_data', async () => {
-    const response = await postRequestAuthed('/delete_all_data').expect(200);
+    const response = (await postRequestAuthed('/delete_all_data')
+      .expect(200)
+      .json()) as DeleteAllResponse;
 
-    expect((await response.json()).deleted).toEqual({
+    expect(response.deleted).toEqual({
       itemHashTags: 71,
       loadouts: 37,
       searches: 205,
@@ -175,7 +177,7 @@ describe('profile', () => {
     // Now re-export and make sure it's all gone
     const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
 
-    expect(_.size(exportResponse.settings)).toBe(0);
+    expect(Object.keys(exportResponse.settings).length).toBe(0);
     expect(exportResponse.loadouts.length).toBe(0);
     expect(exportResponse.tags.length).toBe(0);
   });
@@ -274,7 +276,7 @@ describe('loadouts', () => {
     expect(resultLoadout.clearSpace).toBe(loadout.clearSpace);
     expect(resultLoadout.equipped).toEqual(loadout.equipped);
     // This property should have been stripped
-    expect((resultLoadout.unequipped[0] as any).fizbuzz).toBeUndefined();
+    expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
   });
 
   it('can update a loadout', async () => {

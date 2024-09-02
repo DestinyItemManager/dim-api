@@ -21,7 +21,7 @@ pool.on('acquire', () => {
 });
 pool.on('error', (e: Error) => {
   metrics.increment('db.pool.error.count');
-  metrics.increment('db.pool.error.' + e.name + '.count');
+  metrics.increment(`db.pool.error.${  e.name  }.count`);
 });
 pool.on('remove', () => {
   metrics.increment('db.pool.remove.count');
@@ -66,10 +66,10 @@ export async function readTransaction<T>(fn: (client: ClientBase) => Promise<T>)
   const client = await pool.connect();
   try {
     // We used to wrap multiple reads in a transaction but I'm not sure it matters all that much.
-    //await client.query('BEGIN');
+    // await client.query('BEGIN');
     return await fn(client);
   } finally {
-    //await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     client.release();
   }
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Request, RequestHandler } from 'express';
 import { StatsD } from 'hot-shots';
 
@@ -20,11 +22,11 @@ export default function expressStatsd({
 
       // Status Code
       const statusCode = res.statusCode || 'unknown_status';
-      client.increment(prefix + '.response_code.' + routeName + '.' + statusCode);
+      client.increment(`${prefix}.response_code.${routeName}.${statusCode}`);
 
       // Response Time
       const duration = performance.now() - startTime;
-      client.timing(prefix + '.response_time.' + routeName, duration);
+      client.timing(`${prefix}.response_time.${routeName}`, duration);
 
       cleanup();
     }
@@ -58,10 +60,11 @@ function sanitize(routeName: string) {
 
 // Extracts a route name from the request or response and sets it for use by the statsd middleware
 export function getRouteNameForStats(req: Request) {
-  if (req.route?.path) {
-    let routeName = req.route.path;
+  const route = req.route;
+  if (route?.path) {
+    let routeName: string & { source?: string } = route.path;
     if (Object.prototype.toString.call(routeName) === '[object RegExp]') {
-      routeName = routeName.source;
+      routeName = routeName.source!;
     }
 
     if (req.baseUrl) {
@@ -72,9 +75,9 @@ export function getRouteNameForStats(req: Request) {
 
     const sanitizedRoute = sanitize(routeName);
     if (sanitizedRoute !== '') {
-      return req.method + '_' + sanitizedRoute;
+      return `${req.method}_${sanitizedRoute}`;
     }
   }
 
-  return req.method + '_unknown_express_route'; //req.method + '_' + sanitize(req.path);
+  return `${req.method}_unknown_express_route`; // req.method + '_' + sanitize(req.path);
 }

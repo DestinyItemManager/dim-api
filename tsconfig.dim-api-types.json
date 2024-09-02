@@ -1,11 +1,18 @@
 {
   "compilerOptions": {
     "outDir": "./dim-api-types",
+    "strict": true,
     "sourceMap": false,
     "strictNullChecks": true,
-    "module": "commonjs",
+    "module": "CommonJS",
     "target": "es5",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": true,
     "declaration": true,
     "emitDeclarationOnly": true,
     "esModuleInterop": true
