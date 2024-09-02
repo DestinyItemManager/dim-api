@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import express, { ErrorRequestHandler } from 'express';
 import { expressjwt as jwt } from 'express-jwt';
-import { JwtPayload } from 'jsonwebtoken';
+import { type JwtPayload } from 'jsonwebtoken';
 import { apiKey, isAppOrigin } from './apps/index.js';
 import expressStatsd from './metrics/express.js';
 import { metrics } from './metrics/index.js';

@@ -1,5 +1,5 @@
 import { readFile } from 'fs';
-import { sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
@@ -30,7 +30,7 @@ beforeAll(async () => {
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
-  testUserToken = sign({}, process.env.JWT_SECRET!, {
+  testUserToken = jwt.sign({}, process.env.JWT_SECRET!, {
     subject: bungieMembershipId.toString(),
     issuer: testApiKey,
     expiresIn: 60 * 60,

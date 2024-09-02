@@ -4,7 +4,7 @@ import asyncHandler from 'express-async-handler';
 import util from 'util';
 import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 
-import { Secret, sign, SignOptions } from 'jsonwebtoken';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
 import _ from 'lodash';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
@@ -12,7 +12,7 @@ import { badRequest } from '../utils.js';
 
 const TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60; // 30 days
 
-const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, string>(sign);
+const signJwt = util.promisify<string | Buffer | object, Secret, SignOptions, string>(jwt.sign);
 
 export const authTokenHandler = asyncHandler(async (req, res) => {
   const { bungieAccessToken, membershipId } = req.body as AuthTokenRequest;
