@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
-import { DatabaseError } from 'pg';
+import { DatabaseError } from 'pg-protocol';
 import { transaction } from '../db/index.js';
 import { addLoadoutShare, getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 import { metrics } from '../metrics/index.js';

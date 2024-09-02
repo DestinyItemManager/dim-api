@@ -1,4 +1,4 @@
-import { DatabaseError } from 'pg';
+import { DatabaseError } from 'pg-protocol';
 import { v4 as uuid } from 'uuid';
 import { ApiApp } from '../shapes/app.js';
 import { getAllApps, getAppById, insertApp } from './apps-queries.js';
@@ -36,7 +36,7 @@ it('cannot create a new app with the same name as an existing one', async () => 
       if (!(e instanceof DatabaseError)) {
         fail('should have thrown a DatabaseError');
       }
-      expect((e).code).toBe('23505');
+      expect(e.code).toBe('23505');
     }
   });
 });

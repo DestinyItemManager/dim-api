@@ -56,6 +56,9 @@ dependencies:
   pg:
     specifier: ^8.12.0
     version: 8.12.0
+  pg-protocol:
+    specifier: ^1.6.1
+    version: 1.6.1
   slugify:
     specifier: ^1.6.6
     version: 1.6.6
@@ -2617,7 +2620,7 @@ packages:
     resolution: {integrity: sha512-IqpCf8/569txXN/HoP5i1LjXfKZWL76Yr2R77xgeIICUbAYHeoaEZFhYHo2uDftecLWrTJUq63JvQu8q3lnDyA==}
     dependencies:
       '@types/node': 20.8.4
-      pg-protocol: 1.6.0
+      pg-protocol: 1.6.1
       pg-types: 4.0.1
     dev: true
 
@@ -5509,10 +5512,6 @@ packages:
       pg: '>=8.0'
     dependencies:
       pg: 8.12.0
-
-  /pg-protocol@1.6.0:
-    resolution: {integrity: sha512-M+PDm637OY5WM307051+bsDia5Xej6d9IR4GwJse1qA1DIhiKlksvrneZOYQq42OM+spubpcNYEo2FcKQrDk+Q==}
-    dev: true
 
   /pg-protocol@1.6.1:
     resolution: {integrity: sha512-jPIlvgoD63hrEuihvIg+tJhoGjUsLPn6poJY9N5CnlPd91c2T18T/9zBtLxZSb1EhYxBRoZJtzScCaWlYLtktg==}

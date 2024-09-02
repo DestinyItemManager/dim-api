@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { DatabaseError } from 'pg';
+import { DatabaseError } from 'pg-protocol';
 import { v4 as uuid } from 'uuid';
 import { getAppById, insertApp } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
