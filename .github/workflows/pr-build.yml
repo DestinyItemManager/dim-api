@@ -7,6 +7,7 @@ on: pull_request
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: 'test'
 
     services:
       postgres:
@@ -52,8 +53,12 @@ jobs:
       - name: Build API
         run: pnpm build:api
 
-      - name: Test
-        run: pnpm test
-
       - name: Lint
         run: pnpm run lint-check
+
+      - name: Test
+        run: pnpm test
+        env:
+          STATELY_STORE_ID: ${{ vars.STATELY_STORE_ID}}
+          STATELY_CLIENT_ID: ${{ vars.STATELY_CLIENT_ID }}
+          STATELY_CLIENT_SECRET: ${{ secrets.STATELY_CLIENT_SECRET }}

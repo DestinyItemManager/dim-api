@@ -4,7 +4,7 @@ import asyncHandler from 'express-async-handler';
 import util from 'util';
 import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 
-import jwt, { Secret, SignOptions } from 'jsonwebtoken';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
 import _ from 'lodash';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';

@@ -13,6 +13,8 @@ export interface GlobalSettings {
   dimProfileMinimumRefreshInterval: number;
   /** Display an issue banner, if there is one. */
   showIssueBanner: boolean;
+  /** The unix milliseconds timestamp for when this was last updated. */
+  lastUpdated: number;
 }
 
 export const defaultGlobalSettings: GlobalSettings = {
@@ -23,6 +25,7 @@ export const defaultGlobalSettings: GlobalSettings = {
   refreshProfileOnVisible: true,
   dimProfileMinimumRefreshInterval: 600,
   showIssueBanner: false,
+  lastUpdated: 0,
 };
 
 export interface PlatformInfoResponse {

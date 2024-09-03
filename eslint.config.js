@@ -22,7 +22,7 @@ export default tseslint.config(
   { name: 'sonarjs/recommended', ...sonarjs.configs.recommended },
   {
     name: 'global ignores',
-    ignores: ['*.test.ts', '*/migrations/*'],
+    ignores: ['*.test.ts', 'api/migrations/*', 'api/stately/generated/*.js'],
   },
   {
     name: 'dim-api-custom',
@@ -112,7 +112,6 @@ export default tseslint.config(
       'arrow-body-style': ['error', 'as-needed'],
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always'],
-      'no-return-await': 'off',
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
       'prefer-regex-literals': 'error',
       'prefer-promise-reject-errors': 'error',
@@ -144,7 +143,6 @@ export default tseslint.config(
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/method-signature-style': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-use-before-define': ['error', { functions: false }],
       '@typescript-eslint/no-parameter-properties': 'off',
@@ -162,7 +160,6 @@ export default tseslint.config(
       '@typescript-eslint/prefer-reduce-type-parameter': 'error',
       '@typescript-eslint/prefer-includes': 'error',
       '@typescript-eslint/prefer-string-starts-ends-with': 'error',
-      '@typescript-eslint/prefer-ts-expect-error': 'error',
       '@typescript-eslint/prefer-regexp-exec': 'off',
       '@typescript-eslint/array-type': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',

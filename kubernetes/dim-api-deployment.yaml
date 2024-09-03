@@ -59,6 +59,11 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: jwt_secret
+            - name: STATELY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: stately_client_secret
           envFrom:
             - configMapRef:
                 name: dim-api-config

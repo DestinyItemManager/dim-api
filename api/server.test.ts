@@ -1,5 +1,5 @@
 import { readFile } from 'fs';
-import { sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
@@ -16,6 +16,7 @@ import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest, ProfileUpdateResponse } from './shapes/profile.js';
 import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
+import { client } from './stately/client.js';
 
 const fetch = makeFetch(app);
 
@@ -30,11 +31,26 @@ beforeAll(async () => {
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
-  testUserToken = sign({}, process.env.JWT_SECRET!, {
+  testUserToken = jwt.sign({}, process.env.JWT_SECRET!, {
     subject: bungieMembershipId.toString(),
     issuer: testApiKey,
     expiresIn: 60 * 60,
   });
+
+  // Make sure we have global settings
+  const globalSettings = ['dev', 'beta', 'app'].map((stage) =>
+    client.create('GlobalSettings', {
+      stage,
+      dimApiEnabled: true,
+      destinyProfileMinimumRefreshInterval: 15n,
+      destinyProfileRefreshInterval: 120n,
+      autoRefresh: true,
+      refreshProfileOnVisible: true,
+      dimProfileMinimumRefreshInterval: 600n,
+      showIssueBanner: false,
+    }),
+  );
+  await client.putBatch(...globalSettings);
 });
 
 afterAll(() => closeDbPool());
