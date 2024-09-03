@@ -59,6 +59,6 @@ jobs:
       - name: Test
         run: pnpm test
         env:
-          STATELY_STORE_ID: ${{ env.STATELY_STORE_ID}}
-          STATELY_CLIENT_ID: ${{ env.STATELY_CLIENT_ID }}
+          STATELY_STORE_ID: ${{ vars.STATELY_STORE_ID}}
+          STATELY_CLIENT_ID: ${{ vars.STATELY_CLIENT_ID }}
           STATELY_CLIENT_SECRET: ${{ secrets.STATELY_CLIENT_SECRET }}
