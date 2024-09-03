@@ -21,6 +21,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
         ),
         destinyProfileRefreshInterval: Number(statelySettings.destinyProfileRefreshInterval),
         dimProfileMinimumRefreshInterval: Number(statelySettings.dimProfileMinimumRefreshInterval),
+        lastUpdated: Number(statelySettings.lastUpdated),
       };
     }
   } catch (e) {
