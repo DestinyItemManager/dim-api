@@ -17,7 +17,7 @@ export const LoadoutShare = itemType('LoadoutShare', {
      * This is essentially 35 random bits encoded via base32 into a 7-character string. It'd be neat if we could
      * support that, with a parameterizable string length.
      */
-    id: { type: string, fieldNum: 1 /*initialValue: 'rand35str'*/ },
+    id: { type: string, fieldNum: 1 /* initialValue: 'rand35str' */ },
     ...loadoutFields,
 
     // TODO: Where's the view-counter?

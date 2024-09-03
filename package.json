@@ -19,6 +19,7 @@
     "lint-check": "eslint api",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --verbose --coverage api --forceExit",
     "test:watch": "jest --watch",
+    "eslint-inspect": "pnpm dlx @eslint/config-inspector",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
