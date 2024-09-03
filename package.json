@@ -10,7 +10,7 @@
   "type": "module",
   "scripts": {
     "start": "rm -rf dist && pnpm build:api && node -r dotenv/config dist/api/index.js",
-    "build:api": "mkdir -p ./dist/api/stately/generated && cp -r ./api/stately/generated/ ./dist/api/stately/generated && tsc -p ./api/tsconfig.json",
+    "build:api": "mkdir -p ./dist/api/stately/generated && cp -r ./api/stately/generated/*.js ./dist/api/stately/generated && tsc -p ./api/tsconfig.json",
     "deploy": "kubernetes/deploy.sh",
     "docker:build": "rm -rf dist && pnpm build:api && docker build -t destinyitemmanager/dim-api .",
     "docker:run": "docker run -p 3000:3000 destinyitemmanager/dim-api:latest",
