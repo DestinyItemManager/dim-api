@@ -11,3 +11,5 @@ data:
   PGUSER: placeholder
   PGSSLMODE: require
   SENTRY_DSN: placeholder
+  SENTRY_CLIENT_ID: placeholder
+  SENTRY_STORE_ID: placeholder
