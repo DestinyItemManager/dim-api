@@ -4,7 +4,7 @@ These are the objects that DIM stores in its own service - most data comes from 
 
 Key paths are laid out like this:
 
-- `/app-:id`: `ApiApp`
+- `/apps/app-:id`: `ApiApp`
 - `/gs-:stage`: `GlobalSettings`
 - `/loadoutShare-:id`: `LoadoutShare`
 - `/member-:memberId/settings`: `Settings`
@@ -20,3 +20,7 @@ The goal with this modeling is to allow for syncing all of a user's info in two 
 
 - `List("/p-:profileId/d-:destinyVersion")` - get all saved data for a particular game profile + destiny version (each profile can be associated with Destiny 1 and Destiny 2)
 - `List("/member-:memberId")` - get settings for a whole Bungie.net account. It's a List instead of a Get so we can sync it!
+
+Plus some fun stuff such as:
+
+- `List("/apps/")` to get all registered apps, and `SyncList()` to keep them up to date.

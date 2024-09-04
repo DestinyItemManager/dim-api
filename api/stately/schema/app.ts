@@ -10,7 +10,7 @@ const uuidString = type('uuidString', string, {
 
 // "apps" aren't exposed to users - they're periodically synced by server instances.
 export const ApiApp = itemType('ApiApp', {
-  keyPath: '/app-:id',
+  keyPath: '/apps/app-:id',
   fields: {
     /** A short ID that uniquely identifies the app. */
     id: { type: string, fieldNum: 1 },

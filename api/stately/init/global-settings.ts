@@ -36,4 +36,5 @@ const prodSettings = client.create('GlobalSettings', {
 await client.putBatch(devSettings, betaSettings, prodSettings);
 
 console.log('Global settings initialized');
+// This is due to a bug in Connect!
 process.exit(0);
