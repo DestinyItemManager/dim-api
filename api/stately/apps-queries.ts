@@ -83,7 +83,7 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
   // accidentally updating an app. Instead I got a transaction.
   const result = await client.transaction(async (txn) => {
     resultApp = await txn.get('ApiApp', keyPathFor(app.id));
-    if (app) {
+    if (resultApp) {
       return;
     }
     txn.put(client.create('ApiApp', app));
