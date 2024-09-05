@@ -6,7 +6,7 @@ import { client } from './client.js';
  * Get all registered apps.
  */
 export async function getAllApps(): Promise<[ApiApp[], ListToken]> {
-  let apps = client.beginList('/apps-1');
+  let apps = client.withAllowStale(true).beginList('/apps-1');
   const allApps: ApiApp[] = [];
   let token: ListToken | undefined = undefined;
 
