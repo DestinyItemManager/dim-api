@@ -33,6 +33,11 @@ export declare type ApiApp = Message<"stately.generated.ApiApp"> & {
    * @generated from field: string origin = 4;
    */
   origin: string;
+
+  /**
+   * @generated from field: uint64 partition = 5;
+   */
+  partition: bigint;
 };
 
 /**

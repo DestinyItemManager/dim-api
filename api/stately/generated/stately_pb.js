@@ -2,239 +2,278 @@
 // @generated from file stately.proto (package stately.generated, syntax proto3)
 /* eslint-disable */
 
-import { enumDesc, fileDesc, messageDesc, tsEnum } from '@bufbuild/protobuf/codegenv1';
+import { enumDesc, fileDesc, messageDesc, tsEnum } from "@bufbuild/protobuf/codegenv1";
 
 /**
  * Describes the file stately.proto.
  */
-export const file_stately =
-  /*@__PURE__*/
-  fileDesc(
-    'Cg1zdGF0ZWx5LnByb3RvEhFzdGF0ZWx5LmdlbmVyYXRlZCJNCgZBcGlBcHASCgoCaWQYASABKAkSFAoMYnVuZ2llQXBpS2V5GAIgASgJEhEKCWRpbUFwaUtleRgDIAEoCRIOCgZvcmlnaW4YBCABKAkiQwoPQXJ0aWZhY3RVbmxvY2tzEhoKEnVubG9ja2VkSXRlbUhhc2hlcxgBIAMoBBIUCgxzZWFzb25OdW1iZXIYAiABKAQiMgoQQ29sbGFwc2VkU2VjdGlvbhILCgNrZXkYASABKAkSEQoJY29sbGFwc2VkGAIgASgIIrABCg1DdXN0b21TdGF0RGVmEhAKCHN0YXRIYXNoGAEgASgEEg0KBWxhYmVsGAIgASgJEhIKCnNob3J0TGFiZWwYAyABKAkSLgoFY2xhc3MYBCABKA4yHy5zdGF0ZWx5LmdlbmVyYXRlZC5EZXN0aW55Q2xhc3MSOgoHd2VpZ2h0cxgFIAMoCzIpLnN0YXRlbHkuZ2VuZXJhdGVkLkN1c3RvbVN0YXRXZWlnaHRzRW50cnkiOgoWQ3VzdG9tU3RhdFdlaWdodHNFbnRyeRIQCghzdGF0SGFzaBgBIAEoBBIOCgZ3ZWlnaHQYAiABKAEiWwoQQ3VzdG9tU3RhdHNFbnRyeRIyCgljbGFzc1R5cGUYASABKA4yHy5zdGF0ZWx5LmdlbmVyYXRlZC5EZXN0aW55Q2xhc3MSEwoLY3VzdG9tU3RhdHMYAiADKAQimQIKDkdsb2JhbFNldHRpbmdzEg0KBXN0YWdlGAEgASgJEhUKDWRpbUFwaUVuYWJsZWQYAiABKAgSLAokZGVzdGlueVByb2ZpbGVNaW5pbXVtUmVmcmVzaEludGVydmFsGAMgASgSEiUKHWRlc3RpbnlQcm9maWxlUmVmcmVzaEludGVydmFsGAQgASgSEhMKC2F1dG9SZWZyZXNoGAUgASgIEh8KF3JlZnJlc2hQcm9maWxlT25WaXNpYmxlGAYgASgIEigKIGRpbVByb2ZpbGVNaW5pbXVtUmVmcmVzaEludGVydmFsGAcgASgSEhcKD3Nob3dJc3N1ZUJhbm5lchgIIAEoCBITCgtsYXN0VXBkYXRlZBgJIAEoEiJRChhJbkdhbWVMb2Fkb3V0SWRlbnRpZmllcnMSEQoJY29sb3JIYXNoGAEgASgEEhAKCGljb25IYXNoGAIgASgEEhAKCG5hbWVIYXNoGAMgASgEIqMBCg5JdGVtQW5ub3RhdGlvbhIMCgRoYXNoGAEgASgEEigKA3RhZxgCIAEoDjIbLnN0YXRlbHkuZ2VuZXJhdGVkLlRhZ1ZhbHVlEg0KBW5vdGVzGAMgASgJEhEKCXByb2ZpbGVJZBgGIAEoBBIWCg5kZXN0aW55VmVyc2lvbhgHIAEoBBIKCgJpZBgEIAEoBBITCgtjcmFmdGVkRGF0ZRgFIAEoEiJ/CgtJdGVtSGFzaFRhZxIMCgRoYXNoGAEgASgEEigKA3RhZxgCIAEoDjIbLnN0YXRlbHkuZ2VuZXJhdGVkLlRhZ1ZhbHVlEg0KBW5vdGVzGAMgASgJEhEKCXByb2ZpbGVJZBgGIAEoBBIWCg5kZXN0aW55VmVyc2lvbhgHIAEoBCLbAgoHTG9hZG91dBIKCgJpZBgBIAEoDBIMCgRuYW1lGAIgASgJEg0KBW5vdGVzGAMgASgJEjIKCWNsYXNzVHlwZRgEIAEoDjIfLnN0YXRlbHkuZ2VuZXJhdGVkLkRlc3RpbnlDbGFzcxIwCghlcXVpcHBlZBgFIAMoCzIeLnN0YXRlbHkuZ2VuZXJhdGVkLkxvYWRvdXRJdGVtEjIKCnVuZXF1aXBwZWQYBiADKAsyHi5zdGF0ZWx5LmdlbmVyYXRlZC5Mb2Fkb3V0SXRlbRI4CgpwYXJhbWV0ZXJzGAcgASgLMiQuc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dFBhcmFtZXRlcnMSEQoJY3JlYXRlZEF0GAggASgSEhUKDWxhc3RVcGRhdGVkQXQYCSABKBISFgoOZGVzdGlueVZlcnNpb24YCiABKAQSEQoJcHJvZmlsZUlkGAsgASgEIogBCgtMb2Fkb3V0SXRlbRIKCgJpZBgBIAEoBBIMCgRoYXNoGAIgASgEEg4KBmFtb3VudBgDIAEoBBI6Cg9zb2NrZXRPdmVycmlkZXMYBCADKAsyIS5zdGF0ZWx5LmdlbmVyYXRlZC5Tb2NrZXRPdmVycmlkZRITCgtjcmFmdGVkRGF0ZRgFIAEoEiKGBAoRTG9hZG91dFBhcmFtZXRlcnMSOgoPc3RhdENvbnN0cmFpbnRzGAEgAygLMiEuc3RhdGVseS5nZW5lcmF0ZWQuU3RhdENvbnN0cmFpbnQSDAoEbW9kcxgCIAMoBBIRCgljbGVhck1vZHMYAyABKAgSFAoMY2xlYXJXZWFwb25zGAQgASgIEhIKCmNsZWFyQXJtb3IYBSABKAgSOgoMbW9kc0J5QnVja2V0GAYgASgLMiQuc3RhdGVseS5nZW5lcmF0ZWQuTW9kc0J5QnVja2V0RW50cnkSOwoPYXJ0aWZhY3RVbmxvY2tzGAcgASgLMiIuc3RhdGVseS5nZW5lcmF0ZWQuQXJ0aWZhY3RVbmxvY2tzEhQKDGF1dG9TdGF0TW9kcxgIIAEoCBINCgVxdWVyeRgJIAEoCRJHChVhc3N1bWVBcm1vck1hc3RlcndvcmsYCiABKA4yKC5zdGF0ZWx5LmdlbmVyYXRlZC5Bc3N1bWVBcm1vck1hc3RlcndvcmsSFwoPZXhvdGljQXJtb3JIYXNoGAsgASgEEkYKEWluR2FtZUlkZW50aWZpZXJzGAwgASgLMisuc3RhdGVseS5nZW5lcmF0ZWQuSW5HYW1lTG9hZG91dElkZW50aWZpZXJzEiIKGmluY2x1ZGVSdW50aW1lU3RhdEJlbmVmaXRzGA0gASgIIuACCgxMb2Fkb3V0U2hhcmUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVub3RlcxgDIAEoCRIyCgljbGFzc1R5cGUYBCABKA4yHy5zdGF0ZWx5LmdlbmVyYXRlZC5EZXN0aW55Q2xhc3MSMAoIZXF1aXBwZWQYBSADKAsyHi5zdGF0ZWx5LmdlbmVyYXRlZC5Mb2Fkb3V0SXRlbRIyCgp1bmVxdWlwcGVkGAYgAygLMh4uc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dEl0ZW0SOAoKcGFyYW1ldGVycxgHIAEoCzIkLnN0YXRlbHkuZ2VuZXJhdGVkLkxvYWRvdXRQYXJhbWV0ZXJzEhEKCWNyZWF0ZWRBdBgIIAEoEhIVCg1sYXN0VXBkYXRlZEF0GAkgASgSEhYKDmRlc3RpbnlWZXJzaW9uGAogASgEEhEKCXByb2ZpbGVJZBgLIAEoBCI6ChFNb2RzQnlCdWNrZXRFbnRyeRISCgpidWNrZXRIYXNoGAEgASgEEhEKCW1vZEhhc2hlcxgCIAMoBCK0AQoGU2VhcmNoEg0KBXF1ZXJ5GAEgASgJEhIKCnVzYWdlQ291bnQYAiABKAQSDQoFc2F2ZWQYAyABKAgSEQoJbGFzdFVzYWdlGAQgASgSEisKBHR5cGUYBSABKA4yHS5zdGF0ZWx5LmdlbmVyYXRlZC5TZWFyY2hUeXBlEg0KBXFoYXNoGAYgASgMEhEKCXByb2ZpbGVJZBgHIAEoBBIWCg5kZXN0aW55VmVyc2lvbhgIIAEoBCLKDAoIU2V0dGluZ3MSEAoIbWVtYmVySWQYASABKAkSEwoLaXRlbVF1YWxpdHkYAiABKAgSFAoMc2hvd05ld0l0ZW1zGAMgASgIEjkKDmNoYXJhY3Rlck9yZGVyGAQgASgOMiEuc3RhdGVseS5nZW5lcmF0ZWQuQ2hhcmFjdGVyT3JkZXISGwoTaXRlbVNvcnRPcmRlckN1c3RvbRgFIAMoCRIZChFpdGVtU29ydFJldmVyc2FscxgGIAMoCRIPCgdjaGFyQ29sGAcgASgEEhUKDWNoYXJDb2xNb2JpbGUYCCABKAQSEAoIaXRlbVNpemUYCSABKAQSPgoRY29sbGFwc2VkU2VjdGlvbnMYCiADKAsyIy5zdGF0ZWx5LmdlbmVyYXRlZC5Db2xsYXBzZWRTZWN0aW9uEh4KFmNvbXBsZXRlZFJlY29yZHNIaWRkZW4YCyABKAgSHwoXcmVkYWN0ZWRSZWNvcmRzUmV2ZWFsZWQYDCABKAgSHwoXZmFybWluZ01ha2VSb29tRm9ySXRlbXMYDSABKAgSHAoUaW52ZW50b3J5Q2xlYXJTcGFjZXMYDiABKAQSHAoUaGlkZUNvbXBsZXRlZFJlY29yZHMYDyABKAgSGwoTY3VzdG9tQ2hhcmFjdGVyU29ydBgQIAMoCRI9ChFpbmZ1c2lvbkRpcmVjdGlvbhgRIAEoDjIiLnN0YXRlbHkuZ2VuZXJhdGVkLkluZnVzZURpcmVjdGlvbhIQCghsYW5ndWFnZRgSIAEoCRIXCg93aXNoTGlzdFNvdXJjZXMYEyADKAkSOgoMbG9QYXJhbWV0ZXJzGBQgASgLMiQuc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dFBhcmFtZXRlcnMSSQoYbG9TdGF0Q29uc3RyYWludHNCeUNsYXNzGBUgAygLMicuc3RhdGVseS5nZW5lcmF0ZWQuU3RhdENvbnN0cmFpbnRzRW50cnkSRAoXY3VzdG9tVG90YWxTdGF0c0J5Q2xhc3MYFiADKAsyIy5zdGF0ZWx5LmdlbmVyYXRlZC5DdXN0b21TdGF0c0VudHJ5Eh8KF29yZ2FuaXplckNvbHVtbnNXZWFwb25zGBcgAygJEh0KFW9yZ2FuaXplckNvbHVtbnNBcm1vchgYIAMoCRIdChVvcmdhbml6ZXJDb2x1bW5zR2hvc3QYGSADKAkSGAoQY29tcGFyZUJhc2VTdGF0cxgaIAEoCBIYChBzaWRlY2FyQ29sbGFwc2VkGBsgASgIEhcKD3NpbmdsZUNoYXJhY3RlchgcIAEoCBIXCg9iYWRnZVBvc3RtYXN0ZXIYHSABKAgSEAoIcGVya0xpc3QYHiABKAgSMwoLbG9hZG91dFNvcnQYHyABKA4yHi5zdGF0ZWx5LmdlbmVyYXRlZC5Mb2Fkb3V0U29ydBIaChJpdGVtRmVlZEhpZGVUYWdnZWQYICABKAgSGAoQaXRlbUZlZWRFeHBhbmRlZBghIAEoCBIeChZoaWRlUHVsbEZyb21Qb3N0bWFzdGVyGCIgASgIEkQKFWRlc2NyaXB0aW9uc1RvRGlzcGxheRgjIAEoDjIlLnN0YXRlbHkuZ2VuZXJhdGVkLkRlc2NyaXB0aW9uT3B0aW9ucxIfChdjb21wYXJlV2VhcG9uTWFzdGVyd29yaxgkIAEoCBIZChFpdGVtRmVlZFdhdGVybWFyaxglIAEoBBI1CgtjdXN0b21TdGF0cxgmIAMoCzIgLnN0YXRlbHkuZ2VuZXJhdGVkLkN1c3RvbVN0YXREZWYSFgoOYXV0b0xvY2tUYWdnZWQYJyABKAgSDQoFdGhlbWUYKCABKAkSHQoVc29ydFJlY29yZFByb2dyZXNzaW9uGCkgASgIEh4KFnZlbmRvcnNIaWRlU2lsdmVySXRlbXMYKiABKAgSGwoTdmF1bHRXZWFwb25Hcm91cGluZxgrIAEoCRJNChh2YXVsdFdlYXBvbkdyb3VwaW5nU3R5bGUYLCABKA4yKy5zdGF0ZWx5LmdlbmVyYXRlZC5WYXVsdFdlYXBvbkdyb3VwaW5nU3R5bGUSNQoMaXRlbVBvcHVwVGFiGC0gASgOMh8uc3RhdGVseS5nZW5lcmF0ZWQuSXRlbVBvcHVwVGFiIjcKDlNvY2tldE92ZXJyaWRlEhMKC3NvY2tldEluZGV4GAEgASgEEhAKCGl0ZW1IYXNoGAIgASgEIkQKDlN0YXRDb25zdHJhaW50EhAKCHN0YXRIYXNoGAEgASgEEg8KB21pblRpZXIYAiABKAQSDwoHbWF4VGllchgDIAEoBCKCAQoUU3RhdENvbnN0cmFpbnRzRW50cnkSMgoJY2xhc3NUeXBlGAEgASgOMh8uc3RhdGVseS5nZW5lcmF0ZWQuRGVzdGlueUNsYXNzEjYKC2NvbnN0cmFpbnRzGAIgAygLMiEuc3RhdGVseS5nZW5lcmF0ZWQuU3RhdENvbnN0cmFpbnQiSAoHVHJpdW1waBISCgpyZWNvcmRIYXNoGAEgASgEEhEKCXByb2ZpbGVJZBgCIAEoBBIWCg5kZXN0aW55VmVyc2lvbhgHIAEoBCp7ChVBc3N1bWVBcm1vck1hc3RlcndvcmsSHgoaQXNzdW1lQXJtb3JNYXN0ZXJ3b3JrX05vbmUQABIjCh9Bc3N1bWVBcm1vck1hc3RlcndvcmtfTGVnZW5kYXJ5EAESHQoZQXNzdW1lQXJtb3JNYXN0ZXJ3b3JrX0FsbBACKooBCg5DaGFyYWN0ZXJPcmRlchIdChlDaGFyYWN0ZXJPcmRlcl9tb3N0UmVjZW50EAASJAogQ2hhcmFjdGVyT3JkZXJfbW9zdFJlY2VudFJldmVyc2UQARIYChRDaGFyYWN0ZXJPcmRlcl9maXhlZBACEhkKFUNoYXJhY3Rlck9yZGVyX2N1c3RvbRADKpYBChJEZXNjcmlwdGlvbk9wdGlvbnMSIgoeRGVzY3JpcHRpb25PcHRpb25zX1VOU1BFQ0lGSUVEEAASHQoZRGVzY3JpcHRpb25PcHRpb25zX2J1bmdpZRABEiAKHERlc2NyaXB0aW9uT3B0aW9uc19jb21tdW5pdHkQAhIbChdEZXNjcmlwdGlvbk9wdGlvbnNfYm90aBADKnMKDERlc3RpbnlDbGFzcxIWChJEZXN0aW55Q2xhc3NfVGl0YW4QABIXChNEZXN0aW55Q2xhc3NfSHVudGVyEAESGAoURGVzdGlueUNsYXNzX1dhcmxvY2sQAhIYChREZXN0aW55Q2xhc3NfVW5rbm93bhADKmgKD0luZnVzZURpcmVjdGlvbhIfChtJbmZ1c2VEaXJlY3Rpb25fVU5TUEVDSUZJRUQQABIaChZJbmZ1c2VEaXJlY3Rpb25fSW5mdXNlEAESGAoUSW5mdXNlRGlyZWN0aW9uX0Z1ZWwQAipCCgxJdGVtUG9wdXBUYWISGQoVSXRlbVBvcHVwVGFiX092ZXJ2aWV3EAASFwoTSXRlbVBvcHVwVGFiX1RyaWFnZRABKkEKC0xvYWRvdXRTb3J0EhoKFkxvYWRvdXRTb3J0X0J5RWRpdFRpbWUQABIWChJMb2Fkb3V0U29ydF9CeU5hbWUQASo5CgpTZWFyY2hUeXBlEhMKD1NlYXJjaFR5cGVfSXRlbRAAEhYKElNlYXJjaFR5cGVfTG9hZG91dBABKowBCghUYWdWYWx1ZRIYChRUYWdWYWx1ZV9VTlNQRUNJRklFRBAAEhUKEVRhZ1ZhbHVlX2Zhdm9yaXRlEAESEQoNVGFnVmFsdWVfa2VlcBACEhMKD1RhZ1ZhbHVlX2luZnVzZRADEhEKDVRhZ1ZhbHVlX2p1bmsQBBIUChBUYWdWYWx1ZV9hcmNoaXZlEAUqYwoYVmF1bHRXZWFwb25Hcm91cGluZ1N0eWxlEiIKHlZhdWx0V2VhcG9uR3JvdXBpbmdTdHlsZV9MaW5lcxAAEiMKH1ZhdWx0V2VhcG9uR3JvdXBpbmdTdHlsZV9JbmxpbmUQAWIGcHJvdG8z',
-  );
+export const file_stately = /*@__PURE__*/
+  fileDesc("Cg1zdGF0ZWx5LnByb3RvEhFzdGF0ZWx5LmdlbmVyYXRlZCJgCgZBcGlBcHASCgoCaWQYASABKAkSFAoMYnVuZ2llQXBpS2V5GAIgASgJEhEKCWRpbUFwaUtleRgDIAEoCRIOCgZvcmlnaW4YBCABKAkSEQoJcGFydGl0aW9uGAUgASgEIkMKD0FydGlmYWN0VW5sb2NrcxIaChJ1bmxvY2tlZEl0ZW1IYXNoZXMYASADKAQSFAoMc2Vhc29uTnVtYmVyGAIgASgEIjIKEENvbGxhcHNlZFNlY3Rpb24SCwoDa2V5GAEgASgJEhEKCWNvbGxhcHNlZBgCIAEoCCKwAQoNQ3VzdG9tU3RhdERlZhIQCghzdGF0SGFzaBgBIAEoBBINCgVsYWJlbBgCIAEoCRISCgpzaG9ydExhYmVsGAMgASgJEi4KBWNsYXNzGAQgASgOMh8uc3RhdGVseS5nZW5lcmF0ZWQuRGVzdGlueUNsYXNzEjoKB3dlaWdodHMYBSADKAsyKS5zdGF0ZWx5LmdlbmVyYXRlZC5DdXN0b21TdGF0V2VpZ2h0c0VudHJ5IjoKFkN1c3RvbVN0YXRXZWlnaHRzRW50cnkSEAoIc3RhdEhhc2gYASABKAQSDgoGd2VpZ2h0GAIgASgBIlsKEEN1c3RvbVN0YXRzRW50cnkSMgoJY2xhc3NUeXBlGAEgASgOMh8uc3RhdGVseS5nZW5lcmF0ZWQuRGVzdGlueUNsYXNzEhMKC2N1c3RvbVN0YXRzGAIgAygEIpkCCg5HbG9iYWxTZXR0aW5ncxINCgVzdGFnZRgBIAEoCRIVCg1kaW1BcGlFbmFibGVkGAIgASgIEiwKJGRlc3RpbnlQcm9maWxlTWluaW11bVJlZnJlc2hJbnRlcnZhbBgDIAEoEhIlCh1kZXN0aW55UHJvZmlsZVJlZnJlc2hJbnRlcnZhbBgEIAEoEhITCgthdXRvUmVmcmVzaBgFIAEoCBIfChdyZWZyZXNoUHJvZmlsZU9uVmlzaWJsZRgGIAEoCBIoCiBkaW1Qcm9maWxlTWluaW11bVJlZnJlc2hJbnRlcnZhbBgHIAEoEhIXCg9zaG93SXNzdWVCYW5uZXIYCCABKAgSEwoLbGFzdFVwZGF0ZWQYCSABKBIiUQoYSW5HYW1lTG9hZG91dElkZW50aWZpZXJzEhEKCWNvbG9ySGFzaBgBIAEoBBIQCghpY29uSGFzaBgCIAEoBBIQCghuYW1lSGFzaBgDIAEoBCKjAQoOSXRlbUFubm90YXRpb24SDAoEaGFzaBgBIAEoBBIoCgN0YWcYAiABKA4yGy5zdGF0ZWx5LmdlbmVyYXRlZC5UYWdWYWx1ZRINCgVub3RlcxgDIAEoCRIRCglwcm9maWxlSWQYBiABKAQSFgoOZGVzdGlueVZlcnNpb24YByABKAQSCgoCaWQYBCABKAQSEwoLY3JhZnRlZERhdGUYBSABKBIifwoLSXRlbUhhc2hUYWcSDAoEaGFzaBgBIAEoBBIoCgN0YWcYAiABKA4yGy5zdGF0ZWx5LmdlbmVyYXRlZC5UYWdWYWx1ZRINCgVub3RlcxgDIAEoCRIRCglwcm9maWxlSWQYBiABKAQSFgoOZGVzdGlueVZlcnNpb24YByABKAQi2wIKB0xvYWRvdXQSCgoCaWQYASABKAwSDAoEbmFtZRgCIAEoCRINCgVub3RlcxgDIAEoCRIyCgljbGFzc1R5cGUYBCABKA4yHy5zdGF0ZWx5LmdlbmVyYXRlZC5EZXN0aW55Q2xhc3MSMAoIZXF1aXBwZWQYBSADKAsyHi5zdGF0ZWx5LmdlbmVyYXRlZC5Mb2Fkb3V0SXRlbRIyCgp1bmVxdWlwcGVkGAYgAygLMh4uc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dEl0ZW0SOAoKcGFyYW1ldGVycxgHIAEoCzIkLnN0YXRlbHkuZ2VuZXJhdGVkLkxvYWRvdXRQYXJhbWV0ZXJzEhEKCWNyZWF0ZWRBdBgIIAEoEhIVCg1sYXN0VXBkYXRlZEF0GAkgASgSEhYKDmRlc3RpbnlWZXJzaW9uGAogASgEEhEKCXByb2ZpbGVJZBgLIAEoBCKIAQoLTG9hZG91dEl0ZW0SCgoCaWQYASABKAQSDAoEaGFzaBgCIAEoBBIOCgZhbW91bnQYAyABKAQSOgoPc29ja2V0T3ZlcnJpZGVzGAQgAygLMiEuc3RhdGVseS5nZW5lcmF0ZWQuU29ja2V0T3ZlcnJpZGUSEwoLY3JhZnRlZERhdGUYBSABKBIihgQKEUxvYWRvdXRQYXJhbWV0ZXJzEjoKD3N0YXRDb25zdHJhaW50cxgBIAMoCzIhLnN0YXRlbHkuZ2VuZXJhdGVkLlN0YXRDb25zdHJhaW50EgwKBG1vZHMYAiADKAQSEQoJY2xlYXJNb2RzGAMgASgIEhQKDGNsZWFyV2VhcG9ucxgEIAEoCBISCgpjbGVhckFybW9yGAUgASgIEjoKDG1vZHNCeUJ1Y2tldBgGIAEoCzIkLnN0YXRlbHkuZ2VuZXJhdGVkLk1vZHNCeUJ1Y2tldEVudHJ5EjsKD2FydGlmYWN0VW5sb2NrcxgHIAEoCzIiLnN0YXRlbHkuZ2VuZXJhdGVkLkFydGlmYWN0VW5sb2NrcxIUCgxhdXRvU3RhdE1vZHMYCCABKAgSDQoFcXVlcnkYCSABKAkSRwoVYXNzdW1lQXJtb3JNYXN0ZXJ3b3JrGAogASgOMiguc3RhdGVseS5nZW5lcmF0ZWQuQXNzdW1lQXJtb3JNYXN0ZXJ3b3JrEhcKD2V4b3RpY0FybW9ySGFzaBgLIAEoBBJGChFpbkdhbWVJZGVudGlmaWVycxgMIAEoCzIrLnN0YXRlbHkuZ2VuZXJhdGVkLkluR2FtZUxvYWRvdXRJZGVudGlmaWVycxIiChppbmNsdWRlUnVudGltZVN0YXRCZW5lZml0cxgNIAEoCCLgAgoMTG9hZG91dFNoYXJlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFbm90ZXMYAyABKAkSMgoJY2xhc3NUeXBlGAQgASgOMh8uc3RhdGVseS5nZW5lcmF0ZWQuRGVzdGlueUNsYXNzEjAKCGVxdWlwcGVkGAUgAygLMh4uc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dEl0ZW0SMgoKdW5lcXVpcHBlZBgGIAMoCzIeLnN0YXRlbHkuZ2VuZXJhdGVkLkxvYWRvdXRJdGVtEjgKCnBhcmFtZXRlcnMYByABKAsyJC5zdGF0ZWx5LmdlbmVyYXRlZC5Mb2Fkb3V0UGFyYW1ldGVycxIRCgljcmVhdGVkQXQYCCABKBISFQoNbGFzdFVwZGF0ZWRBdBgJIAEoEhIWCg5kZXN0aW55VmVyc2lvbhgKIAEoBBIRCglwcm9maWxlSWQYCyABKAQiOgoRTW9kc0J5QnVja2V0RW50cnkSEgoKYnVja2V0SGFzaBgBIAEoBBIRCgltb2RIYXNoZXMYAiADKAQitAEKBlNlYXJjaBINCgVxdWVyeRgBIAEoCRISCgp1c2FnZUNvdW50GAIgASgEEg0KBXNhdmVkGAMgASgIEhEKCWxhc3RVc2FnZRgEIAEoEhIrCgR0eXBlGAUgASgOMh0uc3RhdGVseS5nZW5lcmF0ZWQuU2VhcmNoVHlwZRINCgVxaGFzaBgGIAEoDBIRCglwcm9maWxlSWQYByABKAQSFgoOZGVzdGlueVZlcnNpb24YCCABKAQiygwKCFNldHRpbmdzEhAKCG1lbWJlcklkGAEgASgJEhMKC2l0ZW1RdWFsaXR5GAIgASgIEhQKDHNob3dOZXdJdGVtcxgDIAEoCBI5Cg5jaGFyYWN0ZXJPcmRlchgEIAEoDjIhLnN0YXRlbHkuZ2VuZXJhdGVkLkNoYXJhY3Rlck9yZGVyEhsKE2l0ZW1Tb3J0T3JkZXJDdXN0b20YBSADKAkSGQoRaXRlbVNvcnRSZXZlcnNhbHMYBiADKAkSDwoHY2hhckNvbBgHIAEoBBIVCg1jaGFyQ29sTW9iaWxlGAggASgEEhAKCGl0ZW1TaXplGAkgASgEEj4KEWNvbGxhcHNlZFNlY3Rpb25zGAogAygLMiMuc3RhdGVseS5nZW5lcmF0ZWQuQ29sbGFwc2VkU2VjdGlvbhIeChZjb21wbGV0ZWRSZWNvcmRzSGlkZGVuGAsgASgIEh8KF3JlZGFjdGVkUmVjb3Jkc1JldmVhbGVkGAwgASgIEh8KF2Zhcm1pbmdNYWtlUm9vbUZvckl0ZW1zGA0gASgIEhwKFGludmVudG9yeUNsZWFyU3BhY2VzGA4gASgEEhwKFGhpZGVDb21wbGV0ZWRSZWNvcmRzGA8gASgIEhsKE2N1c3RvbUNoYXJhY3RlclNvcnQYECADKAkSPQoRaW5mdXNpb25EaXJlY3Rpb24YESABKA4yIi5zdGF0ZWx5LmdlbmVyYXRlZC5JbmZ1c2VEaXJlY3Rpb24SEAoIbGFuZ3VhZ2UYEiABKAkSFwoPd2lzaExpc3RTb3VyY2VzGBMgAygJEjoKDGxvUGFyYW1ldGVycxgUIAEoCzIkLnN0YXRlbHkuZ2VuZXJhdGVkLkxvYWRvdXRQYXJhbWV0ZXJzEkkKGGxvU3RhdENvbnN0cmFpbnRzQnlDbGFzcxgVIAMoCzInLnN0YXRlbHkuZ2VuZXJhdGVkLlN0YXRDb25zdHJhaW50c0VudHJ5EkQKF2N1c3RvbVRvdGFsU3RhdHNCeUNsYXNzGBYgAygLMiMuc3RhdGVseS5nZW5lcmF0ZWQuQ3VzdG9tU3RhdHNFbnRyeRIfChdvcmdhbml6ZXJDb2x1bW5zV2VhcG9ucxgXIAMoCRIdChVvcmdhbml6ZXJDb2x1bW5zQXJtb3IYGCADKAkSHQoVb3JnYW5pemVyQ29sdW1uc0dob3N0GBkgAygJEhgKEGNvbXBhcmVCYXNlU3RhdHMYGiABKAgSGAoQc2lkZWNhckNvbGxhcHNlZBgbIAEoCBIXCg9zaW5nbGVDaGFyYWN0ZXIYHCABKAgSFwoPYmFkZ2VQb3N0bWFzdGVyGB0gASgIEhAKCHBlcmtMaXN0GB4gASgIEjMKC2xvYWRvdXRTb3J0GB8gASgOMh4uc3RhdGVseS5nZW5lcmF0ZWQuTG9hZG91dFNvcnQSGgoSaXRlbUZlZWRIaWRlVGFnZ2VkGCAgASgIEhgKEGl0ZW1GZWVkRXhwYW5kZWQYISABKAgSHgoWaGlkZVB1bGxGcm9tUG9zdG1hc3RlchgiIAEoCBJEChVkZXNjcmlwdGlvbnNUb0Rpc3BsYXkYIyABKA4yJS5zdGF0ZWx5LmdlbmVyYXRlZC5EZXNjcmlwdGlvbk9wdGlvbnMSHwoXY29tcGFyZVdlYXBvbk1hc3RlcndvcmsYJCABKAgSGQoRaXRlbUZlZWRXYXRlcm1hcmsYJSABKAQSNQoLY3VzdG9tU3RhdHMYJiADKAsyIC5zdGF0ZWx5LmdlbmVyYXRlZC5DdXN0b21TdGF0RGVmEhYKDmF1dG9Mb2NrVGFnZ2VkGCcgASgIEg0KBXRoZW1lGCggASgJEh0KFXNvcnRSZWNvcmRQcm9ncmVzc2lvbhgpIAEoCBIeChZ2ZW5kb3JzSGlkZVNpbHZlckl0ZW1zGCogASgIEhsKE3ZhdWx0V2VhcG9uR3JvdXBpbmcYKyABKAkSTQoYdmF1bHRXZWFwb25Hcm91cGluZ1N0eWxlGCwgASgOMisuc3RhdGVseS5nZW5lcmF0ZWQuVmF1bHRXZWFwb25Hcm91cGluZ1N0eWxlEjUKDGl0ZW1Qb3B1cFRhYhgtIAEoDjIfLnN0YXRlbHkuZ2VuZXJhdGVkLkl0ZW1Qb3B1cFRhYiI3Cg5Tb2NrZXRPdmVycmlkZRITCgtzb2NrZXRJbmRleBgBIAEoBBIQCghpdGVtSGFzaBgCIAEoBCJECg5TdGF0Q29uc3RyYWludBIQCghzdGF0SGFzaBgBIAEoBBIPCgdtaW5UaWVyGAIgASgEEg8KB21heFRpZXIYAyABKAQiggEKFFN0YXRDb25zdHJhaW50c0VudHJ5EjIKCWNsYXNzVHlwZRgBIAEoDjIfLnN0YXRlbHkuZ2VuZXJhdGVkLkRlc3RpbnlDbGFzcxI2Cgtjb25zdHJhaW50cxgCIAMoCzIhLnN0YXRlbHkuZ2VuZXJhdGVkLlN0YXRDb25zdHJhaW50IkgKB1RyaXVtcGgSEgoKcmVjb3JkSGFzaBgBIAEoBBIRCglwcm9maWxlSWQYAiABKAQSFgoOZGVzdGlueVZlcnNpb24YByABKAQqewoVQXNzdW1lQXJtb3JNYXN0ZXJ3b3JrEh4KGkFzc3VtZUFybW9yTWFzdGVyd29ya19Ob25lEAASIwofQXNzdW1lQXJtb3JNYXN0ZXJ3b3JrX0xlZ2VuZGFyeRABEh0KGUFzc3VtZUFybW9yTWFzdGVyd29ya19BbGwQAiqKAQoOQ2hhcmFjdGVyT3JkZXISHQoZQ2hhcmFjdGVyT3JkZXJfbW9zdFJlY2VudBAAEiQKIENoYXJhY3Rlck9yZGVyX21vc3RSZWNlbnRSZXZlcnNlEAESGAoUQ2hhcmFjdGVyT3JkZXJfZml4ZWQQAhIZChVDaGFyYWN0ZXJPcmRlcl9jdXN0b20QAyqWAQoSRGVzY3JpcHRpb25PcHRpb25zEiIKHkRlc2NyaXB0aW9uT3B0aW9uc19VTlNQRUNJRklFRBAAEh0KGURlc2NyaXB0aW9uT3B0aW9uc19idW5naWUQARIgChxEZXNjcmlwdGlvbk9wdGlvbnNfY29tbXVuaXR5EAISGwoXRGVzY3JpcHRpb25PcHRpb25zX2JvdGgQAypzCgxEZXN0aW55Q2xhc3MSFgoSRGVzdGlueUNsYXNzX1RpdGFuEAASFwoTRGVzdGlueUNsYXNzX0h1bnRlchABEhgKFERlc3RpbnlDbGFzc19XYXJsb2NrEAISGAoURGVzdGlueUNsYXNzX1Vua25vd24QAypoCg9JbmZ1c2VEaXJlY3Rpb24SHwobSW5mdXNlRGlyZWN0aW9uX1VOU1BFQ0lGSUVEEAASGgoWSW5mdXNlRGlyZWN0aW9uX0luZnVzZRABEhgKFEluZnVzZURpcmVjdGlvbl9GdWVsEAIqQgoMSXRlbVBvcHVwVGFiEhkKFUl0ZW1Qb3B1cFRhYl9PdmVydmlldxAAEhcKE0l0ZW1Qb3B1cFRhYl9UcmlhZ2UQASpBCgtMb2Fkb3V0U29ydBIaChZMb2Fkb3V0U29ydF9CeUVkaXRUaW1lEAASFgoSTG9hZG91dFNvcnRfQnlOYW1lEAEqOQoKU2VhcmNoVHlwZRITCg9TZWFyY2hUeXBlX0l0ZW0QABIWChJTZWFyY2hUeXBlX0xvYWRvdXQQASqMAQoIVGFnVmFsdWUSGAoUVGFnVmFsdWVfVU5TUEVDSUZJRUQQABIVChFUYWdWYWx1ZV9mYXZvcml0ZRABEhEKDVRhZ1ZhbHVlX2tlZXAQAhITCg9UYWdWYWx1ZV9pbmZ1c2UQAxIRCg1UYWdWYWx1ZV9qdW5rEAQSFAoQVGFnVmFsdWVfYXJjaGl2ZRAFKmMKGFZhdWx0V2VhcG9uR3JvdXBpbmdTdHlsZRIiCh5WYXVsdFdlYXBvbkdyb3VwaW5nU3R5bGVfTGluZXMQABIjCh9WYXVsdFdlYXBvbkdyb3VwaW5nU3R5bGVfSW5saW5lEAFiBnByb3RvMw");
 
 /**
  * Describes the message stately.generated.ApiApp.
  * Use `create(ApiAppSchema)` to create a new message.
  */
-export const ApiAppSchema = /*@__PURE__*/ messageDesc(file_stately, 0);
+export const ApiAppSchema = /*@__PURE__*/
+  messageDesc(file_stately, 0);
 
 /**
  * Describes the message stately.generated.ArtifactUnlocks.
  * Use `create(ArtifactUnlocksSchema)` to create a new message.
  */
-export const ArtifactUnlocksSchema = /*@__PURE__*/ messageDesc(file_stately, 1);
+export const ArtifactUnlocksSchema = /*@__PURE__*/
+  messageDesc(file_stately, 1);
 
 /**
  * Describes the message stately.generated.CollapsedSection.
  * Use `create(CollapsedSectionSchema)` to create a new message.
  */
-export const CollapsedSectionSchema = /*@__PURE__*/ messageDesc(file_stately, 2);
+export const CollapsedSectionSchema = /*@__PURE__*/
+  messageDesc(file_stately, 2);
 
 /**
  * Describes the message stately.generated.CustomStatDef.
  * Use `create(CustomStatDefSchema)` to create a new message.
  */
-export const CustomStatDefSchema = /*@__PURE__*/ messageDesc(file_stately, 3);
+export const CustomStatDefSchema = /*@__PURE__*/
+  messageDesc(file_stately, 3);
 
 /**
  * Describes the message stately.generated.CustomStatWeightsEntry.
  * Use `create(CustomStatWeightsEntrySchema)` to create a new message.
  */
-export const CustomStatWeightsEntrySchema = /*@__PURE__*/ messageDesc(file_stately, 4);
+export const CustomStatWeightsEntrySchema = /*@__PURE__*/
+  messageDesc(file_stately, 4);
 
 /**
  * Describes the message stately.generated.CustomStatsEntry.
  * Use `create(CustomStatsEntrySchema)` to create a new message.
  */
-export const CustomStatsEntrySchema = /*@__PURE__*/ messageDesc(file_stately, 5);
+export const CustomStatsEntrySchema = /*@__PURE__*/
+  messageDesc(file_stately, 5);
 
 /**
  * Describes the message stately.generated.GlobalSettings.
  * Use `create(GlobalSettingsSchema)` to create a new message.
  */
-export const GlobalSettingsSchema = /*@__PURE__*/ messageDesc(file_stately, 6);
+export const GlobalSettingsSchema = /*@__PURE__*/
+  messageDesc(file_stately, 6);
 
 /**
  * Describes the message stately.generated.InGameLoadoutIdentifiers.
  * Use `create(InGameLoadoutIdentifiersSchema)` to create a new message.
  */
-export const InGameLoadoutIdentifiersSchema = /*@__PURE__*/ messageDesc(file_stately, 7);
+export const InGameLoadoutIdentifiersSchema = /*@__PURE__*/
+  messageDesc(file_stately, 7);
 
 /**
  * Describes the message stately.generated.ItemAnnotation.
  * Use `create(ItemAnnotationSchema)` to create a new message.
  */
-export const ItemAnnotationSchema = /*@__PURE__*/ messageDesc(file_stately, 8);
+export const ItemAnnotationSchema = /*@__PURE__*/
+  messageDesc(file_stately, 8);
 
 /**
  * Describes the message stately.generated.ItemHashTag.
  * Use `create(ItemHashTagSchema)` to create a new message.
  */
-export const ItemHashTagSchema = /*@__PURE__*/ messageDesc(file_stately, 9);
+export const ItemHashTagSchema = /*@__PURE__*/
+  messageDesc(file_stately, 9);
 
 /**
  * Describes the message stately.generated.Loadout.
  * Use `create(LoadoutSchema)` to create a new message.
  */
-export const LoadoutSchema = /*@__PURE__*/ messageDesc(file_stately, 10);
+export const LoadoutSchema = /*@__PURE__*/
+  messageDesc(file_stately, 10);
 
 /**
  * Describes the message stately.generated.LoadoutItem.
  * Use `create(LoadoutItemSchema)` to create a new message.
  */
-export const LoadoutItemSchema = /*@__PURE__*/ messageDesc(file_stately, 11);
+export const LoadoutItemSchema = /*@__PURE__*/
+  messageDesc(file_stately, 11);
 
 /**
  * Describes the message stately.generated.LoadoutParameters.
  * Use `create(LoadoutParametersSchema)` to create a new message.
  */
-export const LoadoutParametersSchema = /*@__PURE__*/ messageDesc(file_stately, 12);
+export const LoadoutParametersSchema = /*@__PURE__*/
+  messageDesc(file_stately, 12);
 
 /**
  * Describes the message stately.generated.LoadoutShare.
  * Use `create(LoadoutShareSchema)` to create a new message.
  */
-export const LoadoutShareSchema = /*@__PURE__*/ messageDesc(file_stately, 13);
+export const LoadoutShareSchema = /*@__PURE__*/
+  messageDesc(file_stately, 13);
 
 /**
  * Describes the message stately.generated.ModsByBucketEntry.
  * Use `create(ModsByBucketEntrySchema)` to create a new message.
  */
-export const ModsByBucketEntrySchema = /*@__PURE__*/ messageDesc(file_stately, 14);
+export const ModsByBucketEntrySchema = /*@__PURE__*/
+  messageDesc(file_stately, 14);
 
 /**
  * Describes the message stately.generated.Search.
  * Use `create(SearchSchema)` to create a new message.
  */
-export const SearchSchema = /*@__PURE__*/ messageDesc(file_stately, 15);
+export const SearchSchema = /*@__PURE__*/
+  messageDesc(file_stately, 15);
 
 /**
  * Describes the message stately.generated.Settings.
  * Use `create(SettingsSchema)` to create a new message.
  */
-export const SettingsSchema = /*@__PURE__*/ messageDesc(file_stately, 16);
+export const SettingsSchema = /*@__PURE__*/
+  messageDesc(file_stately, 16);
 
 /**
  * Describes the message stately.generated.SocketOverride.
  * Use `create(SocketOverrideSchema)` to create a new message.
  */
-export const SocketOverrideSchema = /*@__PURE__*/ messageDesc(file_stately, 17);
+export const SocketOverrideSchema = /*@__PURE__*/
+  messageDesc(file_stately, 17);
 
 /**
  * Describes the message stately.generated.StatConstraint.
  * Use `create(StatConstraintSchema)` to create a new message.
  */
-export const StatConstraintSchema = /*@__PURE__*/ messageDesc(file_stately, 18);
+export const StatConstraintSchema = /*@__PURE__*/
+  messageDesc(file_stately, 18);
 
 /**
  * Describes the message stately.generated.StatConstraintsEntry.
  * Use `create(StatConstraintsEntrySchema)` to create a new message.
  */
-export const StatConstraintsEntrySchema = /*@__PURE__*/ messageDesc(file_stately, 19);
+export const StatConstraintsEntrySchema = /*@__PURE__*/
+  messageDesc(file_stately, 19);
 
 /**
  * Describes the message stately.generated.Triumph.
  * Use `create(TriumphSchema)` to create a new message.
  */
-export const TriumphSchema = /*@__PURE__*/ messageDesc(file_stately, 20);
+export const TriumphSchema = /*@__PURE__*/
+  messageDesc(file_stately, 20);
 
 /**
  * Describes the enum stately.generated.AssumeArmorMasterwork.
  */
-export const AssumeArmorMasterworkSchema = /*@__PURE__*/ enumDesc(file_stately, 0);
+export const AssumeArmorMasterworkSchema = /*@__PURE__*/
+  enumDesc(file_stately, 0);
 
 /**
  * @generated from enum stately.generated.AssumeArmorMasterwork
  */
-export const AssumeArmorMasterwork = /*@__PURE__*/ tsEnum(AssumeArmorMasterworkSchema);
+export const AssumeArmorMasterwork = /*@__PURE__*/
+  tsEnum(AssumeArmorMasterworkSchema);
 
 /**
  * Describes the enum stately.generated.CharacterOrder.
  */
-export const CharacterOrderSchema = /*@__PURE__*/ enumDesc(file_stately, 1);
+export const CharacterOrderSchema = /*@__PURE__*/
+  enumDesc(file_stately, 1);
 
 /**
  * @generated from enum stately.generated.CharacterOrder
  */
-export const CharacterOrder = /*@__PURE__*/ tsEnum(CharacterOrderSchema);
+export const CharacterOrder = /*@__PURE__*/
+  tsEnum(CharacterOrderSchema);
 
 /**
  * Describes the enum stately.generated.DescriptionOptions.
  */
-export const DescriptionOptionsSchema = /*@__PURE__*/ enumDesc(file_stately, 2);
+export const DescriptionOptionsSchema = /*@__PURE__*/
+  enumDesc(file_stately, 2);
 
 /**
  * @generated from enum stately.generated.DescriptionOptions
  */
-export const DescriptionOptions = /*@__PURE__*/ tsEnum(DescriptionOptionsSchema);
+export const DescriptionOptions = /*@__PURE__*/
+  tsEnum(DescriptionOptionsSchema);
 
 /**
  * Describes the enum stately.generated.DestinyClass.
  */
-export const DestinyClassSchema = /*@__PURE__*/ enumDesc(file_stately, 3);
+export const DestinyClassSchema = /*@__PURE__*/
+  enumDesc(file_stately, 3);
 
 /**
  * @generated from enum stately.generated.DestinyClass
  */
-export const DestinyClass = /*@__PURE__*/ tsEnum(DestinyClassSchema);
+export const DestinyClass = /*@__PURE__*/
+  tsEnum(DestinyClassSchema);
 
 /**
  * Describes the enum stately.generated.InfuseDirection.
  */
-export const InfuseDirectionSchema = /*@__PURE__*/ enumDesc(file_stately, 4);
+export const InfuseDirectionSchema = /*@__PURE__*/
+  enumDesc(file_stately, 4);
 
 /**
  * @generated from enum stately.generated.InfuseDirection
  */
-export const InfuseDirection = /*@__PURE__*/ tsEnum(InfuseDirectionSchema);
+export const InfuseDirection = /*@__PURE__*/
+  tsEnum(InfuseDirectionSchema);
 
 /**
  * Describes the enum stately.generated.ItemPopupTab.
  */
-export const ItemPopupTabSchema = /*@__PURE__*/ enumDesc(file_stately, 5);
+export const ItemPopupTabSchema = /*@__PURE__*/
+  enumDesc(file_stately, 5);
 
 /**
  * @generated from enum stately.generated.ItemPopupTab
  */
-export const ItemPopupTab = /*@__PURE__*/ tsEnum(ItemPopupTabSchema);
+export const ItemPopupTab = /*@__PURE__*/
+  tsEnum(ItemPopupTabSchema);
 
 /**
  * Describes the enum stately.generated.LoadoutSort.
  */
-export const LoadoutSortSchema = /*@__PURE__*/ enumDesc(file_stately, 6);
+export const LoadoutSortSchema = /*@__PURE__*/
+  enumDesc(file_stately, 6);
 
 /**
  * @generated from enum stately.generated.LoadoutSort
  */
-export const LoadoutSort = /*@__PURE__*/ tsEnum(LoadoutSortSchema);
+export const LoadoutSort = /*@__PURE__*/
+  tsEnum(LoadoutSortSchema);
 
 /**
  * Describes the enum stately.generated.SearchType.
  */
-export const SearchTypeSchema = /*@__PURE__*/ enumDesc(file_stately, 7);
+export const SearchTypeSchema = /*@__PURE__*/
+  enumDesc(file_stately, 7);
 
 /**
  * @generated from enum stately.generated.SearchType
  */
-export const SearchType = /*@__PURE__*/ tsEnum(SearchTypeSchema);
+export const SearchType = /*@__PURE__*/
+  tsEnum(SearchTypeSchema);
 
 /**
  * Describes the enum stately.generated.TagValue.
  */
-export const TagValueSchema = /*@__PURE__*/ enumDesc(file_stately, 8);
+export const TagValueSchema = /*@__PURE__*/
+  enumDesc(file_stately, 8);
 
 /**
  * @generated from enum stately.generated.TagValue
  */
-export const TagValue = /*@__PURE__*/ tsEnum(TagValueSchema);
+export const TagValue = /*@__PURE__*/
+  tsEnum(TagValueSchema);
 
 /**
  * Describes the enum stately.generated.VaultWeaponGroupingStyle.
  */
-export const VaultWeaponGroupingStyleSchema = /*@__PURE__*/ enumDesc(file_stately, 9);
+export const VaultWeaponGroupingStyleSchema = /*@__PURE__*/
+  enumDesc(file_stately, 9);
 
 /**
  * @generated from enum stately.generated.VaultWeaponGroupingStyle
  */
-export const VaultWeaponGroupingStyle = /*@__PURE__*/ tsEnum(VaultWeaponGroupingStyleSchema);
+export const VaultWeaponGroupingStyle = /*@__PURE__*/
+  tsEnum(VaultWeaponGroupingStyleSchema);
+
