@@ -1,6 +1,7 @@
 import { keyPath, ListToken } from '@stately-cloud/client';
 import { ApiApp } from '../shapes/app.js';
 import { client } from './client.js';
+import { ApiApp as StatelyApiApp } from './generated/index.js';
 
 /**
  * Get all registered apps.
@@ -13,7 +14,7 @@ export async function getAllApps(): Promise<[ApiApp[], ListToken]> {
   while (true) {
     for await (const app of apps) {
       if (client.isType(app, 'ApiApp')) {
-        allApps.push(app);
+        allApps.push(convertToApiApp(app));
       }
     }
 
@@ -40,9 +41,9 @@ export async function updateApps(token: ListToken, apps: ApiApp[]): Promise<[Api
         if (client.isType(item, 'ApiApp')) {
           const existingIndex = apps.findIndex((app) => app.id === item.id);
           if (existingIndex >= 0) {
-            apps[existingIndex] = item;
+            apps[existingIndex] = convertToApiApp(item);
           } else {
-            apps.push(item);
+            apps.push(convertToApiApp(item));
           }
         }
         break;
@@ -71,7 +72,11 @@ export async function updateApps(token: ListToken, apps: ApiApp[]): Promise<[Api
  * Get an app by its ID.
  */
 export async function getAppById(id: string): Promise<ApiApp | undefined> {
-  return client.get('ApiApp', keyPathFor(id));
+  const result = await client.get('ApiApp', keyPathFor(id));
+  if (result) {
+    return convertToApiApp(result);
+  }
+  return undefined;
 }
 
 /**
@@ -82,8 +87,9 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
   // TODO: wish I could set an if-not-exists condition here, to avoid
   // accidentally updating an app. Instead I got a transaction.
   const result = await client.transaction(async (txn) => {
-    resultApp = await txn.get('ApiApp', keyPathFor(app.id));
-    if (resultApp) {
+    const getResult = await txn.get('ApiApp', keyPathFor(app.id));
+    if (getResult) {
+      resultApp = convertToApiApp(getResult);
       return;
     }
     txn.put(client.create('ApiApp', app));
@@ -96,7 +102,7 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
   if (result.committed && result.puts.length === 1) {
     const put = result.puts[0];
     if (client.isType(put, 'ApiApp')) {
-      return put;
+      return convertToApiApp(put);
     }
   }
 
@@ -105,4 +111,12 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
 
 function keyPathFor(id: string) {
   return keyPath`/apps-1/app-${id}`;
+}
+
+// This mostly serves to remove the partition field, which we don't need. It
+// would cause problems serializing to JSON, since it's a bigint. It'd be nice
+// if I could've used a 32-bit int, but that isn't in the standard schema types...
+function convertToApiApp(app: StatelyApiApp): ApiApp {
+  const { partition, ...rest } = app;
+  return rest;
 }
