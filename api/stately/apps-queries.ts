@@ -92,7 +92,7 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
       resultApp = convertToApiApp(getResult);
       return;
     }
-    await txn.put(client.create('ApiApp', app));
+    await txn.put(client.create('ApiApp', { ...app, partition: 1n }));
   });
 
   if (resultApp) {
