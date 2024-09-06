@@ -1,9 +1,10 @@
 import asyncHandler from 'express-async-handler';
 import { DatabaseError } from 'pg-protocol';
 import { v4 as uuid } from 'uuid';
-import { getAppById, insertApp } from '../db/apps-queries.js';
+import { insertApp as insertAppPostgres } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
 import { ApiApp, CreateAppRequest } from '../shapes/app.js';
+import { insertApp } from '../stately/apps-queries.js';
 import { badRequest } from '../utils.js';
 
 const localHosts =
@@ -48,14 +49,17 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     dimApiKey: uuid(),
   };
 
+  // Put it in StatelyDB
+  app = await insertApp(app);
+
+  // Also put it in Postgres, for now!
   await transaction(async (client) => {
     try {
-      await insertApp(client, app);
+      await insertAppPostgres(client, app);
     } catch (e) {
       // This is a unique constraint violation, so just get the app!
       if (e instanceof DatabaseError && e.code === '23505') {
         await client.query('ROLLBACK');
-        app = (await getAppById(client, request.id))!;
       } else {
         throw e;
       }

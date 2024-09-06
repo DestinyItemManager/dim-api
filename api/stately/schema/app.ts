@@ -1,4 +1,4 @@
-import { itemType, string, type } from '@stately-cloud/schema';
+import { itemType, string, type, uint } from '@stately-cloud/schema';
 
 // A UUID stored as a string. This is inefficient, but we always use them as
 // strings in this API.
@@ -10,7 +10,7 @@ const uuidString = type('uuidString', string, {
 
 // "apps" aren't exposed to users - they're periodically synced by server instances.
 export const ApiApp = itemType('ApiApp', {
-  keyPath: '/app-:id',
+  keyPath: '/apps-:partition/app-:id',
   fields: {
     /** A short ID that uniquely identifies the app. */
     id: { type: string, fieldNum: 1 },
@@ -23,5 +23,7 @@ export const ApiApp = itemType('ApiApp', {
     },
     /** The origin used to allow CORS for this app. Only requests from this origin are allowed. */
     origin: { type: string, fieldNum: 4 },
+    /** This isn't a "real" field but StatelyDB won't allow a group without an ID. */
+    partition: { type: uint, fieldNum: 5 },
   },
 });

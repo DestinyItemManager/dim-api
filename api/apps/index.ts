@@ -1,10 +1,12 @@
 import * as Sentry from '@sentry/node';
+import { ListToken } from '@stately-cloud/client';
 import { RequestHandler } from 'express';
 import _ from 'lodash';
-import { getAllApps } from '../db/apps-queries.js';
+import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
 import { pool } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
+import { getAllApps, updateApps } from '../stately/apps-queries.js';
 
 /**
  * Express middleware that requires an API key be provided in a header
@@ -38,10 +40,11 @@ export const apiKey: RequestHandler = (req, res, next) => {
   }
 };
 
-let apps: ApiApp[];
+let apps: ApiApp[] = [];
 let appsByApiKey: { [apiKey: string]: ApiApp };
 let origins = new Set<string>();
 let appsInterval: NodeJS.Timeout | null = null;
+let token: ListToken | undefined;
 
 export function stopAppsRefresh() {
   if (appsInterval) {
@@ -65,32 +68,67 @@ export function isAppOrigin(origin: string) {
   return origins.has(origin);
 }
 
-export async function refreshApps() {
+export async function refreshApps(): Promise<void> {
   stopAppsRefresh();
 
   try {
-    const client = await pool.connect();
-    try {
-      apps = await getAllApps(client);
-      appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
-      origins = new Set<string>();
-      for (const app of apps) {
-        origins.add(app.origin);
-      }
-      metrics.increment('apps.refresh.success.count');
-      return apps;
-    } catch (e) {
-      metrics.increment('apps.refresh.error.count');
-      console.error('Error refreshing apps', e);
-      Sentry.captureException(e);
-      throw e;
-    } finally {
-      client.release();
+    if (apps.length === 0) {
+      // Start off with a copy from postgres, just in case StatelyDB is having
+      // problems.
+      await fetchAppsFromPostgres();
+      digestApps();
     }
+
+    if (!token) {
+      // First time, get 'em all
+      const [appsFromStately, newToken] = await getAllApps();
+      if (appsFromStately.length > 0) {
+        apps = appsFromStately;
+        digestApps();
+        token = newToken;
+      }
+    } else {
+      // After that, use a sync to update them
+      const [appsFromStately, newToken] = await updateApps(token, apps);
+      if (appsFromStately.length > 0) {
+        apps = appsFromStately;
+        digestApps();
+        token = newToken;
+      }
+    }
+    metrics.increment('apps.refresh.success.count');
+  } catch (e) {
+    metrics.increment('apps.refresh.error.count');
+    console.error('Error refreshing apps', e);
+    Sentry.captureException(e);
+    throw e;
   } finally {
     // Refresh again every minute or so
     if (!appsInterval) {
       appsInterval = setTimeout(refreshApps, 60000 + Math.random() * 10000);
     }
+  }
+}
+
+async function fetchAppsFromPostgres() {
+  const client = await pool.connect();
+  try {
+    apps = await getAllAppsPostgres(client);
+    appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+    origins = new Set<string>();
+    for (const app of apps) {
+      origins.add(app.origin);
+    }
+    return apps;
+  } finally {
+    client.release();
+  }
+}
+
+function digestApps() {
+  appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+  origins = new Set<string>();
+  for (const app of apps) {
+    origins.add(app.origin);
   }
 }
