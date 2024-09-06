@@ -92,7 +92,7 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
       resultApp = convertToApiApp(getResult);
       return;
     }
-    txn.put(client.create('ApiApp', app));
+    await txn.put(client.create('ApiApp', app));
   });
 
   if (resultApp) {
@@ -117,6 +117,10 @@ function keyPathFor(id: string) {
 // would cause problems serializing to JSON, since it's a bigint. It'd be nice
 // if I could've used a 32-bit int, but that isn't in the standard schema types...
 function convertToApiApp(app: StatelyApiApp): ApiApp {
-  const { partition, ...rest } = app;
-  return rest;
+  return {
+    id: app.id,
+    bungieApiKey: app.bungieApiKey,
+    dimApiKey: app.dimApiKey,
+    origin: app.origin,
+  };
 }
