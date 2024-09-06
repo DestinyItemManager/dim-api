@@ -13,6 +13,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
     // Try StatelyDB first, then fall back to Postgres
     const statelySettings = await client
       .withAllowStale(true)
+      .withTimeoutMs(500)
       .get('GlobalSettings', keyPath`/gs-${flavor}`);
     if (statelySettings) {
       settings = {
