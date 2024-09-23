@@ -23,7 +23,7 @@ import {
   SocketOverrideSchema,
   StatConstraintSchema,
   StatConstraintsEntrySchema,
-} from "./stately_pb.js";
+} from "./index_pb.js";
 
 export const typeToSchema = {
   // itemTypes

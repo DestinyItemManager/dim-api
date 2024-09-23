@@ -169,13 +169,13 @@ export function LoadoutParameters() {
       /**
        * If set, after applying the mods above, all other mods will be removed from armor.
        */
-      clearMods: { type: bool, fieldNum: 3, required: false },
+      clearMods: { type: bool, fieldNum: 3 },
 
       /** Whether to clear out other weapons when applying this loadout */
-      clearWeapons: { type: bool, fieldNum: 4, required: false },
+      clearWeapons: { type: bool, fieldNum: 4 },
 
       /** Whether to clear out other weapons when applying this loadout */
-      clearArmor: { type: bool, fieldNum: 5, required: false },
+      clearArmor: { type: bool, fieldNum: 5 },
 
       /**
        * Mods that must be applied to a specific bucket hash. In general, prefer to
@@ -190,7 +190,7 @@ export function LoadoutParameters() {
       artifactUnlocks: { type: ArtifactUnlocks, fieldNum: 7, required: false },
 
       /** Whether to automatically add stat mods. */
-      autoStatMods: { type: bool, fieldNum: 8, required: false },
+      autoStatMods: { type: bool, fieldNum: 8 },
 
       /**
        * A search filter applied while editing the loadout in Loadout Optimizer,
@@ -218,7 +218,7 @@ export function LoadoutParameters() {
        * When calculating loadout stats, should "Font of ..." mods be assumed active
        * and their runtime bonus stats be included?
        */
-      includeRuntimeStatBenefits: { type: bool, fieldNum: 13, required: false },
+      includeRuntimeStatBenefits: { type: bool, fieldNum: 13 },
     },
   });
 }

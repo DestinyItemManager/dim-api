@@ -44,7 +44,7 @@ export const CollapsedSection = objectType('CollapsedSection', {
   fields: {
     key: { type: string, fieldNum: 1 },
     /** Whether this section is collapsed */
-    collapsed: { type: bool, fieldNum: 2, required: false },
+    collapsed: { type: bool, fieldNum: 2 },
   },
 });
 
@@ -99,9 +99,9 @@ export const Settings = itemType('Settings', {
     memberId: { type: string, fieldNum: 1 },
 
     /** Show item quality percentages */
-    itemQuality: { type: bool, fieldNum: 2, required: false },
+    itemQuality: { type: bool, fieldNum: 2 },
     /** Show new items with an overlay */
-    showNewItems: { type: bool, fieldNum: 3, required: false },
+    showNewItems: { type: bool, fieldNum: 3 },
     /** Sort characters (mostRecent, mostRecentReverse, fixed) */
     characterOrder: { type: CharacterOrder, fieldNum: 4 },
     /** Custom sorting properties, in order of application */
@@ -119,16 +119,16 @@ export const Settings = itemType('Settings', {
     // TODO: Some support for maps would be great
     collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10 },
     /** Hide triumphs once they're completed */
-    completedRecordsHidden: { type: bool, fieldNum: 11, required: false },
+    completedRecordsHidden: { type: bool, fieldNum: 11 },
     /** Hide show triumphs the manifest recommends be redacted */
-    redactedRecordsRevealed: { type: bool, fieldNum: 12, required: false },
+    redactedRecordsRevealed: { type: bool, fieldNum: 12 },
     /** Whether to keep one slot per item type open */
-    farmingMakeRoomForItems: { type: bool, fieldNum: 13, required: false },
+    farmingMakeRoomForItems: { type: bool, fieldNum: 13 },
     /** How many spaces to clear when using Farming Mode (make space). */
     inventoryClearSpaces: { type: uint, fieldNum: 14, required: false, valid: 'this <= 9' },
 
     /** Hide completed triumphs/collections */
-    hideCompletedRecords: { type: bool, fieldNum: 15, required: false },
+    hideCompletedRecords: { type: bool, fieldNum: 15 },
 
     /** Custom character sort - across all accounts and characters! The values are character IDs. */
     customCharacterSort: { type: arrayOf(string), fieldNum: 16, required: false },
@@ -177,36 +177,36 @@ export const Settings = itemType('Settings', {
     organizerColumnsGhost: { type: arrayOf(string), fieldNum: 25 },
 
     /** Compare base stats or actual stats in Compare */
-    compareBaseStats: { type: bool, fieldNum: 26, required: false },
+    compareBaseStats: { type: bool, fieldNum: 26 },
     /** Item popup sidecar collapsed just shows icon and no character locations */
-    sidecarCollapsed: { type: bool, fieldNum: 27, required: false },
+    sidecarCollapsed: { type: bool, fieldNum: 27 },
 
     /** In "Single Character Mode" DIM pretends you only have one (active) character and all the other characters' items are in the vault. */
-    singleCharacter: { type: bool, fieldNum: 28, required: false },
+    singleCharacter: { type: bool, fieldNum: 28 },
 
     /** Badge the app icon with the number of postmaster items on the current character */
-    badgePostmaster: { type: bool, fieldNum: 29, required: false },
+    badgePostmaster: { type: bool, fieldNum: 29 },
 
     /** Display perks as a list instead of a grid. */
-    perkList: { type: bool, fieldNum: 30, required: false },
+    perkList: { type: bool, fieldNum: 30 },
 
     /** How the loadouts menu and page should be sorted */
     loadoutSort: { type: LoadoutSort, fieldNum: 31 },
 
     /** Hide tagged items in the Item Feed */
-    itemFeedHideTagged: { type: bool, fieldNum: 32, required: false },
+    itemFeedHideTagged: { type: bool, fieldNum: 32 },
 
     /** Show the Item Feed */
-    itemFeedExpanded: { type: bool, fieldNum: 33, required: false },
+    itemFeedExpanded: { type: bool, fieldNum: 33 },
 
     /** Pull from postmaster is an irreversible action and some people don't want to accidentally hit it. */
-    hidePullFromPostmaster: { type: bool, fieldNum: 34, required: false },
+    hidePullFromPostmaster: { type: bool, fieldNum: 34 },
 
     /** Select descriptions to display */
     descriptionsToDisplay: { type: DescriptionOptions, fieldNum: 35, required: false },
 
     /** Plug the T10 masterwork into D2Y2+ random roll weapons for comparison purposes. */
-    compareWeaponMasterwork: { type: bool, fieldNum: 36, required: false },
+    compareWeaponMasterwork: { type: bool, fieldNum: 36 },
 
     /**
      * Cutoff point; the instance ID of the newest item that isn't shown in
@@ -222,16 +222,16 @@ export const Settings = itemType('Settings', {
     customStats: { type: arrayOf(CustomStatDef), fieldNum: 38, required: false },
 
     /** Automatically sync lock status with tag */
-    autoLockTagged: { type: bool, fieldNum: 39, required: false },
+    autoLockTagged: { type: bool, fieldNum: 39 },
 
     /** The currently chosen theme. */
     theme: { type: string, fieldNum: 40, required: false },
 
     /** Whether to sort triumphs on the records tab by their progression percentage. */
-    sortRecordProgression: { type: bool, fieldNum: 41, required: false },
+    sortRecordProgression: { type: bool, fieldNum: 41 },
 
     /** Whether to hide items that cost silver from the Vendors screen. */
-    vendorsHideSilverItems: { type: bool, fieldNum: 42, required: false },
+    vendorsHideSilverItems: { type: bool, fieldNum: 42 },
 
     /** An additional layer of grouping for weapons in the vault. */
     vaultWeaponGrouping: { type: string, fieldNum: 43, required: false },
