@@ -32,7 +32,7 @@ import type {
   SocketOverrideSchema,
   StatConstraintSchema,
   StatConstraintsEntrySchema,
-} from "./stately_pb.js";
+} from "./index_pb.js";
 
 export declare const itemTypeToSchema: {
   "ApiApp": typeof ApiAppSchema,

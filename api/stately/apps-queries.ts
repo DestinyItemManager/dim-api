@@ -7,24 +7,14 @@ import { ApiApp as StatelyApiApp } from './generated/index.js';
  * Get all registered apps.
  */
 export async function getAllApps(): Promise<[ApiApp[], ListToken]> {
-  let apps = client.withAllowStale(true).beginList('/apps-1');
+  const apps = client.withAllowStale(true).beginList('/apps-1');
   const allApps: ApiApp[] = [];
-  let token: ListToken | undefined = undefined;
-
-  while (true) {
-    for await (const app of apps) {
-      if (client.isType(app, 'ApiApp')) {
-        allApps.push(convertToApiApp(app));
-      }
-    }
-
-    token = apps.token!;
-    if (token.canContinue) {
-      apps = client.continueList(token);
-    } else {
-      break;
+  for await (const app of apps) {
+    if (client.isType(app, 'ApiApp')) {
+      allApps.push(convertToApiApp(app));
     }
   }
+  const token = apps.token!;
 
   return [allApps, token] as const;
 }

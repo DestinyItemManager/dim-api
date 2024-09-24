@@ -27,7 +27,7 @@ export const Search = itemType('Search', {
     /** A zero usage count means this is a suggested/preloaded search. */
     usageCount: { type: uint, fieldNum: 2, required: false },
     /** Has this search been saved/favorite'd/pinned by the user? */
-    saved: { type: bool, fieldNum: 3, required: false },
+    saved: { type: bool, fieldNum: 3 },
     /** The last time this was used, as a unix millisecond timestamp. */
     lastUsage: { type: timestampMilliseconds, fieldNum: 4 },
     /**
