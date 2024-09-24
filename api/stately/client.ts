@@ -1,6 +1,8 @@
-import { createClient } from './generated/stately_item_types.js';
+import { createClient } from './generated/index.js';
 
 /**
  * Our StatelyDB client, bound to our types and store.
  */
-export const client = createClient(BigInt(process.env.STATELY_STORE_ID!));
+export const client = createClient(BigInt(process.env.STATELY_STORE_ID!), {
+  region: process.env.STATELY_REGION || 'us-west-2',
+});

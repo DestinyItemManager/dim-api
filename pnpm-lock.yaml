@@ -18,8 +18,8 @@ dependencies:
     specifier: ^7.114.0
     version: 7.114.0
   '@stately-cloud/client':
-    specifier: ^0.4.0
-    version: 0.4.0
+    specifier: ^0.5.0
+    version: 0.5.0
   bungie-api-ts:
     specifier: ^5.1.0
     version: 5.1.0
@@ -107,8 +107,8 @@ devDependencies:
     specifier: ^2.34.1
     version: 2.34.1
   '@stately-cloud/schema':
-    specifier: ^0.3.0
-    version: 0.3.0
+    specifier: ^0.4.0
+    version: 0.4.0
   '@types/cors':
     specifier: ^2.8.17
     version: 2.8.17
@@ -1623,22 +1623,21 @@ packages:
     engines: {node: '>=0.1.90'}
     dev: true
 
-  /@connectrpc/connect-node@2.0.0-alpha.1(@bufbuild/protobuf@2.1.0)(@connectrpc/connect@2.0.0-alpha.1):
-    resolution: {integrity: sha512-8V4iVs0nBU3lQCaKt6KmJeaGRvfjyUqJ4XZbMQDxP45xyvEZOOSsUCzeoJCMMhRAWEKzguPkYZI8B4RmepPREQ==}
-    engines: {node: '>=16.0.0'}
+  /@connectrpc/connect-node@2.0.0-beta.1(@bufbuild/protobuf@2.1.0)(@connectrpc/connect@2.0.0-beta.1):
+    resolution: {integrity: sha512-cmkuvOr1sAsEptlwSNN7rOjhrdc3vbsuipoEKUmGWQ0CjzF/SgCca86FyVf7dSsfGJme98TBsjYiznaLDJgaaA==}
+    engines: {node: '>=18.14.1'}
     peerDependencies:
-      '@bufbuild/protobuf': ^2.0.0-beta.2
-      '@connectrpc/connect': 2.0.0-alpha.1
+      '@bufbuild/protobuf': ^2.1.0
+      '@connectrpc/connect': 2.0.0-beta.1
     dependencies:
       '@bufbuild/protobuf': 2.1.0
-      '@connectrpc/connect': 2.0.0-alpha.1(@bufbuild/protobuf@2.1.0)
-      undici: 5.28.4
+      '@connectrpc/connect': 2.0.0-beta.1(@bufbuild/protobuf@2.1.0)
     dev: false
 
-  /@connectrpc/connect@2.0.0-alpha.1(@bufbuild/protobuf@2.1.0):
-    resolution: {integrity: sha512-eAjezEy1m+7bDtWt/TeXY2qIayq7R+WW8Jqwq3p8Q7ZTHpFJu0SBQivhRGQbNXSYR+QmqMk+j/FLAVlgB6CfHA==}
+  /@connectrpc/connect@2.0.0-beta.1(@bufbuild/protobuf@2.1.0):
+    resolution: {integrity: sha512-3zr+mHusBrEqhFGjOpbCF7GrFBLZUQEk2/3Aa8lNEQt5hZhT2uXAOJhyroxs5mNTI5yWhAA/g6ua6RoSnTXoKQ==}
     peerDependencies:
-      '@bufbuild/protobuf': ^2.0.0-beta.2
+      '@bufbuild/protobuf': ^2.1.0
     dependencies:
       '@bufbuild/protobuf': 2.1.0
     dev: false
@@ -1928,11 +1927,6 @@ packages:
     resolution: {integrity: sha512-BsWiH1yFGjXXS2yvrf5LyuoSIIbPrGUWob917o+BTKuZ7qJdxX8aJLRxs1fS9n6r7vESrq1OUqb68dANcFXuQQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     dev: true
-
-  /@fastify/busboy@2.1.1:
-    resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
-    engines: {node: '>=14'}
-    dev: false
 
   /@godaddy/terminus@4.12.1:
     resolution: {integrity: sha512-Tm+wVu1/V37uZXcT7xOhzdpFoovQReErff8x3y82k6YyWa1gzxWBjTyrx4G2enjEqoXPnUUmJ3MOmwH+TiP6Sw==}
@@ -2499,17 +2493,17 @@ packages:
       '@sinonjs/commons': 3.0.0
     dev: true
 
-  /@stately-cloud/client@0.4.0:
-    resolution: {integrity: sha512-r6yMuiwDrhI4QhxQhQUJF1vlz7ZJRAklwCE2OJofm/PwFFtyNZowpu96i9qpf6SVoD45hr6PamsuiQdi3rYFmQ==}
+  /@stately-cloud/client@0.5.0:
+    resolution: {integrity: sha512-Bh5gEHI4VZr3y3XDuzscTJJwObZyFxO7n82h0y36hZIBBfa49S5HMiuM0dMSNCtrUdvzAOfhhhhkj79mPgeq4g==}
     engines: {node: '>=18'}
     dependencies:
       '@bufbuild/protobuf': 2.1.0
-      '@connectrpc/connect': 2.0.0-alpha.1(@bufbuild/protobuf@2.1.0)
-      '@connectrpc/connect-node': 2.0.0-alpha.1(@bufbuild/protobuf@2.1.0)(@connectrpc/connect@2.0.0-alpha.1)
+      '@connectrpc/connect': 2.0.0-beta.1(@bufbuild/protobuf@2.1.0)
+      '@connectrpc/connect-node': 2.0.0-beta.1(@bufbuild/protobuf@2.1.0)(@connectrpc/connect@2.0.0-beta.1)
     dev: false
 
-  /@stately-cloud/schema@0.3.0:
-    resolution: {integrity: sha512-8a3/K2xbWuPeM0d6T+naMduasJDic9IU8Jb+IbuxKCZ/Hjh5NATR0ruQ1+5pjJoyuOcHKnrr37mmWM3mB/oigg==}
+  /@stately-cloud/schema@0.4.0:
+    resolution: {integrity: sha512-GasVQRox4xWqroDatabhHFN+Orjp/AXcfqiGPq5XUn/5UeUjYidn/KDuoEgtWXP3UYxdMjRBi8o3NFacgnd16g==}
     hasBin: true
     dependencies:
       '@bufbuild/protobuf': 2.1.0
@@ -6507,13 +6501,6 @@ packages:
   /undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
     dev: true
-
-  /undici@5.28.4:
-    resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
-    engines: {node: '>=14.0'}
-    dependencies:
-      '@fastify/busboy': 2.1.1
-    dev: false
 
   /unicode-canonical-property-names-ecmascript@2.0.0:
     resolution: {integrity: sha512-yY5PpDlfVIU5+y/BSCxAJRBIS1Zc2dDG3Ujq+sR0U+JjUevW2JhocOF+soROYDSaAezOzOKuyyixhD6mBknSmQ==}
