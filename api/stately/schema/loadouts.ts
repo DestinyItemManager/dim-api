@@ -102,6 +102,8 @@ export function AssumeArmorMasterwork() {
     Legendary: 1,
     /** All armor (legendary & exotic) will have assumed masterworked stats. */
     All: 2,
+    /** All armor (legendary & exotic) will have assumed masterworked stats, and Exotic Armor will be upgraded to have an artifice mod slot. */
+    ArtificeExotic: 3,
   });
 }
 

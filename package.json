@@ -17,7 +17,7 @@
     "docker:push": "docker push destinyitemmanager/dim-api:latest",
     "lint": "eslint --fix api",
     "lint-check": "eslint api",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --verbose --coverage api --forceExit",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --detectOpenHandles --verbose --coverage --forceExit",
     "test:watch": "jest --watch",
     "eslint-inspect": "pnpm dlx @eslint/config-inspector",
     "generate": "stately schema generate api/stately/schema/index.ts -l js api/stately/generated",

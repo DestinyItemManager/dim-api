@@ -1,8 +1,7 @@
-import { keyPath } from '@stately-cloud/client';
 import asyncHandler from 'express-async-handler';
 import { pool } from '../db/index.js';
 import { defaultGlobalSettings, GlobalSettings } from '../shapes/global-settings.js';
-import { client } from '../stately/client.js';
+import { getGlobalSettings } from '../stately/global-settings.js';
 import { camelize } from '../utils.js';
 
 export const platformInfoHandler = asyncHandler(async (req, res) => {
@@ -11,22 +10,7 @@ export const platformInfoHandler = asyncHandler(async (req, res) => {
   let settings: GlobalSettings | undefined = undefined;
   try {
     // Try StatelyDB first, then fall back to Postgres
-    const statelySettings = await client
-      .withAllowStale(true)
-      .withTimeoutMs(500)
-      .get('GlobalSettings', keyPath`/gs-${flavor}`);
-    if (statelySettings) {
-      settings = {
-        ...statelySettings,
-        // I have to manually convert these to numbers
-        destinyProfileMinimumRefreshInterval: Number(
-          statelySettings.destinyProfileMinimumRefreshInterval,
-        ),
-        destinyProfileRefreshInterval: Number(statelySettings.destinyProfileRefreshInterval),
-        dimProfileMinimumRefreshInterval: Number(statelySettings.dimProfileMinimumRefreshInterval),
-        lastUpdated: Number(statelySettings.lastUpdated),
-      };
-    }
+    settings = await getGlobalSettings(flavor);
   } catch (e) {
     console.error('Error loading global settings from Stately:', flavor, e);
   }

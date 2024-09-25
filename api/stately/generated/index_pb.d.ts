@@ -651,9 +651,9 @@ export declare const SearchSchema: GenMessage<Search>;
  */
 export declare type Settings = Message<"stately.generated.Settings"> & {
   /**
-   * @generated from field: string memberId = 1;
+   * @generated from field: uint64 memberId = 1;
    */
-  memberId: string;
+  memberId: bigint;
 
   /**
    * @generated from field: bool itemQuality = 2;
@@ -994,6 +994,11 @@ export enum AssumeArmorMasterwork {
    * @generated from enum value: AssumeArmorMasterwork_All = 2;
    */
   AssumeArmorMasterwork_All = 2,
+
+  /**
+   * @generated from enum value: AssumeArmorMasterwork_ArtificeExotic = 3;
+   */
+  AssumeArmorMasterwork_ArtificeExotic = 3,
 }
 
 /**
@@ -1006,24 +1011,29 @@ export declare const AssumeArmorMasterworkSchema: GenEnum<AssumeArmorMasterwork>
  */
 export enum CharacterOrder {
   /**
-   * @generated from enum value: CharacterOrder_mostRecent = 0;
+   * @generated from enum value: CharacterOrder_UNSPECIFIED = 0;
    */
-  CharacterOrder_mostRecent = 0,
+  CharacterOrder_UNSPECIFIED = 0,
 
   /**
-   * @generated from enum value: CharacterOrder_mostRecentReverse = 1;
+   * @generated from enum value: CharacterOrder_mostRecent = 1;
    */
-  CharacterOrder_mostRecentReverse = 1,
+  CharacterOrder_mostRecent = 1,
 
   /**
-   * @generated from enum value: CharacterOrder_fixed = 2;
+   * @generated from enum value: CharacterOrder_mostRecentReverse = 2;
    */
-  CharacterOrder_fixed = 2,
+  CharacterOrder_mostRecentReverse = 2,
 
   /**
-   * @generated from enum value: CharacterOrder_custom = 3;
+   * @generated from enum value: CharacterOrder_fixed = 3;
    */
-  CharacterOrder_custom = 3,
+  CharacterOrder_fixed = 3,
+
+  /**
+   * @generated from enum value: CharacterOrder_custom = 4;
+   */
+  CharacterOrder_custom = 4,
 }
 
 /**

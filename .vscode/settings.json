@@ -13,7 +13,8 @@
       "source.organizeImports": "never"
     }
   },
-  "jest.jestCommandLine": "pnpm test",
+  "jest.jestCommandLine": "pnpm test --",
+  "jest.runMode": "on-demand",
   "cSpell.enabledLanguageIds": ["jsonc", "json", "markdown"],
   "cSpell.allowCompoundWords": true,
   "cSpell.ignorePaths": [

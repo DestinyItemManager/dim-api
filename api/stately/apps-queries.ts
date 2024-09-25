@@ -70,7 +70,7 @@ export async function getAppById(id: string): Promise<ApiApp | undefined> {
 }
 
 /**
- * Insert a new app into the list of registered apps, or update an existing app.
+ * Insert a new app into the list of registered apps, or get an existing app.
  */
 export async function insertApp(app: ApiApp): Promise<ApiApp> {
   let resultApp: ApiApp | undefined;
@@ -97,6 +97,10 @@ export async function insertApp(app: ApiApp): Promise<ApiApp> {
   }
 
   throw new Error('No ApiApp in result!');
+}
+
+export function deleteApp(id: string): Promise<void> {
+  return client.del(keyPathFor(id));
 }
 
 function keyPathFor(id: string) {

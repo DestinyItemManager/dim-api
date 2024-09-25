@@ -12,13 +12,13 @@ import {
   uint,
 } from '@stately-cloud/schema';
 import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
-import { DestinyClass, HashID, ItemID } from './types.js';
+import { DestinyClass, HashID, ItemID, MembershipID } from './types.js';
 
 export const CharacterOrder = enumType('CharacterOrder', {
-  mostRecent: 0,
-  mostRecentReverse: 1,
-  fixed: 2,
-  custom: 3,
+  mostRecent: 1,
+  mostRecentReverse: 2,
+  fixed: 3,
+  custom: 4,
 });
 
 export const InfuseDirection = enumType('InfuseDirection', {
@@ -96,7 +96,7 @@ export const Settings = itemType('Settings', {
   // Settings are stored per-Bungie-membership, not per-profile or per-destiny-version
   keyPath: '/member-:memberId/settings',
   fields: {
-    memberId: { type: string, fieldNum: 1 },
+    memberId: { type: MembershipID, fieldNum: 1 },
 
     /** Show item quality percentages */
     itemQuality: { type: bool, fieldNum: 2 },
@@ -108,7 +108,7 @@ export const Settings = itemType('Settings', {
     // TODO: Default should be ["primStat", "name"] but we don't support list defaults
     itemSortOrderCustom: { type: arrayOf(string), fieldNum: 5 },
     /** supplements itemSortOrderCustom by allowing each sort to be reversed */
-    itemSortReversals: { type: arrayOf(string), fieldNum: 6 },
+    itemSortReversals: { type: arrayOf(string), fieldNum: 6, required: false },
     /** How many columns to display character buckets */
     charCol: { type: Columns, fieldNum: 7, required: false },
     /** How many columns to display character buckets on Mobile */
@@ -117,7 +117,7 @@ export const Settings = itemType('Settings', {
     itemSize: { type: uint, fieldNum: 9, valid: 'this <= 66', required: false },
     /** Which categories or buckets should be collapsed? */
     // TODO: Some support for maps would be great
-    collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10 },
+    collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10, required: false },
     /** Hide triumphs once they're completed */
     completedRecordsHidden: { type: bool, fieldNum: 11 },
     /** Hide show triumphs the manifest recommends be redacted */
@@ -191,7 +191,7 @@ export const Settings = itemType('Settings', {
     perkList: { type: bool, fieldNum: 30 },
 
     /** How the loadouts menu and page should be sorted */
-    loadoutSort: { type: LoadoutSort, fieldNum: 31 },
+    loadoutSort: { type: LoadoutSort, fieldNum: 31, required: false },
 
     /** Hide tagged items in the Item Feed */
     itemFeedHideTagged: { type: bool, fieldNum: 32 },
