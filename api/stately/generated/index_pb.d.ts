@@ -253,37 +253,32 @@ export declare const InGameLoadoutIdentifiersSchema: GenMessage<InGameLoadoutIde
  */
 export declare type ItemAnnotation = Message<"stately.generated.ItemAnnotation"> & {
   /**
-   * @generated from field: uint64 hash = 1;
-   */
-  hash: bigint;
-
-  /**
-   * @generated from field: stately.generated.TagValue tag = 2;
-   */
-  tag: TagValue;
-
-  /**
-   * @generated from field: string notes = 3;
-   */
-  notes: string;
-
-  /**
-   * @generated from field: uint64 profileId = 6;
+   * @generated from field: uint64 profileId = 1;
    */
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 7;
+   * @generated from field: uint64 destinyVersion = 2;
    */
   destinyVersion: bigint;
 
   /**
-   * @generated from field: uint64 id = 4;
+   * @generated from field: stately.generated.TagValue tag = 3;
+   */
+  tag: TagValue;
+
+  /**
+   * @generated from field: string notes = 4;
+   */
+  notes: string;
+
+  /**
+   * @generated from field: uint64 id = 5;
    */
   id: bigint;
 
   /**
-   * @generated from field: sint64 craftedDate = 5;
+   * @generated from field: sint64 craftedDate = 6;
    */
   craftedDate: bigint;
 };
@@ -299,29 +294,29 @@ export declare const ItemAnnotationSchema: GenMessage<ItemAnnotation>;
  */
 export declare type ItemHashTag = Message<"stately.generated.ItemHashTag"> & {
   /**
-   * @generated from field: uint64 hash = 1;
-   */
-  hash: bigint;
-
-  /**
-   * @generated from field: stately.generated.TagValue tag = 2;
-   */
-  tag: TagValue;
-
-  /**
-   * @generated from field: string notes = 3;
-   */
-  notes: string;
-
-  /**
-   * @generated from field: uint64 profileId = 6;
+   * @generated from field: uint64 profileId = 1;
    */
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 7;
+   * @generated from field: uint64 destinyVersion = 2;
    */
   destinyVersion: bigint;
+
+  /**
+   * @generated from field: stately.generated.TagValue tag = 3;
+   */
+  tag: TagValue;
+
+  /**
+   * @generated from field: string notes = 4;
+   */
+  notes: string;
+
+  /**
+   * @generated from field: uint64 hash = 5;
+   */
+  hash: bigint;
 };
 
 /**

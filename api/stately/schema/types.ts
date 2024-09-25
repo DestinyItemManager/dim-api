@@ -1,6 +1,8 @@
 import { enumType, type, uint } from '@stately-cloud/schema';
 
 export const ItemID = type('ItemID', uint, { docs: 'The unique ID of an inventory item' });
+
+// Manifest hashes are actually a uint32
 export const HashID = type('HashID', uint, {
   docs: 'The hash ID of a definition',
 });
@@ -9,7 +11,7 @@ export const MembershipID = type('MembershipID', uint, {
   docs: 'The unique ID of a Bungie.net membership',
 });
 export const ProfileID = type('ProfileID', uint, {
-  docs: 'The unique ID of a Destiny profile. These can be moved between diffferent Bungie.net memberships.',
+  docs: 'The unique ID of a Destiny profile. These can be moved between different Bungie.net memberships.',
 });
 
 // This could be an enum, but it's easy enough as a constrained number.
