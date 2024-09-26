@@ -49,8 +49,8 @@ export async function getAllItemAnnotationsForUser(platformMembershipId: string)
   // Rather than list ALL items under the profile and filter down to item
   // annotations, just separately get the D1 and D2 tags. We probably won't use
   // this - for export we *will* scrape a whole profile.
-  const d1Annotations = getItemAnnotationsForProfile(platformMembershipId, 2);
-  const d2Annotations = getItemAnnotationsForProfile(platformMembershipId, 1);
+  const d1Annotations = getItemAnnotationsForProfile(platformMembershipId, 1);
+  const d2Annotations = getItemAnnotationsForProfile(platformMembershipId, 2);
   return (await d1Annotations)
     .map((a) => ({ platformMembershipId, destinyVersion: 1 as DestinyVersion, annotation: a }))
     .concat(

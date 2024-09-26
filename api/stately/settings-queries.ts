@@ -1,9 +1,7 @@
-import { MessageInitShape } from '@bufbuild/protobuf';
 import { keyPath, ListToken } from '@stately-cloud/client';
 import { DestinyClass } from 'bungie-api-ts/destiny2';
-import _ from 'lodash';
 import { CustomStatDef } from '../shapes/custom-stats.js';
-import { LoadoutParameters, LoadoutSort } from '../shapes/loadouts.js';
+import { LoadoutSort } from '../shapes/loadouts.js';
 import {
   defaultSettings,
   InfuseDirection,
@@ -14,9 +12,7 @@ import {
 import { client } from './client.js';
 import {
   CharacterOrder,
-  CustomStatDefSchema,
   DescriptionOptions,
-  LoadoutParametersSchema,
   InfuseDirection as StatelyInfuseDirection,
   ItemPopupTab as StatelyItemPopupTab,
   LoadoutSort as StatelyLoadoutSort,
@@ -24,12 +20,10 @@ import {
   VaultWeaponGroupingStyle as StatelyVaultWeaponGroupingStyle,
 } from './generated/index.js';
 import {
-  bigIntToNumber,
-  enumToStringUnion,
-  listToMap,
-  stripDefaults,
-  stripTypeName,
-} from './stately-utils.js';
+  convertLoadoutParametersFromStately,
+  convertLoadoutParametersToStately,
+} from './loadouts-queries.js';
+import { bigIntToNumber, enumToStringUnion, listToMap, stripTypeName } from './stately-utils.js';
 
 function keyFor(bungieMembershipId: number) {
   return keyPath`/member-${bungieMembershipId}/settings`;
@@ -97,24 +91,9 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
   const collapsedSectionsMap = Object.fromEntries(
     collapsedSections.map((s) => [s.key, s.collapsed]),
   );
-  let loParametersFixed: LoadoutParameters | undefined;
-  if (loParameters) {
-    const { assumeArmorMasterwork, statConstraints, ...loParametersDefaulted } = stripTypeName(
-      bigIntToNumber(loParameters),
-    );
-    loParametersFixed = {
-      ...stripDefaults(loParametersDefaulted),
-      // DIM's AssumArmorMasterwork enum starts at 1
-      assumeArmorMasterwork: (assumeArmorMasterwork ?? 0) + 1,
-      statConstraints: statConstraints.map((c) => {
-        const mostlyConverted = stripTypeName(bigIntToNumber(c));
-        return {
-          ...stripDefaults(mostlyConverted),
-          statHash: mostlyConverted.statHash,
-        };
-      }),
-    };
-  }
+  const loParametersFixed = loParameters
+    ? convertLoadoutParametersFromStately(loParameters)
+    : undefined;
   const loStatConstraintsByClassMap = listToMap(
     'classType',
     'constraints',
@@ -199,15 +178,7 @@ export function convertToStatelyItem(
   // TODO: In Postgres, because we store settings as JSON, I do a clever thing
   // where I only store the diff vs. the default settings. That's harder to do
   // in StatelyDB because the settings are protobufs.
-  let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
-  if (!_.isEmpty(loParameters)) {
-    const { assumeArmorMasterwork, ...loParametersDefaulted } = loParameters;
-    loParametersFixed = {
-      ...loParametersDefaulted,
-      // DIM's AssumArmorMasterwork enum starts at 1
-      assumeArmorMasterwork: Number(assumeArmorMasterwork) - 1,
-    };
-  }
+  const loParametersFixed = convertLoadoutParametersToStately(loParameters);
 
   const loStatConstraintsByClassList = Object.entries(loStatConstraintsByClass).map(
     ([classType, constraints]) => ({
@@ -216,9 +187,9 @@ export function convertToStatelyItem(
     }),
   );
 
-  const customStatsFixed: MessageInitShape<typeof CustomStatDefSchema>[] = customStats.map((c) => {
+  const customStatsFixed = customStats.map((c) => {
     const { class: klass, statHash, weights, ...rest } = c;
-    return {
+    return client.create('CustomStatDef', {
       class: klass as number,
       statHash: Number(statHash),
       weights: Object.entries(weights).map(([statHash, weight]) => ({
@@ -226,7 +197,7 @@ export function convertToStatelyItem(
         weight: weight ?? 0,
       })),
       ...rest,
-    };
+    });
   });
 
   const customTotalStatsList = Object.entries(customTotalStatsByClass).map(

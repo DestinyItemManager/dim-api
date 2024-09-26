@@ -53,7 +53,7 @@ export interface Loadout {
    * @deprecated in favor of parameters.clearWeapons and parameters.clearArmor
    */
   /** Whether to clear out other items when applying this loadout */
-  clearSpace: boolean;
+  clearSpace?: boolean;
   /** List of equipped items in the loadout */
   equipped: LoadoutItem[];
   /** List of unequipped items in the loadout */
