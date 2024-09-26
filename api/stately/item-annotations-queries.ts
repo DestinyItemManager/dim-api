@@ -6,7 +6,7 @@ import {
   ItemAnnotation as StatelyItemAnnotation,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { enumToStringUnion } from './stately-utils.js';
+import { clearValue, enumToStringUnion } from './stately-utils.js';
 
 function keyFor(
   platformMembershipId: string,
@@ -80,7 +80,7 @@ function convertItemAnnotation(item: StatelyItemAnnotation): ItemAnnotation {
 }
 
 /**
- * Insert or update (upsert) a single item annotation. Loadouts are totally replaced when updated.
+ * Insert or update (upsert) a single item annotation.
  */
 export async function updateItemAnnotation(
   platformMembershipId: string,
@@ -104,7 +104,7 @@ export async function updateItemAnnotation(
       existing = client.create('ItemAnnotation', {
         id: BigInt(itemAnnotation.id),
         profileId: BigInt(platformMembershipId),
-        destinyVersion: BigInt(destinyVersion),
+        destinyVersion,
       });
     }
 
@@ -126,21 +126,6 @@ export async function updateItemAnnotation(
 
     await txn.put(existing);
   });
-}
-
-/**
- * If the value is explicitly set to null or empty string, we return "clear" which will remove the value from the database.
- * If it's undefined we return null, which will preserve the existing value.
- * If it's set, we'll return the input which will update the existing value.
- */
-function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | null {
-  if (val === null || (val !== undefined && val.length === 0)) {
-    return 'clear';
-  } else if (!val) {
-    return null;
-  } else {
-    return val;
-  }
 }
 
 /**

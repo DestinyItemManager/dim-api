@@ -51,9 +51,9 @@ export declare const ApiAppSchema: GenMessage<ApiApp>;
  */
 export declare type ArtifactUnlocks = Message<"stately.generated.ArtifactUnlocks"> & {
   /**
-   * @generated from field: repeated uint64 unlockedItemHashes = 1;
+   * @generated from field: repeated uint32 unlockedItemHashes = 1;
    */
-  unlockedItemHashes: bigint[];
+  unlockedItemHashes: number[];
 
   /**
    * @generated from field: uint64 seasonNumber = 2;
@@ -93,9 +93,9 @@ export declare const CollapsedSectionSchema: GenMessage<CollapsedSection>;
  */
 export declare type CustomStatDef = Message<"stately.generated.CustomStatDef"> & {
   /**
-   * @generated from field: uint64 statHash = 1;
+   * @generated from field: uint32 statHash = 1;
    */
-  statHash: bigint;
+  statHash: number;
 
   /**
    * @generated from field: string label = 2;
@@ -129,9 +129,9 @@ export declare const CustomStatDefSchema: GenMessage<CustomStatDef>;
  */
 export declare type CustomStatWeightsEntry = Message<"stately.generated.CustomStatWeightsEntry"> & {
   /**
-   * @generated from field: uint64 statHash = 1;
+   * @generated from field: uint32 statHash = 1;
    */
-  statHash: bigint;
+  statHash: number;
 
   /**
    * @generated from field: double weight = 2;
@@ -155,9 +155,9 @@ export declare type CustomStatsEntry = Message<"stately.generated.CustomStatsEnt
   classType: DestinyClass;
 
   /**
-   * @generated from field: repeated uint64 customStats = 2;
+   * @generated from field: repeated uint32 customStats = 2;
    */
-  customStats: bigint[];
+  customStats: number[];
 };
 
 /**
@@ -258,9 +258,9 @@ export declare type ItemAnnotation = Message<"stately.generated.ItemAnnotation">
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 2;
+   * @generated from field: uint32 destinyVersion = 2;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 
   /**
    * @generated from field: stately.generated.TagValue tag = 3;
@@ -299,9 +299,9 @@ export declare type ItemHashTag = Message<"stately.generated.ItemHashTag"> & {
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 2;
+   * @generated from field: uint32 destinyVersion = 2;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 
   /**
    * @generated from field: stately.generated.TagValue tag = 3;
@@ -314,9 +314,9 @@ export declare type ItemHashTag = Message<"stately.generated.ItemHashTag"> & {
   notes: string;
 
   /**
-   * @generated from field: uint64 hash = 5;
+   * @generated from field: uint32 hash = 5;
    */
-  hash: bigint;
+  hash: number;
 };
 
 /**
@@ -375,9 +375,9 @@ export declare type Loadout = Message<"stately.generated.Loadout"> & {
   lastUpdatedAt: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 10;
+   * @generated from field: uint32 destinyVersion = 10;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 
   /**
    * @generated from field: uint64 profileId = 11;
@@ -401,9 +401,9 @@ export declare type LoadoutItem = Message<"stately.generated.LoadoutItem"> & {
   id: bigint;
 
   /**
-   * @generated from field: uint64 hash = 2;
+   * @generated from field: uint32 hash = 2;
    */
-  hash: bigint;
+  hash: number;
 
   /**
    * @generated from field: uint64 amount = 3;
@@ -437,9 +437,9 @@ export declare type LoadoutParameters = Message<"stately.generated.LoadoutParame
   statConstraints: StatConstraint[];
 
   /**
-   * @generated from field: repeated uint64 mods = 2;
+   * @generated from field: repeated uint32 mods = 2;
    */
-  mods: bigint[];
+  mods: number[];
 
   /**
    * @generated from field: bool clearMods = 3;
@@ -482,9 +482,9 @@ export declare type LoadoutParameters = Message<"stately.generated.LoadoutParame
   assumeArmorMasterwork: AssumeArmorMasterwork;
 
   /**
-   * @generated from field: uint64 exoticArmorHash = 11;
+   * @generated from field: uint32 exoticArmorHash = 11;
    */
-  exoticArmorHash: bigint;
+  exoticArmorHash: number;
 
   /**
    * @generated from field: stately.generated.InGameLoadoutIdentifiers inGameIdentifiers = 12;
@@ -553,9 +553,9 @@ export declare type LoadoutShare = Message<"stately.generated.LoadoutShare"> & {
   lastUpdatedAt: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 10;
+   * @generated from field: uint32 destinyVersion = 10;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 
   /**
    * @generated from field: uint64 profileId = 11;
@@ -574,14 +574,14 @@ export declare const LoadoutShareSchema: GenMessage<LoadoutShare>;
  */
 export declare type ModsByBucketEntry = Message<"stately.generated.ModsByBucketEntry"> & {
   /**
-   * @generated from field: uint64 bucketHash = 1;
+   * @generated from field: uint32 bucketHash = 1;
    */
-  bucketHash: bigint;
+  bucketHash: number;
 
   /**
-   * @generated from field: repeated uint64 modHashes = 2;
+   * @generated from field: repeated uint32 modHashes = 2;
    */
-  modHashes: bigint[];
+  modHashes: number[];
 };
 
 /**
@@ -887,9 +887,9 @@ export declare type SocketOverride = Message<"stately.generated.SocketOverride">
   socketIndex: bigint;
 
   /**
-   * @generated from field: uint64 itemHash = 2;
+   * @generated from field: uint32 itemHash = 2;
    */
-  itemHash: bigint;
+  itemHash: number;
 };
 
 /**
@@ -903,9 +903,9 @@ export declare const SocketOverrideSchema: GenMessage<SocketOverride>;
  */
 export declare type StatConstraint = Message<"stately.generated.StatConstraint"> & {
   /**
-   * @generated from field: uint64 statHash = 1;
+   * @generated from field: uint32 statHash = 1;
    */
-  statHash: bigint;
+  statHash: number;
 
   /**
    * @generated from field: uint64 minTier = 2;
@@ -950,9 +950,9 @@ export declare const StatConstraintsEntrySchema: GenMessage<StatConstraintsEntry
  */
 export declare type Triumph = Message<"stately.generated.Triumph"> & {
   /**
-   * @generated from field: uint64 recordHash = 1;
+   * @generated from field: uint32 recordHash = 1;
    */
-  recordHash: bigint;
+  recordHash: number;
 
   /**
    * @generated from field: uint64 profileId = 2;
@@ -960,9 +960,9 @@ export declare type Triumph = Message<"stately.generated.Triumph"> & {
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 7;
+   * @generated from field: uint32 destinyVersion = 7;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 };
 
 /**

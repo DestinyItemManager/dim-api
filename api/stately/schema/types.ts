@@ -1,9 +1,10 @@
+import { FieldDescriptorProto_Type } from '@bufbuild/protobuf/wkt';
 import { enumType, type, uint } from '@stately-cloud/schema';
 
 export const ItemID = type('ItemID', uint, { docs: 'The unique ID of an inventory item' });
 
 // Manifest hashes are actually a uint32
-export const HashID = type('HashID', uint, {
+export const HashID = type('HashID', FieldDescriptorProto_Type.UINT32, {
   docs: 'The hash ID of a definition',
 });
 
@@ -15,7 +16,7 @@ export const ProfileID = type('ProfileID', uint, {
 });
 
 // This could be an enum, but it's easy enough as a constrained number.
-export const DestinyVersion = type('DestinyVersion', uint, {
+export const DestinyVersion = type('DestinyVersion', FieldDescriptorProto_Type.UINT32, {
   valid: 'this == uint(1) || this == uint(2)',
 });
 

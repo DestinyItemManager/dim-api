@@ -1,6 +1,7 @@
 import {
   BigIntToNumber,
   bigIntToNumber,
+  clearValue,
   listToMap,
   NumberToBigInt,
   numberToBigInt,
@@ -121,5 +122,20 @@ describe('stripDefaults', () => {
     };
 
     expect(stripDefaults(input)).toEqual(output);
+  });
+});
+
+describe('clearValue', () => {
+  it('returns "clear" for null or empty strings', () => {
+    expect(clearValue(null)).toBe('clear');
+    expect(clearValue('')).toBe('clear');
+  });
+
+  it('returns null for undefined', () => {
+    expect(clearValue(undefined)).toBe(null);
+  });
+
+  it('returns the input for other values', () => {
+    expect(clearValue('foo')).toBe('foo');
   });
 });
