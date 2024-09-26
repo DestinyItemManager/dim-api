@@ -56,9 +56,9 @@ export declare type ArtifactUnlocks = Message<"stately.generated.ArtifactUnlocks
   unlockedItemHashes: number[];
 
   /**
-   * @generated from field: uint64 seasonNumber = 2;
+   * @generated from field: uint32 seasonNumber = 2;
    */
-  seasonNumber: bigint;
+  seasonNumber: number;
 };
 
 /**
@@ -227,19 +227,19 @@ export declare const GlobalSettingsSchema: GenMessage<GlobalSettings>;
  */
 export declare type InGameLoadoutIdentifiers = Message<"stately.generated.InGameLoadoutIdentifiers"> & {
   /**
-   * @generated from field: uint64 colorHash = 1;
+   * @generated from field: uint32 colorHash = 1;
    */
-  colorHash: bigint;
+  colorHash: number;
 
   /**
-   * @generated from field: uint64 iconHash = 2;
+   * @generated from field: uint32 iconHash = 2;
    */
-  iconHash: bigint;
+  iconHash: number;
 
   /**
-   * @generated from field: uint64 nameHash = 3;
+   * @generated from field: uint32 nameHash = 3;
    */
-  nameHash: bigint;
+  nameHash: number;
 };
 
 /**
@@ -406,9 +406,9 @@ export declare type LoadoutItem = Message<"stately.generated.LoadoutItem"> & {
   hash: number;
 
   /**
-   * @generated from field: uint64 amount = 3;
+   * @generated from field: uint32 amount = 3;
    */
-  amount: bigint;
+  amount: number;
 
   /**
    * @generated from field: repeated stately.generated.SocketOverride socketOverrides = 4;
@@ -600,9 +600,9 @@ export declare type Search = Message<"stately.generated.Search"> & {
   query: string;
 
   /**
-   * @generated from field: uint64 usageCount = 2;
+   * @generated from field: uint32 usageCount = 2;
    */
-  usageCount: bigint;
+  usageCount: number;
 
   /**
    * @generated from field: bool saved = 3;
@@ -630,9 +630,9 @@ export declare type Search = Message<"stately.generated.Search"> & {
   profileId: bigint;
 
   /**
-   * @generated from field: uint64 destinyVersion = 8;
+   * @generated from field: uint32 destinyVersion = 8;
    */
-  destinyVersion: bigint;
+  destinyVersion: number;
 };
 
 /**
@@ -676,19 +676,19 @@ export declare type Settings = Message<"stately.generated.Settings"> & {
   itemSortReversals: string[];
 
   /**
-   * @generated from field: uint64 charCol = 7;
+   * @generated from field: uint32 charCol = 7;
    */
-  charCol: bigint;
+  charCol: number;
 
   /**
-   * @generated from field: uint64 charColMobile = 8;
+   * @generated from field: uint32 charColMobile = 8;
    */
-  charColMobile: bigint;
+  charColMobile: number;
 
   /**
-   * @generated from field: uint64 itemSize = 9;
+   * @generated from field: uint32 itemSize = 9;
    */
-  itemSize: bigint;
+  itemSize: number;
 
   /**
    * @generated from field: repeated stately.generated.CollapsedSection collapsedSections = 10;
@@ -711,9 +711,9 @@ export declare type Settings = Message<"stately.generated.Settings"> & {
   farmingMakeRoomForItems: boolean;
 
   /**
-   * @generated from field: uint64 inventoryClearSpaces = 14;
+   * @generated from field: uint32 inventoryClearSpaces = 14;
    */
-  inventoryClearSpaces: bigint;
+  inventoryClearSpaces: number;
 
   /**
    * @generated from field: bool hideCompletedRecords = 15;
@@ -882,9 +882,9 @@ export declare const SettingsSchema: GenMessage<Settings>;
  */
 export declare type SocketOverride = Message<"stately.generated.SocketOverride"> & {
   /**
-   * @generated from field: uint64 socketIndex = 1;
+   * @generated from field: uint32 socketIndex = 1;
    */
-  socketIndex: bigint;
+  socketIndex: number;
 
   /**
    * @generated from field: uint32 itemHash = 2;
@@ -908,14 +908,14 @@ export declare type StatConstraint = Message<"stately.generated.StatConstraint">
   statHash: number;
 
   /**
-   * @generated from field: uint64 minTier = 2;
+   * @generated from field: uint32 minTier = 2;
    */
-  minTier: bigint;
+  minTier: number;
 
   /**
-   * @generated from field: uint64 maxTier = 3;
+   * @generated from field: uint32 maxTier = 3;
    */
-  maxTier: bigint;
+  maxTier: number;
 };
 
 /**

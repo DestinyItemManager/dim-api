@@ -8,15 +8,14 @@ import {
   string,
   timestampMilliseconds,
   timestampSeconds,
-  uint,
   uuid,
 } from '@stately-cloud/schema';
-import { DestinyClass, DestinyVersion, HashID, ItemID, ProfileID } from './types.js';
+import { DestinyClass, DestinyVersion, HashID, ItemID, ProfileID, uint32 } from './types.js';
 
 export const SocketOverride = objectType('SocketOverride', {
   fields: {
     /** The index of the socket in the item */
-    socketIndex: { type: uint, fieldNum: 1 },
+    socketIndex: { type: uint32, fieldNum: 1 },
     /** The hash of the item that should be in this socket */
     itemHash: { type: HashID, fieldNum: 2 },
   },
@@ -29,7 +28,7 @@ export const LoadoutItem = objectType('LoadoutItem', {
     /** DestinyInventoryItemDefinition hash of the item */
     hash: { type: HashID, fieldNum: 2 },
     /** Optional amount (for consumables), default to zero */
-    amount: { type: uint, fieldNum: 3, required: false },
+    amount: { type: uint32, fieldNum: 3, required: false },
     /**
      * The socket overrides for the item. These signal what DestinyInventoryItemDefinition
      * (by it's hash) is supposed to be socketed into the given socket index.
@@ -47,9 +46,9 @@ export const LoadoutItem = objectType('LoadoutItem', {
 /** normally found inside DestinyLoadoutComponent, mapped to respective definition tables */
 export const InGameLoadoutIdentifiers = objectType('InGameLoadoutIdentifiers', {
   fields: {
-    colorHash: { type: uint, fieldNum: 1 },
-    iconHash: { type: uint, fieldNum: 2 },
-    nameHash: { type: uint, fieldNum: 3 },
+    colorHash: { type: HashID, fieldNum: 1 },
+    iconHash: { type: HashID, fieldNum: 2 },
+    nameHash: { type: HashID, fieldNum: 3 },
   },
 });
 
@@ -128,7 +127,7 @@ export function ArtifactUnlocks() {
       /** The item hashes of the unlocked artifact perk items. */
       unlockedItemHashes: { type: arrayOf(HashID), fieldNum: 1 },
       /** The season this set of artifact unlocks was chosen from. */
-      seasonNumber: { type: uint, fieldNum: 2 },
+      seasonNumber: { type: uint32, fieldNum: 2 },
     },
   });
 }
@@ -232,9 +231,9 @@ export function StatConstraint() {
       /** The stat definition hash of the stat */
       statHash: { type: HashID, fieldNum: 1 },
       /** The minimum tier value for the stat. 0 if unset. */
-      minTier: { type: uint, fieldNum: 2, required: false },
+      minTier: { type: uint32, fieldNum: 2, required: false, valid: 'this <= 10 && this >= 0' },
       /** The maximum tier value for the stat. 10 if unset. */
-      maxTier: { type: uint, fieldNum: 3, required: false },
+      maxTier: { type: uint32, fieldNum: 3, required: false, valid: 'this <= 10 && this >= 0' },
     },
   });
 }

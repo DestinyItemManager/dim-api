@@ -27,7 +27,6 @@ import {
   bigIntToNumber,
   enumToStringUnion,
   listToMap,
-  numberToBigInt,
   stripDefaults,
   stripTypeName,
 } from './stately-utils.js';
@@ -202,7 +201,7 @@ export function convertToStatelyItem(
   // in StatelyDB because the settings are protobufs.
   let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
   if (!_.isEmpty(loParameters)) {
-    const { assumeArmorMasterwork, ...loParametersDefaulted } = numberToBigInt(loParameters);
+    const { assumeArmorMasterwork, ...loParametersDefaulted } = loParameters;
     loParametersFixed = {
       ...loParametersDefaulted,
       // DIM's AssumArmorMasterwork enum starts at 1
@@ -213,7 +212,7 @@ export function convertToStatelyItem(
   const loStatConstraintsByClassList = Object.entries(loStatConstraintsByClass).map(
     ([classType, constraints]) => ({
       classType: Number(classType),
-      constraints: numberToBigInt(constraints),
+      constraints: constraints,
     }),
   );
 
@@ -221,9 +220,9 @@ export function convertToStatelyItem(
     const { class: klass, statHash, weights, ...rest } = c;
     return {
       class: klass as number,
-      statHash: BigInt(statHash),
+      statHash: Number(statHash),
       weights: Object.entries(weights).map(([statHash, weight]) => ({
-        statHash: BigInt(statHash),
+        statHash: Number(statHash),
         weight: weight ?? 0,
       })),
       ...rest,
@@ -233,12 +232,12 @@ export function convertToStatelyItem(
   const customTotalStatsList = Object.entries(customTotalStatsByClass).map(
     ([classType, customStats]) => ({
       classType: Number(classType),
-      customStats: customStats.map((c) => BigInt(c)),
+      customStats,
     }),
   );
 
   return client.create('Settings', {
-    ...numberToBigInt(rest),
+    ...rest,
     memberId: BigInt(bungieMembershipId),
     wishListSources: wishListSource.split('|'),
     characterOrder: CharacterOrder[`CharacterOrder_${characterOrder}`],

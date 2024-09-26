@@ -9,10 +9,9 @@ import {
   objectType,
   string,
   type,
-  uint,
 } from '@stately-cloud/schema';
 import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
-import { DestinyClass, HashID, ItemID, MembershipID } from './types.js';
+import { DestinyClass, HashID, ItemID, MembershipID, uint32 } from './types.js';
 
 export const CharacterOrder = enumType('CharacterOrder', {
   mostRecent: 1,
@@ -38,7 +37,7 @@ export const VaultWeaponGroupingStyle = enumType('VaultWeaponGroupingStyle', {
   Inline: 1,
 });
 
-const Columns = type('columns', uint, { valid: 'this <= 5 && this >= 2' });
+const Columns = type('columns', uint32, { valid: 'this <= 5 && this >= 2' });
 
 export const CollapsedSection = objectType('CollapsedSection', {
   fields: {
@@ -114,7 +113,7 @@ export const Settings = itemType('Settings', {
     /** How many columns to display character buckets on Mobile */
     charColMobile: { type: Columns, fieldNum: 8, required: false },
     /** How big in pixels to draw items - start smaller for iPad */
-    itemSize: { type: uint, fieldNum: 9, valid: 'this <= 66', required: false },
+    itemSize: { type: uint32, fieldNum: 9, valid: 'this <= 66', required: false },
     /** Which categories or buckets should be collapsed? */
     // TODO: Some support for maps would be great
     collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10, required: false },
@@ -125,7 +124,7 @@ export const Settings = itemType('Settings', {
     /** Whether to keep one slot per item type open */
     farmingMakeRoomForItems: { type: bool, fieldNum: 13 },
     /** How many spaces to clear when using Farming Mode (make space). */
-    inventoryClearSpaces: { type: uint, fieldNum: 14, required: false, valid: 'this <= 9' },
+    inventoryClearSpaces: { type: uint32, fieldNum: 14, required: false, valid: 'this <= 9' },
 
     /** Hide completed triumphs/collections */
     hideCompletedRecords: { type: bool, fieldNum: 15 },
