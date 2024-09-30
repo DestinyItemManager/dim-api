@@ -1,5 +1,6 @@
 import { keyPath } from '@stately-cloud/client';
 import { client } from './client.js';
+import { batches } from './stately-utils.js';
 
 function keyFor(platformMembershipId: string, triumphHash: number) {
   return keyPath`/p-${platformMembershipId}/d-2/triumph-${triumphHash}`;
@@ -55,5 +56,7 @@ export async function deleteAllTrackedTriumphs(platformMembershipId: string): Pr
   if (!triumphs.length) {
     return;
   }
-  await client.del(...triumphs.map((recordHash) => keyFor(platformMembershipId, recordHash)));
+  for (const batch of batches(triumphs)) {
+    await client.del(...batch.map((recordHash) => keyFor(platformMembershipId, recordHash)));
+  }
 }

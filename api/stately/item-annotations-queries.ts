@@ -6,7 +6,7 @@ import {
   ItemAnnotation as StatelyItemAnnotation,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { clearValue, enumToStringUnion } from './stately-utils.js';
+import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
 
 function keyFor(
   platformMembershipId: string,
@@ -150,7 +150,9 @@ export async function deleteAllItemAnnotations(platformMembershipId: string): Pr
   if (!allAnnotations.length) {
     return;
   }
-  return client.del(
-    ...allAnnotations.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.annotation.id)),
-  );
+  for (const batch of batches(allAnnotations)) {
+    await client.del(
+      ...batch.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.annotation.id)),
+    );
+  }
 }

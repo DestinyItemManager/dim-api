@@ -125,3 +125,16 @@ export function clearValue<T extends string>(val: T | null | undefined): T | 'cl
     return val;
   }
 }
+
+const STATELY_MAX_BATCH_SIZE = 25;
+
+/**
+ * Yield batches of no more than STATELY_MAX_BATCH_SIZE items from an array.
+ * Otherwise you'll get an error from Stately batch APIs.
+ */
+export function* batches<T>(input: T[]): Generator<T[]> {
+  const numBatches = Math.ceil(input.length / STATELY_MAX_BATCH_SIZE);
+  for (let i = 0; i < numBatches; i += 1) {
+    yield input.slice(i * STATELY_MAX_BATCH_SIZE, (i + 1) * STATELY_MAX_BATCH_SIZE);
+  }
+}

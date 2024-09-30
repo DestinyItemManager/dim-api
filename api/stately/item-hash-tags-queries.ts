@@ -6,7 +6,7 @@ import {
   ItemHashTag as StatelyItemHashTag,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { clearValue, enumToStringUnion } from './stately-utils.js';
+import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
 
 function keyFor(platformMembershipId: string, destinyVersion: DestinyVersion, itemHash: number) {
   return keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/iht-${itemHash}`;
@@ -112,9 +112,12 @@ export async function deleteAllItemHashTags(platformMembershipId: string): Promi
   if (!allHashTags.length) {
     return;
   }
-  return client.del(
-    ...allHashTags.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.hashTag.hash)),
-  );
+
+  for (const batch of batches(allHashTags)) {
+    await client.del(
+      ...batch.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.hashTag.hash)),
+    );
+  }
 }
 
 /**

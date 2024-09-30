@@ -7,6 +7,7 @@ import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { client } from './client.js';
 import { Search as StatelySearch, SearchType as StatelySearchType } from './generated/index.js';
+import { batches } from './stately-utils.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -236,9 +237,11 @@ export async function deleteAllSearches(platformMembershipId: string): Promise<v
   if (!searches.length) {
     return;
   }
-  await client.del(
-    ...searches.map((search) =>
-      keyFor(platformMembershipId, search.destinyVersion, search.search.query),
-    ),
-  );
+  for (const batch of batches(searches)) {
+    await client.del(
+      ...batch.map((search) =>
+        keyFor(platformMembershipId, search.destinyVersion, search.search.query),
+      ),
+    );
+  }
 }

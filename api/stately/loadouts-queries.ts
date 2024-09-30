@@ -16,7 +16,7 @@ import {
   LoadoutParameters as StatelyLoadoutParameters,
   LoadoutShare as StatelyLoadoutShare,
 } from './generated/index.js';
-import { listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
+import { batches, listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
 
 function keyFor(
   platformMembershipId: string,
@@ -286,8 +286,10 @@ export async function deleteAllLoadouts(platformMembershipId: string): Promise<v
   if (!allLoadouts.length) {
     return;
   }
-  console.error('Deleting all loadouts for', allLoadouts);
-  return client.del(
-    ...allLoadouts.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.loadout.id)),
-  );
+
+  for (const batch of batches(allLoadouts)) {
+    await client.del(
+      ...batch.map((a) => keyFor(a.platformMembershipId, a.destinyVersion, a.loadout.id)),
+    );
+  }
 }

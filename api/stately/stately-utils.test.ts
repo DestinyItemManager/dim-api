@@ -1,4 +1,5 @@
 import {
+  batches,
   BigIntToNumber,
   bigIntToNumber,
   clearValue,
@@ -138,4 +139,18 @@ describe('clearValue', () => {
   it('returns the input for other values', () => {
     expect(clearValue('foo')).toBe('foo');
   });
+});
+
+describe('batches', () => {
+  for (const size of [0, 1, 25, 35, 77]) {
+    it(`batches an array of length ${size}`, () => {
+      const input = Array.from(new Array(size).fill(1));
+      let num = 0;
+      for (const batch of batches(input)) {
+        num += batch.length;
+        expect(batch.length).toBeLessThanOrEqual(25);
+      }
+      expect(num).toBe(size);
+    });
+  }
 });
