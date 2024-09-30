@@ -199,9 +199,17 @@ export function convertLoadoutParametersToStately(
 ): MessageInitShape<typeof LoadoutParametersSchema> | undefined {
   let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
   if (!_.isEmpty(loParameters)) {
-    const { assumeArmorMasterwork, ...loParametersDefaulted } = loParameters;
+    const { assumeArmorMasterwork, statConstraints, ...loParametersDefaulted } = loParameters;
     loParametersFixed = {
       ...loParametersDefaulted,
+      statConstraints:
+        statConstraints && statConstraints.length > 0
+          ? statConstraints.map((c) => ({
+              statHash: c.statHash,
+              minTier: c.minTier ?? 0,
+              maxTier: c.maxTier ?? 10,
+            }))
+          : [],
       // DIM's AssumArmorMasterwork enum starts at 1
       assumeArmorMasterwork: Number(assumeArmorMasterwork) - 1,
     };

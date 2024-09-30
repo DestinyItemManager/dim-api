@@ -19,6 +19,13 @@ export const Search = itemType('Search', {
   // stuff in the profile). Technically the searches could be shared between
   // profiles, but if we did that we'd need more queries.
   keyPath: '/p-:profileId/d-:destinyVersion/search-:qhash',
+  // TODO: enable last usage index
+  // indexes: [
+  //   {
+  //     groupLocalIndex: 1,
+  //     field: 'lastUsage',
+  //   },
+  // ],
   fields: {
     /**
      * The full search query. These are
@@ -28,7 +35,11 @@ export const Search = itemType('Search', {
     usageCount: { type: uint32, fieldNum: 2, required: false },
     /** Has this search been saved/favorite'd/pinned by the user? */
     saved: { type: bool, fieldNum: 3 },
-    /** The last time this was used, as a unix millisecond timestamp. */
+    /**
+     * The last time this was used, as a unix millisecond timestamp. We don't
+     * use fromMetadata: 'lastModifiedAtTime' because on import we want to set this
+     * to whatever value it was, not the insert time.
+     */
     lastUsage: { type: timestampMilliseconds, fieldNum: 4 },
     /**
      * Which kind of thing is this search for? Searches of different types are

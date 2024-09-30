@@ -2,7 +2,7 @@ import { keyPath } from '@stately-cloud/client';
 import { client } from './client.js';
 
 function keyFor(platformMembershipId: string, triumphHash: number) {
-  return keyPath`/member-${platformMembershipId}/d-2/triumph-${triumphHash}`;
+  return keyPath`/p-${platformMembershipId}/d-2/triumph-${triumphHash}`;
 }
 
 /**
