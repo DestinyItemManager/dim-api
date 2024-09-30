@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { v4 as uuid } from 'uuid';
-import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
+import { Loadout } from '../shapes/loadouts.js';
 import {
   convertLoadoutFromStately,
   convertLoadoutToStately,
@@ -35,7 +35,7 @@ const loadout: Loadout = {
       hash: 200,
       id: '5678',
       amount: 10,
-    } as any as LoadoutItem,
+    },
   ],
 };
 

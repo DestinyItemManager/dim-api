@@ -561,6 +561,11 @@ export declare type LoadoutShare = Message<"stately.generated.LoadoutShare"> & {
    * @generated from field: uint64 profileId = 11;
    */
   profileId: bigint;
+
+  /**
+   * @generated from field: uint32 viewCount = 15;
+   */
+  viewCount: number;
 };
 
 /**

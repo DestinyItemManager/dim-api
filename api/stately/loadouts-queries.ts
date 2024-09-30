@@ -9,9 +9,12 @@ import { isValidItemId } from '../utils.js';
 import { client } from './client.js';
 import {
   LoadoutParametersSchema,
+  LoadoutSchema,
+  LoadoutShareSchema,
   Loadout as StatelyLoadout,
   LoadoutItem as StatelyLoadoutItem,
   LoadoutParameters as StatelyLoadoutParameters,
+  LoadoutShare as StatelyLoadoutShare,
 } from './generated/index.js';
 import { listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
 
@@ -72,9 +75,10 @@ export async function getAllLoadoutsForUser(platformMembershipId: string): Promi
     );
 }
 
-export function convertLoadoutFromStately(item: StatelyLoadout): Loadout {
+export function convertLoadoutFromStately(item: StatelyLoadout | StatelyLoadoutShare): Loadout {
   const loadout: Loadout = {
-    id: stringifyUUID(item.id),
+    // TODO: it's a bit weird to use the share ID for loadout shares. We should probably just mint a new UUID.
+    id: typeof item.id === 'string' ? item.id : stringifyUUID(item.id),
     name: item.name,
     classType: item.classType as number as DestinyClass,
     equipped: (item.equipped || []).map(convertLoadoutItemFromStately),
@@ -146,9 +150,22 @@ export function convertLoadoutToStately(
   destinyVersion: DestinyVersion,
 ): StatelyLoadout {
   return client.create('Loadout', {
+    ...convertLoadoutCommonFieldsToStately(loadout, platformMembershipId, destinyVersion),
+    id: parseUUID(loadout.id),
+  });
+}
+
+export function convertLoadoutCommonFieldsToStately(
+  loadout: Loadout,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+): Omit<
+  MessageInitShape<typeof LoadoutSchema> | MessageInitShape<typeof LoadoutShareSchema>,
+  'id' | '$typeName'
+> {
+  return {
     destinyVersion,
     profileId: BigInt(platformMembershipId),
-    id: parseUUID(loadout.id),
     name: loadout.name,
     classType: loadout.classType as number,
     equipped: (loadout.equipped || []).map(convertLoadoutItemToStately),
@@ -157,7 +174,7 @@ export function convertLoadoutToStately(
     lastUpdatedAt: BigInt(loadout.lastUpdatedAt ?? 0),
     notes: loadout.notes,
     parameters: convertLoadoutParametersToStately(loadout.parameters),
-  });
+  };
 }
 
 function convertLoadoutItemToStately(item: LoadoutItem): StatelyLoadoutItem {
