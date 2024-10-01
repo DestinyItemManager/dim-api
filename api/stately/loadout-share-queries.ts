@@ -1,5 +1,4 @@
 import { keyPath } from '@stately-cloud/client';
-import { DestinyVersion } from '../shapes/general.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { client } from './client.js';
 import { LoadoutShare as StatelyLoadoutShare } from './generated/index.js';
@@ -23,11 +22,10 @@ export async function getLoadoutShare(shareId: string): Promise<Loadout | undefi
 function convertLoadoutShareToStately(
   loadout: Loadout,
   platformMembershipId: string,
-  destinyVersion: DestinyVersion,
   shareId: string,
 ): StatelyLoadoutShare {
   return client.create('LoadoutShare', {
-    ...convertLoadoutCommonFieldsToStately(loadout, platformMembershipId, destinyVersion),
+    ...convertLoadoutCommonFieldsToStately(loadout, platformMembershipId, 2),
     id: shareId,
   });
 }
@@ -40,20 +38,15 @@ export class LoadoutShareCollision extends Error {
 }
 
 /**
- * Create a new loadout share. These are intended to be immutable.
+ * Create a new loadout share. These are intended to be immutable. Loadout
+ * Shares are only supported for D2.
  */
 export async function addLoadoutShare(
   platformMembershipId: string,
-  destinyVersion: DestinyVersion,
   shareId: string,
   loadout: Loadout,
 ): Promise<void> {
-  const loadoutShare = convertLoadoutShareToStately(
-    loadout,
-    platformMembershipId,
-    destinyVersion,
-    shareId,
-  );
+  const loadoutShare = convertLoadoutShareToStately(loadout, platformMembershipId, shareId);
 
   await client.transaction(async (txn) => {
     const existing = await txn.get('LoadoutShare', keyFor(shareId));
