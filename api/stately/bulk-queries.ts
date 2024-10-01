@@ -2,6 +2,7 @@ import { keyPath } from '@stately-cloud/client';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
+import { ProfileResponse } from '../shapes/profile.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
 import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
@@ -179,4 +180,31 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
       : [],
     searches,
   };
+}
+
+export async function getProfile(
+  platformMembershipId: string | bigint,
+  destinyVersion: DestinyVersion,
+): Promise<ProfileResponse> {
+  const prefix = keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}`;
+
+  const response: ProfileResponse = {};
+
+  // Now get all the data under the profile in one listing.
+  const iter = client.beginList(prefix);
+  for await (const item of iter) {
+    if (client.isType(item, 'Triumph')) {
+      (response.triumphs ??= []).push(item.recordHash);
+    } else if (client.isType(item, 'ItemAnnotation')) {
+      (response.tags ??= []).push(convertItemAnnotation(item));
+    } else if (client.isType(item, 'ItemHashTag')) {
+      (response.itemHashTags ??= []).push(convertItemHashTag(item));
+    } else if (client.isType(item, 'Loadout')) {
+      (response.loadouts ??= []).push(convertLoadoutFromStately(item));
+    } else if (client.isType(item, 'Search')) {
+      (response.searches ??= []).push(convertSearchFromStately(item));
+    }
+  }
+
+  return response;
 }
