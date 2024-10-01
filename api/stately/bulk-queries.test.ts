@@ -11,7 +11,7 @@ import { getTrackedTriumphsForProfile, trackTriumph } from './triumphs-queries.j
 const platformMembershipId = '213512057';
 const bungieMembershipId = 4321;
 
-beforeEach(async () => deleteAllDataForUser(bungieMembershipId, platformMembershipId));
+beforeEach(async () => deleteAllDataForUser(bungieMembershipId, [platformMembershipId]));
 
 describe('deleteAllDataForUser', () => {
   it('should delete all kinds of data', async () => {
@@ -38,7 +38,7 @@ describe('deleteAllDataForUser', () => {
       showNewItems: true,
     });
 
-    await deleteAllDataForUser(bungieMembershipId, platformMembershipId);
+    await deleteAllDataForUser(bungieMembershipId, [platformMembershipId]);
 
     expect(await getItemAnnotationsForProfile(platformMembershipId, 2)).toEqual([]);
     expect(await getItemAnnotationsForProfile(platformMembershipId, 1)).toEqual([]);

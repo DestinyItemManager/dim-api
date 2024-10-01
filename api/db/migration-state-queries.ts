@@ -133,6 +133,7 @@ const forceStatelyMembershipIds = new Set([
   // Ben
   7094,
 ]);
+
 export function getDesiredMigrationState(bungieMembershipId: number): MigrationState {
   // TODO: use a uniform hash and a percentage dial to control this
 

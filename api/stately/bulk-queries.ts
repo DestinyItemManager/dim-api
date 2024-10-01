@@ -1,4 +1,5 @@
 import { keyPath } from '@stately-cloud/client';
+import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { client } from './client.js';
@@ -7,7 +8,7 @@ import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-q
 import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-queries.js';
 import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
 import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
-import { getSettings, keyFor as settingsKeyFor } from './settings-queries.js';
+import { deleteSettings, getSettings } from './settings-queries.js';
 import { batches } from './stately-utils.js';
 import { keyFor as triumphKeyFor } from './triumphs-queries.js';
 
@@ -16,18 +17,55 @@ import { keyFor as triumphKeyFor } from './triumphs-queries.js';
  */
 export async function deleteAllDataForUser(
   bungieMembershipId: number,
-  platformMembershipId: string,
-): Promise<void> {
-  // TODO: This really calls for a deleteGroup API!
+  platformMembershipIds: string[],
+): Promise<DeleteAllResponse['deleted']> {
+  const responses = await Promise.all(platformMembershipIds.map((p) => deleteAllDataForProfile(p)));
 
+  // Also delete settings, which are stored by membershipId
+  await deleteSettings(bungieMembershipId);
+
+  const response = responses.reduce<DeleteAllResponse['deleted']>(
+    (acc, r) => {
+      for (const key in r) {
+        (acc as Record<string, number>)[key] += (r as Record<string, number>)[key];
+      }
+      return acc;
+    },
+    {
+      settings: 1,
+      loadouts: 0,
+      tags: 0,
+      itemHashTags: 0,
+      triumphs: 0,
+      searches: 0,
+    },
+  );
+
+  return response;
+}
+
+async function deleteAllDataForProfile(
+  platformMembershipId: string,
+): Promise<DeleteAllResponse['deleted']> {
+  const response: DeleteAllResponse['deleted'] = {
+    settings: 0,
+    loadouts: 0,
+    tags: 0,
+    itemHashTags: 0,
+    triumphs: 0,
+    searches: 0,
+  };
+
+  // TODO: This really calls for a deleteGroup API!
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}`;
 
   // First, get all the keys we need to delete
   const iter = client.beginList(prefix);
   const keys: string[] = [];
   for await (const item of iter) {
-    const key = keyFor(item);
+    const [key, responseKey] = keyFor(item);
     if (key) {
+      response[responseKey] += 1;
       keys.push(key);
     }
   }
@@ -36,25 +74,32 @@ export async function deleteAllDataForUser(
   for (const batch of batches(keys)) {
     await client.del(...batch);
   }
-
-  // Also delete settings, which are stored by membershipId
-  await client.del(settingsKeyFor(bungieMembershipId));
+  return response;
 }
 
-function keyFor(item: AnyItem): string {
+function keyFor(item: AnyItem): [keyPath: string, responseKey: keyof DeleteAllResponse['deleted']] {
   // TODO: This is where we *really* need an item key helper!
   if (client.isType(item, 'Triumph')) {
-    return triumphKeyFor(item.profileId, item.recordHash);
+    return [triumphKeyFor(item.profileId, item.recordHash), 'triumphs'];
   } else if (client.isType(item, 'ItemAnnotation')) {
-    return tagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id);
+    return [tagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id), 'tags'];
   } else if (client.isType(item, 'ItemHashTag')) {
-    return hashTagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.hash);
+    return [
+      hashTagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.hash),
+      'itemHashTags',
+    ];
   } else if (client.isType(item, 'Loadout')) {
-    return loadoutKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id);
+    return [
+      loadoutKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id),
+      'loadouts',
+    ];
   } else if (client.isType(item, 'Search')) {
-    return searchKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.query);
+    return [
+      searchKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.query),
+      'searches',
+    ];
   }
-  return '';
+  return ['', 'settings'];
 }
 
 /**
