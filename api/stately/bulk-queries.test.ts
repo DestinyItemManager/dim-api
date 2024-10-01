@@ -80,7 +80,7 @@ describe('exportDataForUser', () => {
       showNewItems: true,
     });
 
-    const exportResponse = await exportDataForUser(bungieMembershipId, platformMembershipId);
+    const exportResponse = await exportDataForUser(bungieMembershipId, [platformMembershipId]);
 
     expect(exportResponse.settings.showNewItems).toBe(true);
     expect(exportResponse.tags.length).toBe(2);

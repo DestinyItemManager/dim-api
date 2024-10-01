@@ -107,9 +107,31 @@ function keyFor(item: AnyItem): [keyPath: string, responseKey: keyof DeleteAllRe
  */
 export async function exportDataForUser(
   bungieMembershipId: number,
-  platformMembershipId: string,
+  platformMembershipIds: string[],
 ): Promise<ExportResponse> {
   const settingsPromise = getSettings(bungieMembershipId);
+  const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));
+
+  const settings = await settingsPromise;
+  const initialResponse: ExportResponse = {
+    settings,
+    loadouts: [],
+    tags: [],
+    itemHashTags: [],
+    triumphs: [],
+    searches: [],
+  };
+  return responses.reduce<ExportResponse>((acc, r) => {
+    acc.loadouts.push(...r.loadouts);
+    acc.tags.push(...r.tags);
+    acc.itemHashTags.push(...r.itemHashTags);
+    acc.triumphs.push(...r.triumphs);
+    acc.searches.push(...r.searches);
+    return acc;
+  }, initialResponse);
+}
+
+async function exportDataForProfile(platformMembershipId: string): Promise<ExportResponse> {
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}`;
 
   const loadouts: ExportResponse['loadouts'] = [];
@@ -146,7 +168,7 @@ export async function exportDataForUser(
   }
 
   return {
-    settings: await settingsPromise,
+    settings: {},
     loadouts,
     tags: itemAnnotations,
     itemHashTags,

@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { ClientBase } from 'pg';
-import { transaction } from '../db/index.js';
+import { readTransaction, transaction } from '../db/index.js';
 import { deleteAllItemAnnotations } from '../db/item-annotations-queries.js';
 import { deleteAllItemHashTags } from '../db/item-hash-tags-queries.js';
 import { deleteAllLoadouts } from '../db/loadouts-queries.js';
@@ -18,10 +18,22 @@ import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
 
-  const result = await transaction(async (client) => {
-    const deleted = await deleteAllData(client, bungieMembershipId, profileIds);
-    return deleted;
-  });
+  const migrationState = await readTransaction(async (client) =>
+    getMigrationState(client, bungieMembershipId),
+  );
+
+  let result: DeleteAllResponse['deleted'];
+  switch (migrationState.state) {
+    case MigrationState.Postgres:
+      result = await transaction(async (client) => deleteAllData(client, bungieMembershipId));
+      break;
+    case MigrationState.Stately:
+      result = await deleteAllDataForUser(bungieMembershipId, profileIds);
+      break;
+    default:
+      // We're in the middle of a migration
+      throw new Error(`Unable to delete data - please wait a bit and try again.`);
+  }
 
   // default 200 OK
   res.status(200).send({
@@ -29,28 +41,17 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   });
 });
 
+/** Postgres delete-all-data implementation just individually deletes from each table */
 export async function deleteAllData(
   client: ClientBase,
   bungieMembershipId: number,
-  profileIds: string[],
 ): Promise<DeleteAllResponse['deleted']> {
-  const migrationState = await getMigrationState(client, bungieMembershipId);
-
-  switch (migrationState.state) {
-    case MigrationState.Postgres: {
-      return {
-        settings: (await deleteSettings(client, bungieMembershipId)).rowCount!,
-        loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount!,
-        tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount!,
-        itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId)).rowCount!,
-        triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId)).rowCount!,
-        searches: (await deleteAllSearches(client, bungieMembershipId)).rowCount!,
-      };
-    }
-    case MigrationState.Stately:
-      return deleteAllDataForUser(bungieMembershipId, profileIds);
-    default:
-      // We're in the middle of a migration
-      throw new Error(`Unable to delete data - please wait a bit and try again.`);
-  }
+  return {
+    settings: (await deleteSettings(client, bungieMembershipId)).rowCount!,
+    loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount!,
+    tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount!,
+    itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId)).rowCount!,
+    triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId)).rowCount!,
+    searches: (await deleteAllSearches(client, bungieMembershipId)).rowCount!,
+  };
 }
