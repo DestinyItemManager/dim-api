@@ -14,7 +14,7 @@ const platformMembershipId = '213512057';
 
 beforeEach(async () => deleteAllLoadouts(platformMembershipId));
 
-const loadout: Loadout = {
+export const loadout: Loadout = {
   id: uuid(),
   name: 'Test Loadout',
   classType: 1,

@@ -2,8 +2,8 @@ import { keyPath } from '@stately-cloud/client';
 import { client } from './client.js';
 import { batches } from './stately-utils.js';
 
-function keyFor(platformMembershipId: string, triumphHash: number) {
-  return keyPath`/p-${platformMembershipId}/d-2/triumph-${triumphHash}`;
+export function keyFor(platformMembershipId: string | bigint, triumphHash: number) {
+  return keyPath`/p-${BigInt(platformMembershipId)}/d-2/triumph-${triumphHash}`;
 }
 
 /**

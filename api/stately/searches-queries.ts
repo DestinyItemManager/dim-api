@@ -38,7 +38,11 @@ function queryHash(query: string) {
   return crypto.createHash('md5').update(query).digest();
 }
 
-function keyFor(platformMembershipId: string, destinyVersion: DestinyVersion, query: string) {
+export function keyFor(
+  platformMembershipId: string | bigint,
+  destinyVersion: DestinyVersion,
+  query: string,
+) {
   return keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/search-${queryHash(query)}`;
 }
 
@@ -81,7 +85,7 @@ export async function getSearchesForProfile(
   );
 }
 
-function convertSearchFromStately(item: StatelySearch): Search {
+export function convertSearchFromStately(item: StatelySearch): Search {
   return {
     query: item.query,
     usageCount: item.usageCount,

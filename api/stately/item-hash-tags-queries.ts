@@ -8,7 +8,11 @@ import {
 } from './generated/index.js';
 import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
 
-function keyFor(platformMembershipId: string, destinyVersion: DestinyVersion, itemHash: number) {
+export function keyFor(
+  platformMembershipId: string | bigint,
+  destinyVersion: DestinyVersion,
+  itemHash: number,
+) {
   return keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/iht-${itemHash}`;
 }
 
@@ -32,7 +36,7 @@ export async function getItemHashTagsForProfile(
   return results;
 }
 
-function convertItemHashTag(item: StatelyItemHashTag): ItemHashTag {
+export function convertItemHashTag(item: StatelyItemHashTag): ItemHashTag {
   const result: ItemHashTag = {
     hash: Number(item.hash),
   };

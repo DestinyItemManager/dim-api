@@ -18,8 +18,8 @@ import {
 } from './generated/index.js';
 import { batches, listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
 
-function keyFor(
-  platformMembershipId: string,
+export function keyFor(
+  platformMembershipId: string | bigint,
   destinyVersion: DestinyVersion,
   loadoutId: Uint8Array | string,
 ) {

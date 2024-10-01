@@ -25,7 +25,7 @@ import {
 } from './loadouts-queries.js';
 import { bigIntToNumber, enumToStringUnion, listToMap, stripTypeName } from './stately-utils.js';
 
-function keyFor(bungieMembershipId: number) {
+export function keyFor(bungieMembershipId: number) {
   return keyPath`/member-${bungieMembershipId}/settings`;
 }
 

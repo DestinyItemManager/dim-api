@@ -8,12 +8,12 @@ import {
 } from './generated/index.js';
 import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
 
-function keyFor(
-  platformMembershipId: string,
+export function keyFor(
+  platformMembershipId: string | bigint,
   destinyVersion: DestinyVersion,
-  inventoryItemId: string,
+  inventoryItemId: string | bigint,
 ) {
-  return keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/ia-${inventoryItemId}`;
+  return keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/ia-${BigInt(inventoryItemId)}`;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function getAllItemAnnotationsForUser(platformMembershipId: string)
     );
 }
 
-function convertItemAnnotation(item: StatelyItemAnnotation): ItemAnnotation {
+export function convertItemAnnotation(item: StatelyItemAnnotation): ItemAnnotation {
   const result: ItemAnnotation = {
     id: item.id.toString(),
   };
