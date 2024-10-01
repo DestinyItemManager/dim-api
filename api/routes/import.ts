@@ -1,9 +1,15 @@
 import asyncHandler from 'express-async-handler';
 import _ from 'lodash';
-import { transaction } from '../db/index.js';
+import { readTransaction, transaction } from '../db/index.js';
 import { updateItemAnnotation } from '../db/item-annotations-queries.js';
 import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
 import { updateLoadout } from '../db/loadouts-queries.js';
+import {
+  doMigration,
+  getDesiredMigrationState,
+  getMigrationState,
+  MigrationState,
+} from '../db/migration-state-queries.js';
 import { importSearch } from '../db/searches-queries.js';
 import { replaceSettings } from '../db/settings-queries.js';
 import { trackTriumph } from '../db/triumphs-queries.js';
@@ -11,16 +17,23 @@ import { ApiApp } from '../shapes/app.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
-import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
+import { deleteAllDataForUser } from '../stately/bulk-queries.js';
+import { updateItemAnnotation as updateItemAnnotationStately } from '../stately/item-annotations-queries.js';
+import { updateItemHashTag as updateItemHashTagStately } from '../stately/item-hash-tags-queries.js';
+import { updateLoadout as updateLoadoutStately } from '../stately/loadouts-queries.js';
+import { importSearch as importSearchStately } from '../stately/searches-queries.js';
+import { replaceSettings as replaceSettingsStately } from '../stately/settings-queries.js';
+import { trackTriumph as trackTriumphStately } from '../stately/triumphs-queries.js';
 import { badRequest } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user as UserInfo;
+  const { bungieMembershipId, profileIds } = req.user as UserInfo;
   const { id: appId } = req.dimApp as ApiApp;
 
   // Support only new API exports
@@ -44,8 +57,81 @@ export const importHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  let numTriumphs = 0;
+  const migrationState = await readTransaction(async (client) =>
+    getMigrationState(client, bungieMembershipId),
+  );
 
+  // this is a great time to do the migration
+  const desiredMigrationState = await getDesiredMigrationState(migrationState);
+  const shouldMigrateToStately =
+    desiredMigrationState === MigrationState.Stately &&
+    migrationState.state !== desiredMigrationState;
+
+  let numTriumphs = 0;
+  const importToStately = async () => {
+    numTriumphs = await statelyImport(
+      bungieMembershipId,
+      profileIds,
+      settings,
+      loadouts,
+      itemAnnotations,
+      triumphs,
+      searches,
+      itemHashTags,
+    );
+  };
+
+  switch (migrationState.state) {
+    case MigrationState.Postgres:
+      if (shouldMigrateToStately) {
+        doMigration(bungieMembershipId, importToStately, async (client) =>
+          deleteAllData(client, bungieMembershipId),
+        );
+      } else {
+        numTriumphs = await pgImport(
+          bungieMembershipId,
+          appId,
+          settings,
+          loadouts,
+          itemAnnotations,
+          triumphs,
+          searches,
+          itemHashTags,
+        );
+      }
+      break;
+    case MigrationState.Stately:
+      importToStately();
+      break;
+    default:
+      // in-progress migration
+      badRequest(res, `Unable to import data - please wait a bit and try again.`);
+      return;
+  }
+
+  const response: ImportResponse = {
+    loadouts: loadouts.length,
+    tags: itemAnnotations.length,
+    triumphs: numTriumphs,
+    searches: searches.length,
+    itemHashTags: itemHashTags.length,
+  };
+
+  // default 200 OK
+  res.status(200).send(response);
+});
+
+async function pgImport(
+  bungieMembershipId: number,
+  appId: string,
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  let numTriumphs = 0;
   await transaction(async (client) => {
     await deleteAllData(client, bungieMembershipId);
 
@@ -116,20 +202,82 @@ export const importHandler = asyncHandler(async (req, res) => {
     }
   });
 
-  const response: ImportResponse = {
-    loadouts: loadouts.length,
-    tags: itemAnnotations.length,
-    triumphs: numTriumphs,
-    searches: searches.length,
-    itemHashTags: itemHashTags.length,
-  };
+  return numTriumphs;
+}
 
-  // default 200 OK
-  res.status(200).send(response);
-});
+async function statelyImport(
+  bungieMembershipId: number,
+  platformMembershipIds: string[],
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  // TODO: this could all be parallelized but it's not very performance-sensitive
+
+  let numTriumphs = 0;
+  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+  await replaceSettingsStately(bungieMembershipId, { ...defaultSettings, ...settings });
+
+  for (const loadout of loadouts) {
+    // For now, ignore ancient loadouts
+    if (!loadout.platformMembershipId || !loadout.destinyVersion) {
+      continue;
+    }
+    await updateLoadoutStately(loadout.platformMembershipId, loadout.destinyVersion, loadout);
+  }
+
+  // TODO: query first so we can delete after?
+  for (const annotation of itemAnnotations) {
+    await updateItemAnnotationStately(
+      annotation.platformMembershipId,
+      annotation.destinyVersion,
+      annotation,
+    );
+  }
+
+  for (const tag of itemHashTags) {
+    for (const platformMembershipId of platformMembershipIds) {
+      // TODO: I guess save them to each platform? I should really refactor the
+      // import shape to have hashtags per platform, or merge/unique them.
+      await updateItemHashTagStately(platformMembershipId, tag);
+    }
+  }
+
+  if (Array.isArray(triumphs)) {
+    for (const triumphData of triumphs) {
+      if (Array.isArray(triumphData?.triumphs)) {
+        for (const triumph of triumphData.triumphs) {
+          trackTriumphStately(triumphData.platformMembershipId, triumph);
+          numTriumphs++;
+        }
+      }
+    }
+  }
+
+  for (const search of searches) {
+    for (const platformMembershipId of platformMembershipIds) {
+      // TODO: I guess save them to each platform? I should really refactor the
+      // import shape to have searches per platform, or merge/unique them.
+      importSearchStately(
+        platformMembershipId,
+        search.destinyVersion,
+        search.search.query,
+        search.search.saved,
+        search.search.lastUsage,
+        search.search.usageCount,
+        search.search.type ?? SearchType.Item,
+      );
+    }
+  }
+
+  return numTriumphs;
+}
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
-function subtractObject<T extends object>(obj: Partial<T>, defaults: T): T {
+function subtractObject<T extends object>(obj: Partial<T>, defaults: T): Partial<T> {
   const result: Partial<T> = {};
   if (obj) {
     for (const key in defaults) {
@@ -138,10 +286,10 @@ function subtractObject<T extends object>(obj: Partial<T>, defaults: T): T {
       }
     }
   }
-  return result as T;
+  return result;
 }
 
-function extractSettings(importData: ExportResponse): Settings {
+function extractSettings(importData: ExportResponse): Partial<Settings> {
   return subtractObject(importData.settings, defaultSettings);
 }
 

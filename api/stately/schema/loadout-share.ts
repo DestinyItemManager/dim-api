@@ -23,6 +23,7 @@ export const LoadoutShare = itemType('LoadoutShare', {
      */
     id: { type: string, fieldNum: 1 /* initialValue: 'rand35str' */ },
     ...loadoutFields,
+    // destinyVersion is always 2
 
     /**
      * A count that increases on each view. Not the most efficient way to deal

@@ -25,7 +25,7 @@ describe('deleteAllDataForUser', () => {
       tag: 'favorite',
       notes: 'the best??',
     });
-    await updateItemHashTag(platformMembershipId, 2, {
+    await updateItemHashTag(platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
@@ -42,7 +42,7 @@ describe('deleteAllDataForUser', () => {
 
     expect(await getItemAnnotationsForProfile(platformMembershipId, 2)).toEqual([]);
     expect(await getItemAnnotationsForProfile(platformMembershipId, 1)).toEqual([]);
-    expect(await getItemHashTagsForProfile(platformMembershipId, 2)).toEqual([]);
+    expect(await getItemHashTagsForProfile(platformMembershipId)).toEqual([]);
     expect(await getLoadoutsForProfile(platformMembershipId, 2)).toEqual([]);
     expect(
       (await getSearchesForProfile(platformMembershipId, 1)).filter((s) => s.usageCount > 0),
@@ -67,7 +67,7 @@ describe('exportDataForUser', () => {
       tag: 'favorite',
       notes: 'the best??',
     });
-    await updateItemHashTag(platformMembershipId, 2, {
+    await updateItemHashTag(platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',

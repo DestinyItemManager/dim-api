@@ -69,6 +69,7 @@ export const ItemHashTag = itemType('ItemHashTag', {
   keyPath: '/p-:profileId/d-:destinyVersion/iht-:hash',
   fields: {
     ...sharedFields,
+    // destinyVersion is always 2
 
     /** The inventory item hash for an item */
     hash: {

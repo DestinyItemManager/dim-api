@@ -84,10 +84,7 @@ function keyFor(item: AnyItem): [keyPath: string, responseKey: keyof DeleteAllRe
   } else if (client.isType(item, 'ItemAnnotation')) {
     return [tagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id), 'tags'];
   } else if (client.isType(item, 'ItemHashTag')) {
-    return [
-      hashTagKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.hash),
-      'itemHashTags',
-    ];
+    return [hashTagKeyFor(item.profileId, item.hash), 'itemHashTags'];
   } else if (client.isType(item, 'Loadout')) {
     return [
       loadoutKeyFor(item.profileId, item.destinyVersion as DestinyVersion, item.id),

@@ -35,7 +35,7 @@ const loadout: Loadout = {
 };
 
 it('can record a shared loadout', async () => {
-  await addLoadoutShare(platformMembershipId, 2, shareID, loadout);
+  await addLoadoutShare(platformMembershipId, shareID, loadout);
 
   const sharedLoadout = await getLoadoutShare(shareID);
 
@@ -43,16 +43,16 @@ it('can record a shared loadout', async () => {
 });
 
 it('rejects multiple shares with the same ID', async () => {
-  await addLoadoutShare(platformMembershipId, 2, shareID, loadout);
+  await addLoadoutShare(platformMembershipId, shareID, loadout);
 
   try {
-    await addLoadoutShare(platformMembershipId, 2, shareID, loadout);
+    await addLoadoutShare(platformMembershipId, shareID, loadout);
     fail('Expected this to throw an error');
   } catch {}
 });
 
 it('can record visits', async () => {
-  await addLoadoutShare(platformMembershipId, 2, shareID, loadout);
+  await addLoadoutShare(platformMembershipId, shareID, loadout);
 
   await recordAccess(shareID);
 });
