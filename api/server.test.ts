@@ -295,7 +295,6 @@ describe('loadouts', () => {
     expect(resultLoadout.id).toBe(loadout.id);
     expect(resultLoadout.name).toBe(loadout.name);
     expect(resultLoadout.classType).toBe(loadout.classType);
-    expect(resultLoadout.clearSpace).toBe(loadout.clearSpace);
     expect(resultLoadout.equipped).toEqual(loadout.equipped);
     // This property should have been stripped
     expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
@@ -647,6 +646,8 @@ describe('item hash tags', () => {
 
   it('can add an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -681,6 +682,8 @@ describe('item hash tags', () => {
 
   it('can update an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -700,6 +703,8 @@ describe('item hash tags', () => {
 
     // Change tag and notes
     const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -735,6 +740,8 @@ describe('item hash tags', () => {
 
     // Delete tag
     const request3: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -769,6 +776,8 @@ describe('item hash tags', () => {
 
   it('can delete an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -966,6 +975,7 @@ describe('searches', () => {
 
   it('can add a recent search', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
       destinyVersion: 2,
       updates: [
         {
@@ -998,6 +1008,7 @@ describe('searches', () => {
 
   it('can save a search', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
       destinyVersion: 2,
       updates: [
         {

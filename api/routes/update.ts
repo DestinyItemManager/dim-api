@@ -147,7 +147,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
       if (shouldMigrateToStately) {
         // For now let's leave the old data in Postgres as a backup
         await doMigration(bungieMembershipId, importToStately);
-        await statelyUpdate(
+        results = await statelyUpdate(
           req,
           updates,
           bungieMembershipId,
@@ -167,7 +167,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
       }
       break;
     case MigrationState.Stately:
-      await statelyUpdate(
+      results = await statelyUpdate(
         req,
         updates,
         bungieMembershipId,
