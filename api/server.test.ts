@@ -130,7 +130,7 @@ describe('profile', () => {
 
   it('can retrieve all profile data', async () => {
     const profileResponse = (await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs&platformMembershipId=${platformMembershipId}`,
+      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
     )
       .expect(200)
       .json()) as ProfileResponse;
@@ -148,6 +148,8 @@ describe('profile', () => {
     expect(profileResponse.loadouts!.length).toBe(19);
     expect(profileResponse.tags!.length).toBe(592);
     expect(profileResponse.triumphs!.length).toBe(30);
+    expect(profileResponse.searches!.length).toBe(205);
+    expect(profileResponse.itemHashTags!.length).toBe(71);
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
