@@ -1,9 +1,15 @@
 import asyncHandler from 'express-async-handler';
 import _ from 'lodash';
-import { transaction } from '../db/index.js';
+import { readTransaction, transaction } from '../db/index.js';
 import { updateItemAnnotation } from '../db/item-annotations-queries.js';
 import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
 import { updateLoadout } from '../db/loadouts-queries.js';
+import {
+  doMigration,
+  getDesiredMigrationState,
+  getMigrationState,
+  MigrationState,
+} from '../db/migration-state-queries.js';
 import { importSearch } from '../db/searches-queries.js';
 import { replaceSettings } from '../db/settings-queries.js';
 import { trackTriumph } from '../db/triumphs-queries.js';
@@ -11,27 +17,33 @@ import { ApiApp } from '../shapes/app.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
-import { ItemAnnotation } from '../shapes/item-annotations.js';
+import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { badRequest } from '../utils.js';
+import { deleteAllDataForUser } from '../stately/bulk-queries.js';
+import { client } from '../stately/client.js';
+import { AnyItem } from '../stately/generated/index.js';
+import { importTags } from '../stately/item-annotations-queries.js';
+import { importHashTags } from '../stately/item-hash-tags-queries.js';
+import { importLoadouts } from '../stately/loadouts-queries.js';
+import { importSearches } from '../stately/searches-queries.js';
+import { convertToStatelyItem } from '../stately/settings-queries.js';
+import { batches } from '../stately/stately-utils.js';
+import { importTriumphs } from '../stately/triumphs-queries.js';
+import { badRequest, subtractObject } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
-  const { bungieMembershipId } = req.user as UserInfo;
+  const { bungieMembershipId, profileIds } = req.user as UserInfo;
   const { id: appId } = req.dimApp as ApiApp;
 
   // Support only new API exports
   const importData = req.body as ExportResponse;
 
-  const settings = extractSettings(importData);
-  const loadouts = extractLoadouts(importData);
-  const itemAnnotations = extractItemAnnotations(importData);
-  const triumphs = importData.triumphs || [];
-  const searches = extractSearches(importData);
-  const itemHashTags = importData.itemHashTags || [];
+  const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
+    extractImportData(importData);
 
   if (
     _.isEmpty(settings) &&
@@ -44,8 +56,99 @@ export const importHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  let numTriumphs = 0;
+  const migrationState = await readTransaction(async (client) =>
+    getMigrationState(client, bungieMembershipId),
+  );
 
+  // this is a great time to do the migration
+  const desiredMigrationState = await getDesiredMigrationState(migrationState);
+  const shouldMigrateToStately =
+    desiredMigrationState === MigrationState.Stately &&
+    migrationState.state !== desiredMigrationState;
+
+  let numTriumphs = 0;
+  const importToStately = async () => {
+    numTriumphs = await statelyImport(
+      bungieMembershipId,
+      profileIds,
+      settings,
+      loadouts,
+      itemAnnotations,
+      triumphs,
+      searches,
+      itemHashTags,
+    );
+  };
+
+  switch (migrationState.state) {
+    case MigrationState.Postgres:
+      if (shouldMigrateToStately) {
+        await doMigration(bungieMembershipId, importToStately, async (client) =>
+          deleteAllData(client, bungieMembershipId),
+        );
+      } else {
+        numTriumphs = await pgImport(
+          bungieMembershipId,
+          appId,
+          settings,
+          loadouts,
+          itemAnnotations,
+          triumphs,
+          searches,
+          itemHashTags,
+        );
+      }
+      break;
+    case MigrationState.Stately:
+      await importToStately();
+      break;
+    default:
+      // in-progress migration
+      badRequest(res, `Unable to import data - please wait a bit and try again.`);
+      return;
+  }
+
+  const response: ImportResponse = {
+    loadouts: loadouts.length,
+    tags: itemAnnotations.length,
+    triumphs: numTriumphs,
+    searches: searches.length,
+    itemHashTags: itemHashTags.length,
+  };
+
+  // default 200 OK
+  res.status(200).send(response);
+});
+
+export function extractImportData(importData: ExportResponse) {
+  const settings = extractSettings(importData);
+  const loadouts = extractLoadouts(importData);
+  const itemAnnotations = extractItemAnnotations(importData);
+  const triumphs = importData.triumphs || [];
+  const searches = extractSearches(importData);
+  const itemHashTags = importData.itemHashTags || [];
+
+  return {
+    settings,
+    loadouts,
+    itemAnnotations,
+    triumphs,
+    searches,
+    itemHashTags,
+  };
+}
+
+async function pgImport(
+  bungieMembershipId: number,
+  appId: string,
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  let numTriumphs = 0;
   await transaction(async (client) => {
     await deleteAllData(client, bungieMembershipId);
 
@@ -116,32 +219,58 @@ export const importHandler = asyncHandler(async (req, res) => {
     }
   });
 
-  const response: ImportResponse = {
-    loadouts: loadouts.length,
-    tags: itemAnnotations.length,
-    triumphs: numTriumphs,
-    searches: searches.length,
-    itemHashTags: itemHashTags.length,
-  };
+  return numTriumphs;
+}
 
-  // default 200 OK
-  res.status(200).send(response);
-});
+export async function statelyImport(
+  bungieMembershipId: number,
+  platformMembershipIds: string[],
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  // TODO: what we should do, is map all these to items, and then we can just do
+  // batch puts, 25 at a time.
 
-/** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
-function subtractObject<T extends object>(obj: Partial<T>, defaults: T): T {
-  const result: Partial<T> = {};
-  if (obj) {
-    for (const key in defaults) {
-      if (obj[key] !== undefined && obj[key] !== defaults[key]) {
-        result[key] = obj[key];
+  let numTriumphs = 0;
+  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+
+  const items: AnyItem[] = [
+    convertToStatelyItem({ ...defaultSettings, ...settings }, bungieMembershipId),
+  ];
+  items.push(...importLoadouts(loadouts));
+  items.push(...importTags(itemAnnotations));
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have hashtags per platform, or merge/unique them.
+    items.push(...importHashTags(platformMembershipId, itemHashTags));
+  }
+  if (Array.isArray(triumphs)) {
+    for (const triumphData of triumphs) {
+      if (Array.isArray(triumphData?.triumphs)) {
+        items.push(...importTriumphs(triumphData.platformMembershipId, triumphData.triumphs));
+        numTriumphs += triumphData.triumphs.length;
       }
     }
   }
-  return result as T;
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have searches per platform, or merge/unique them.
+    items.push(...importSearches(platformMembershipId, searches));
+  }
+
+  // OK now put them in as fast as we can
+  for (const batch of batches(items)) {
+    await client.putBatch(...batch);
+  }
+
+  return numTriumphs;
 }
 
-function extractSettings(importData: ExportResponse): Settings {
+function extractSettings(importData: ExportResponse): Partial<Settings> {
   return subtractObject(importData.settings, defaultSettings);
 }
 

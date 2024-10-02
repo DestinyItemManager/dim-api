@@ -31,11 +31,17 @@ beforeAll(async () => {
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
-  testUserToken = jwt.sign({}, process.env.JWT_SECRET!, {
-    subject: bungieMembershipId.toString(),
-    issuer: testApiKey,
-    expiresIn: 60 * 60,
-  });
+  testUserToken = jwt.sign(
+    {
+      profileIds: [platformMembershipId],
+    },
+    process.env.JWT_SECRET!,
+    {
+      subject: bungieMembershipId.toString(),
+      issuer: testApiKey,
+      expiresIn: 60 * 60,
+    },
+  );
 
   // Make sure we have global settings
   const globalSettings = ['dev', 'beta', 'app'].map((stage) =>
@@ -289,7 +295,6 @@ describe('loadouts', () => {
     expect(resultLoadout.id).toBe(loadout.id);
     expect(resultLoadout.name).toBe(loadout.name);
     expect(resultLoadout.classType).toBe(loadout.classType);
-    expect(resultLoadout.clearSpace).toBe(loadout.clearSpace);
     expect(resultLoadout.equipped).toEqual(loadout.equipped);
     // This property should have been stripped
     expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
@@ -641,6 +646,8 @@ describe('item hash tags', () => {
 
   it('can add an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -675,6 +682,8 @@ describe('item hash tags', () => {
 
   it('can update an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -694,6 +703,8 @@ describe('item hash tags', () => {
 
     // Change tag and notes
     const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -729,6 +740,8 @@ describe('item hash tags', () => {
 
     // Delete tag
     const request3: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -763,6 +776,8 @@ describe('item hash tags', () => {
 
   it('can delete an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'item_hash_tag',
@@ -960,6 +975,7 @@ describe('searches', () => {
 
   it('can add a recent search', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
       destinyVersion: 2,
       updates: [
         {
@@ -992,6 +1008,7 @@ describe('searches', () => {
 
   it('can save a search', async () => {
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
       destinyVersion: 2,
       updates: [
         {
@@ -1043,7 +1060,6 @@ describe('loadouts', () => {
       .expect(200)
       .json()) as LoadoutShareResponse;
 
-    console.log(updateResult.shareUrl);
     expect(updateResult.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
   });
 });
@@ -1074,7 +1090,8 @@ async function importData() {
     (await promisify(readFile)('./dim-data.json')).toString(),
   ) as ExportResponse;
 
-  (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
+  const resp = (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
+  expect(resp.tags).toBeGreaterThan(1);
 
   return file;
 }

@@ -13,6 +13,11 @@ import {
 } from '../shapes/loadout-share.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { UserInfo } from '../shapes/user.js';
+import {
+  addLoadoutShare as addLoadoutShareStately,
+  getLoadoutShare as getLoadoutShareStately,
+  recordAccess as recordAccessStately,
+} from '../stately/loadout-share-queries.js';
 import slugify from './slugify.js';
 import { validateLoadout } from './update.js';
 
@@ -23,6 +28,9 @@ const getShareURL = (loadout: Loadout, shareId: string) => {
   const titleSlug = slugify(loadout.name);
   return `https://dim.gg/${shareId}/${titleSlug}`;
 };
+
+// Turn this on to save all loadout shares to StatelyDB as well as Postgres
+const saveToStately = false;
 
 /**
  * Save a loadout to be shared via a dim.gg link.
@@ -49,7 +57,44 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const shareId = await transaction(async (client) => {
+  const shareId = await pgSaveLoadoutShare(
+    bungieMembershipId,
+    appId,
+    platformMembershipId,
+    loadout,
+  );
+  if (shareId === 'ran-out') {
+    metrics.increment('loadout_share.ranOutOfAttempts.count');
+    res.status(500).send({
+      status: 'RanOutOfIDs',
+      message: "We couldn't generate a share URL",
+    });
+    return;
+  }
+
+  if (saveToStately) {
+    try {
+      await addLoadoutShareStately(platformMembershipId, shareId, loadout);
+    } catch (e) {
+      metrics.increment('loadout_share.statelyFailure.count');
+      console.error('Failed to save loadout share to Stately', e);
+    }
+  }
+
+  const result: LoadoutShareResponse = {
+    shareUrl: getShareURL(loadout, shareId),
+  };
+
+  res.send(result);
+});
+
+async function pgSaveLoadoutShare(
+  bungieMembershipId: number,
+  appId: string,
+  platformMembershipId: string,
+  loadout: Loadout,
+) {
+  return transaction(async (client) => {
     let attempts = 0;
     // We'll make three attempts to guess a random non-colliding number
     while (attempts < 4) {
@@ -76,22 +121,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     }
     return 'ran-out';
   });
-
-  if (shareId === 'ran-out') {
-    metrics.increment('loadout_share.ranOutOfAttempts.count');
-    res.status(500).send({
-      status: 'RanOutOfIDs',
-      message: "We couldn't generate a share URL",
-    });
-    return;
-  }
-
-  const result: LoadoutShareResponse = {
-    shareUrl: getShareURL(loadout, shareId),
-  };
-
-  res.send(result);
-});
+}
 
 /**
  * Generate 4 random bytes (32 bits) and encode to base32url, which will yield 7 characters.
@@ -110,6 +140,20 @@ export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
     return;
   }
 
+  if (saveToStately) {
+    // This is just dual-reading to Stately for now
+    try {
+      const loadout = await getLoadoutShareStately(shareId);
+      if (loadout) {
+        // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
+        await recordAccessStately(shareId);
+      }
+    } catch (e) {
+      console.error('Failed to load loadout share from Stately', e);
+    }
+  }
+
+  // Always read from Postgres
   await transaction(async (client) => {
     const loadout = await getLoadoutShare(client, shareId);
     if (loadout) {

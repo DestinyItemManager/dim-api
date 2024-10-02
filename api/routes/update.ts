@@ -1,6 +1,8 @@
+import express from 'express';
 import asyncHandler from 'express-async-handler';
+import _ from 'lodash';
 import { ClientBase } from 'pg';
-import { transaction } from '../db/index.js';
+import { readTransaction, transaction } from '../db/index.js';
 import {
   deleteItemAnnotationList,
   updateItemAnnotation as updateItemAnnotationInDb,
@@ -10,6 +12,12 @@ import {
   deleteLoadout as deleteLoadoutInDb,
   updateLoadout as updateLoadoutInDb,
 } from '../db/loadouts-queries.js';
+import {
+  doMigration,
+  getDesiredMigrationState,
+  getMigrationState,
+  MigrationState,
+} from '../db/migration-state-queries.js';
 import {
   deleteSearch as deleteSearchInDb,
   saveSearch as saveSearchInDb,
@@ -25,6 +33,7 @@ import { Loadout } from '../shapes/loadouts.js';
 import {
   DeleteSearchUpdate,
   ItemHashTagUpdate,
+  ProfileUpdate,
   ProfileUpdateRequest,
   ProfileUpdateResult,
   SavedSearchUpdate,
@@ -35,11 +44,32 @@ import { SearchType } from '../shapes/search.js';
 import { Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import {
+  deleteItemAnnotation as deleteItemAnnotationListStately,
+  updateItemAnnotation as updateItemAnnotationInStately,
+} from '../stately/item-annotations-queries.js';
+import { updateItemHashTag as updateItemHashTagInStately } from '../stately/item-hash-tags-queries.js';
+import {
+  deleteLoadout as deleteLoadoutInStately,
+  updateLoadout as updateLoadoutInStately,
+} from '../stately/loadouts-queries.js';
+import {
+  deleteSearch as deleteSearchInStately,
+  saveSearch as saveSearchInStately,
+  updateUsedSearch as updateUsedSearchInStately,
+} from '../stately/searches-queries.js';
+import { setSetting as setSettingInStately } from '../stately/settings-queries.js';
+import {
+  trackTriumph as trackTriumphInStately,
+  unTrackTriumph as unTrackTriumphInStately,
+} from '../stately/triumphs-queries.js';
+import {
   badRequest,
   checkPlatformMembershipId,
   isValidItemId,
   isValidPlatformMembershipId,
 } from '../utils.js';
+import { pgExport } from './export.js';
+import { extractImportData, statelyImport } from './import.js';
 
 /**
  * Update profile information. This accepts a list of update operations and
@@ -72,7 +102,177 @@ export const updateHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const results = await transaction(async (client) => {
+  const migrationState = await readTransaction(async (client) =>
+    getMigrationState(client, bungieMembershipId),
+  );
+
+  const desiredMigrationState = await getDesiredMigrationState(migrationState);
+  const shouldMigrateToStately =
+    desiredMigrationState === MigrationState.Stately &&
+    migrationState.state !== desiredMigrationState;
+
+  let results: ProfileUpdateResult[] = [];
+
+  const importToStately = async () => {
+    // Export from Postgres
+    const exportResponse = await pgExport(bungieMembershipId);
+
+    const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
+      extractImportData(exportResponse);
+
+    if (
+      _.isEmpty(settings) &&
+      loadouts.length === 0 &&
+      itemAnnotations.length === 0 &&
+      triumphs.length === 0 &&
+      searches.length === 0
+    ) {
+      // Nothing to import!
+      return;
+    }
+    await statelyImport(
+      bungieMembershipId,
+      profileIds,
+      settings,
+      loadouts,
+      itemAnnotations,
+      triumphs,
+      searches,
+      itemHashTags,
+    );
+  };
+
+  switch (migrationState.state) {
+    case MigrationState.Postgres:
+      if (shouldMigrateToStately) {
+        // For now let's leave the old data in Postgres as a backup
+        await doMigration(bungieMembershipId, importToStately);
+        results = await statelyUpdate(
+          req,
+          updates,
+          bungieMembershipId,
+          platformMembershipId,
+          destinyVersion,
+          appId,
+        );
+      } else {
+        results = await pgUpdate(
+          req,
+          updates,
+          bungieMembershipId,
+          platformMembershipId,
+          destinyVersion,
+          appId,
+        );
+      }
+      break;
+    case MigrationState.Stately:
+      results = await statelyUpdate(
+        req,
+        updates,
+        bungieMembershipId,
+        platformMembershipId,
+        destinyVersion,
+        appId,
+      );
+      break;
+    default:
+      // in-progress migration
+      badRequest(res, `Unable to import data - please wait a bit and try again.`);
+      return;
+  }
+
+  res.send({
+    results,
+  });
+});
+
+async function statelyUpdate(
+  req: express.Request,
+  updates: ProfileUpdate[],
+  bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  appId: string,
+) {
+  const results: ProfileUpdateResult[] = [];
+
+  for (const update of updates) {
+    let result: ProfileUpdateResult;
+
+    metrics.increment(`update.action.${update.action}.count`);
+
+    switch (update.action) {
+      case 'setting':
+        result = await updateSettingStately(bungieMembershipId, update.payload);
+        break;
+
+      case 'loadout':
+        result = await updateLoadoutStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      case 'delete_loadout':
+        result = await deleteLoadoutStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      case 'tag':
+        result = await updateItemAnnotationStately(
+          platformMembershipId,
+          destinyVersion,
+          update.payload,
+        );
+        break;
+
+      case 'tag_cleanup':
+        result = await tagCleanupStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      case 'item_hash_tag':
+        result = await updateItemHashTagStately(platformMembershipId, update.payload);
+        break;
+
+      case 'track_triumph':
+        result = await trackTriumphStately(platformMembershipId, update.payload);
+        break;
+
+      case 'search':
+        result = await recordSearchStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      case 'save_search':
+        result = await saveSearchStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      case 'delete_search':
+        result = await deleteSearchStately(platformMembershipId, destinyVersion, update.payload);
+        break;
+
+      default:
+        console.warn(
+          `Unknown action type: ${(update as { action: string }).action} from ${appId}, ${req.header(
+            'User-Agent',
+          )}, ${req.header('Referer')}`,
+        );
+        result = {
+          status: 'InvalidArgument',
+          message: `Unknown action type: ${(update as { action: string }).action}`,
+        };
+    }
+    results.push(result);
+  }
+
+  return results;
+}
+
+async function pgUpdate(
+  req: express.Request,
+  updates: ProfileUpdate[],
+  bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  appId: string,
+) {
+  return transaction(async (client) => {
     const results: ProfileUpdateResult[] = [];
 
     for (const update of updates) {
@@ -169,11 +369,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
 
     return results;
   });
-
-  res.send({
-    results,
-  });
-});
+}
 
 async function updateSetting(
   client: ClientBase,
@@ -185,6 +381,17 @@ async function updateSetting(
 
   const start = new Date();
   await setSettingInDb(client, appId, bungieMembershipId, settings);
+  metrics.timing('update.setting', start);
+
+  return { status: 'Success' };
+}
+
+async function updateSettingStately(
+  bungieMembershipId: number,
+  settings: Partial<Settings>,
+): Promise<ProfileUpdateResult> {
+  const start = new Date();
+  await setSettingInStately(bungieMembershipId, settings);
   metrics.timing('update.setting', start);
 
   return { status: 'Success' };
@@ -220,6 +427,31 @@ async function updateLoadout(
     destinyVersion,
     loadout,
   );
+  metrics.timing('update.loadout', start);
+
+  return { status: 'Success' };
+}
+
+async function updateLoadoutStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  loadout: Loadout,
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadouts require platform membership ID to be set',
+    };
+  }
+
+  const validationResult = validateLoadout('update', loadout);
+  if (validationResult) {
+    return validationResult;
+  }
+
+  const start = new Date();
+  await updateLoadoutInStately(platformMembershipId, destinyVersion, loadout);
   metrics.timing('update.loadout', start);
 
   return { status: 'Success' };
@@ -304,6 +536,29 @@ async function deleteLoadout(
   return { status: 'Success' };
 }
 
+async function deleteLoadoutStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  loadoutId: string,
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Loadouts require platform membership ID to be set',
+    };
+  }
+
+  const start = new Date();
+  const loadout = await deleteLoadoutInStately(platformMembershipId, destinyVersion, loadoutId);
+  metrics.timing('update.deleteLoadout', start);
+  if (loadout === null) {
+    return { status: 'NotFound', message: 'No loadout found with that ID' };
+  }
+
+  return { status: 'Success' };
+}
+
 async function updateItemAnnotation(
   client: ClientBase,
   appId: string,
@@ -360,6 +615,52 @@ async function updateItemAnnotation(
   return { status: 'Success' };
 }
 
+async function updateItemAnnotationStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  itemAnnotation: ItemAnnotation,
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Tags require platform membership ID to be set',
+    };
+  }
+
+  if (!isValidItemId(itemAnnotation.id)) {
+    metrics.increment('update.validation.badItemId.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'item ID is not in the right format',
+    };
+  }
+
+  if (
+    itemAnnotation.tag &&
+    !['favorite', 'keep', 'infuse', 'junk', 'archive'].includes(itemAnnotation.tag)
+  ) {
+    metrics.increment('update.validation.tagNotRecognized.count');
+    return {
+      status: 'InvalidArgument',
+      message: `Tag value ${itemAnnotation.tag} is not recognized`,
+    };
+  }
+  if (itemAnnotation.notes && itemAnnotation.notes.length > 1024) {
+    metrics.increment('update.validation.notesTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Notes must be under 1024 characters',
+    };
+  }
+
+  const start = new Date();
+  await updateItemAnnotationInStately(platformMembershipId, destinyVersion, itemAnnotation);
+  metrics.timing('update.tag', start);
+
+  return { status: 'Success' };
+}
+
 async function tagCleanup(
   client: ClientBase,
   bungieMembershipId: number,
@@ -370,6 +671,30 @@ async function tagCleanup(
     client,
     bungieMembershipId,
     inventoryItemIds.filter(isValidItemId),
+  );
+  metrics.timing('update.tagCleanup', start);
+
+  return { status: 'Success' };
+}
+
+async function tagCleanupStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  inventoryItemIds: string[],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Tags require platform membership ID to be set',
+    };
+  }
+
+  const start = new Date();
+  await deleteItemAnnotationListStately(
+    platformMembershipId,
+    destinyVersion,
+    ...inventoryItemIds.filter(isValidItemId),
   );
   metrics.timing('update.tagCleanup', start);
 
@@ -406,6 +731,27 @@ async function trackTriumph(
   return { status: 'Success' };
 }
 
+async function trackTriumphStately(
+  platformMembershipId: string | undefined,
+  payload: TrackTriumphUpdate['payload'],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Tracked triumphs require platform membership ID to be set',
+    };
+  }
+
+  const start = new Date();
+  payload.tracked
+    ? await trackTriumphInStately(platformMembershipId, payload.recordHash)
+    : await unTrackTriumphInStately(platformMembershipId, payload.recordHash);
+  metrics.timing('update.trackTriumph', start);
+
+  return { status: 'Success' };
+}
+
 async function recordSearch(
   client: ClientBase,
   appId: string,
@@ -413,11 +759,6 @@ async function recordSearch(
   destinyVersion: DestinyVersion,
   payload: UsedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
-  // TODO: I did a silly thing and made the query part of the search table's
-  // primary key, instead of using a fixed-size hash of the query. This limits
-  // how big a query we can store (and bloats the index). I'll need to do some
-  // surgery to fix that, but we should probably just generally refuse to save
-  // long queries.
   if (payload.query.length > 2048) {
     metrics.increment('update.validation.searchTooLong.count');
     return {
@@ -440,6 +781,39 @@ async function recordSearch(
   return { status: 'Success' };
 }
 
+async function recordSearchStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  payload: UsedSearchUpdate['payload'],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Searches require platform membership ID to be set',
+    };
+  }
+
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
+  const start = new Date();
+  await updateUsedSearchInStately(
+    platformMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
+  metrics.timing('update.recordSearch', start);
+
+  return { status: 'Success' };
+}
+
 async function saveSearch(
   client: ClientBase,
   appId: string,
@@ -447,11 +821,6 @@ async function saveSearch(
   destinyVersion: DestinyVersion,
   payload: SavedSearchUpdate['payload'],
 ): Promise<ProfileUpdateResult> {
-  // TODO: I did a silly thing and made the query part of the search table's
-  // primary key, instead of using a fixed-size hash of the query. This limits
-  // how big a query we can store (and bloats the index). I'll need to do some
-  // surgery to fix that, but we should probably just generally refuse to save
-  // long queries.
   if (payload.query.length > 2048) {
     metrics.increment('update.validation.searchTooLong.count');
     return {
@@ -465,6 +834,40 @@ async function saveSearch(
     client,
     appId,
     bungieMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+    payload.saved,
+  );
+  metrics.timing('update.saveSearch', start);
+
+  return { status: 'Success' };
+}
+
+async function saveSearchStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  payload: SavedSearchUpdate['payload'],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Searches require platform membership ID to be set',
+    };
+  }
+
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  }
+
+  const start = new Date();
+  await saveSearchInStately(
+    platformMembershipId,
     destinyVersion,
     payload.query,
     payload.type ?? SearchType.Item,
@@ -494,6 +897,26 @@ async function deleteSearch(
   return { status: 'Success' };
 }
 
+async function deleteSearchStately(
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+  payload: DeleteSearchUpdate['payload'],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Searches require platform membership ID to be set',
+    };
+  }
+
+  const start = new Date();
+  await deleteSearchInStately(platformMembershipId, destinyVersion, payload.query);
+  metrics.timing('update.deleteSearch', start);
+
+  return { status: 'Success' };
+}
+
 async function updateItemHashTag(
   client: ClientBase,
   appId: string,
@@ -502,6 +925,25 @@ async function updateItemHashTag(
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
+  metrics.timing('update.updateItemHashTag', start);
+
+  return { status: 'Success' };
+}
+
+async function updateItemHashTagStately(
+  platformMembershipId: string | undefined,
+  payload: ItemHashTagUpdate['payload'],
+): Promise<ProfileUpdateResult> {
+  if (!platformMembershipId) {
+    metrics.increment('update.validation.platformMembershipIdMissing.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Hash tags require platform membership ID to be set',
+    };
+  }
+
+  const start = new Date();
+  await updateItemHashTagInStately(platformMembershipId, payload);
   metrics.timing('update.updateItemHashTag', start);
 
   return { status: 'Success' };

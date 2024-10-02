@@ -1,4 +1,8 @@
 import { ClientBase } from 'pg';
+import { metrics } from '../metrics/index.js';
+import { transaction } from './index.js';
+
+export const MAX_MIGRATION_ATTEMPTS = 3;
 
 export const enum MigrationState {
   Invalid = 0,
@@ -132,11 +136,75 @@ export async function deleteMigrationState(
 const forceStatelyMembershipIds = new Set([
   // Ben
   7094,
+  // Test user
+  1234,
 ]);
-export function getDesiredMigrationState(bungieMembershipId: number): MigrationState {
-  // TODO: use a uniform hash and a percentage dial to control this
 
-  return forceStatelyMembershipIds.has(bungieMembershipId)
+export async function getDesiredMigrationState(migrationState: MigrationStateInfo) {
+  // TODO: use a uniform hash and a percentage dial to control this
+  const desiredState = forceStatelyMembershipIds.has(migrationState.bungieMembershipId)
     ? MigrationState.Stately
     : MigrationState.Postgres;
+
+  if (desiredState === migrationState.state) {
+    return migrationState.state;
+  }
+
+  if (
+    desiredState === MigrationState.Stately &&
+    migrationState.state === MigrationState.Postgres &&
+    migrationState.attemptCount >= MAX_MIGRATION_ATTEMPTS
+  ) {
+    return MigrationState.Postgres;
+  }
+
+  if (
+    migrationState.state === MigrationState.MigratingToStately &&
+    // If we've been in this state for more than 15 minutes, just move on
+    migrationState.lastStateChangeAt < Date.now() - 1000 * 60 * 15
+  ) {
+    await transaction(async (client) => {
+      abortMigrationToStately(client, migrationState.bungieMembershipId, 'Migration timed out');
+    });
+    return MigrationState.Postgres;
+  }
+
+  if (migrationState.state === MigrationState.MigratingToStately) {
+    throw new Error('Unable to update - please wait a bit and try again.');
+  }
+
+  return desiredState;
+}
+
+/**
+ * Wrap the migration process - start a migration, run fn(), finish the
+ * migration. Abort on failure.
+ */
+export async function doMigration(
+  bungieMembershipId: number,
+  fn: () => Promise<void>,
+  onBeforeFinish?: (client: ClientBase) => Promise<any>,
+): Promise<void> {
+  try {
+    metrics.increment('migration.start.count');
+    await transaction(async (client) => {
+      await startMigrationToStately(client, bungieMembershipId);
+    });
+    await fn();
+    await transaction(async (client) => {
+      await onBeforeFinish?.(client);
+      await finishMigrationToStately(client, bungieMembershipId);
+    });
+    metrics.increment('migration.finish.count');
+  } catch (e) {
+    await transaction(async (client) => {
+      await abortMigrationToStately(
+        client,
+        bungieMembershipId,
+        e instanceof Error ? e.message : 'Unknown error',
+      );
+    });
+    metrics.increment('migration.abort.count');
+    throw e;
+  }
 }

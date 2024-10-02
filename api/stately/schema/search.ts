@@ -5,8 +5,8 @@ import {
   itemType,
   string,
   timestampMilliseconds,
-  uint,
 } from '@stately-cloud/schema';
+import { DestinyVersion, ProfileID, uint32 } from './types.js';
 
 export const SearchType = enumType('SearchType', { Item: 0, Loadout: 1 });
 
@@ -19,16 +19,27 @@ export const Search = itemType('Search', {
   // stuff in the profile). Technically the searches could be shared between
   // profiles, but if we did that we'd need more queries.
   keyPath: '/p-:profileId/d-:destinyVersion/search-:qhash',
+  // TODO: enable last usage index
+  // indexes: [
+  //   {
+  //     groupLocalIndex: 1,
+  //     field: 'lastUsage',
+  //   },
+  // ],
   fields: {
     /**
      * The full search query. These are
      */
     query: { type: string, fieldNum: 1, valid: 'this.size() <= 2048' },
     /** A zero usage count means this is a suggested/preloaded search. */
-    usageCount: { type: uint, fieldNum: 2, required: false },
+    usageCount: { type: uint32, fieldNum: 2, required: false },
     /** Has this search been saved/favorite'd/pinned by the user? */
     saved: { type: bool, fieldNum: 3 },
-    /** The last time this was used, as a unix millisecond timestamp. */
+    /**
+     * The last time this was used, as a unix millisecond timestamp. We don't
+     * use fromMetadata: 'lastModifiedAtTime' because on import we want to set this
+     * to whatever value it was, not the insert time.
+     */
     lastUsage: { type: timestampMilliseconds, fieldNum: 4 },
     /**
      * Which kind of thing is this search for? Searches of different types are
@@ -46,9 +57,9 @@ export const Search = itemType('Search', {
     qhash: { type: bytes, fieldNum: 6 /* expression: 'md5(this.query)' */ },
 
     /** The profile ID this search is associated with. */
-    profileId: { type: uint, fieldNum: 7 },
+    profileId: { type: ProfileID, fieldNum: 7 },
 
     /** The Destiny version this search is associated with. */
-    destinyVersion: { type: uint, fieldNum: 8 },
+    destinyVersion: { type: DestinyVersion, fieldNum: 8 },
   },
 });

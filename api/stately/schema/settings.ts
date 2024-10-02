@@ -9,16 +9,15 @@ import {
   objectType,
   string,
   type,
-  uint,
 } from '@stately-cloud/schema';
 import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
-import { DestinyClass, HashID, ItemID } from './types.js';
+import { DestinyClass, HashID, ItemID, MembershipID, uint32 } from './types.js';
 
 export const CharacterOrder = enumType('CharacterOrder', {
-  mostRecent: 0,
-  mostRecentReverse: 1,
-  fixed: 2,
-  custom: 3,
+  mostRecent: 1,
+  mostRecentReverse: 2,
+  fixed: 3,
+  custom: 4,
 });
 
 export const InfuseDirection = enumType('InfuseDirection', {
@@ -38,7 +37,7 @@ export const VaultWeaponGroupingStyle = enumType('VaultWeaponGroupingStyle', {
   Inline: 1,
 });
 
-const Columns = type('columns', uint, { valid: 'this <= 5 && this >= 2' });
+const Columns = type('columns', uint32, { valid: 'this <= 5 && this >= 2' });
 
 export const CollapsedSection = objectType('CollapsedSection', {
   fields: {
@@ -50,13 +49,13 @@ export const CollapsedSection = objectType('CollapsedSection', {
 
 export const StatConstraintsEntry = objectType('StatConstraintsEntry', {
   fields: {
-    classType: { type: DestinyClass, fieldNum: 1 },
+    classType: { type: DestinyClass, fieldNum: 1, required: false },
     constraints: { type: arrayOf(StatConstraint), fieldNum: 2 },
   },
 });
 export const CustomStatsEntry = objectType('CustomStatsEntry', {
   fields: {
-    classType: { type: DestinyClass, fieldNum: 1 },
+    classType: { type: DestinyClass, fieldNum: 1, required: false },
     customStats: { type: arrayOf(HashID), fieldNum: 2 },
   },
 });
@@ -73,7 +72,7 @@ export const DescriptionOptions = enumType('DescriptionOptions', {
 export const CustomStatWeightsEntry = objectType('CustomStatWeightsEntry', {
   fields: {
     statHash: { type: HashID, fieldNum: 1 },
-    weight: { type: double, fieldNum: 2 },
+    weight: { type: double, fieldNum: 2, required: false },
   },
 });
 
@@ -86,7 +85,7 @@ export const CustomStatDef = objectType('CustomStatDef', {
     /** an abbreviated/crunched form of the stat label, for use in search filters */
     shortLabel: { type: string, fieldNum: 3 },
     /** which guardian class this stat should be used for. DestinyClass.Unknown makes a global (all 3 classes) stat */
-    class: { type: DestinyClass, fieldNum: 4 },
+    class: { type: DestinyClass, fieldNum: 4, required: false },
     /** info about how to calculate the stat total */
     weights: { type: arrayOf(CustomStatWeightsEntry), fieldNum: 5 },
   },
@@ -96,7 +95,7 @@ export const Settings = itemType('Settings', {
   // Settings are stored per-Bungie-membership, not per-profile or per-destiny-version
   keyPath: '/member-:memberId/settings',
   fields: {
-    memberId: { type: string, fieldNum: 1 },
+    memberId: { type: MembershipID, fieldNum: 1 },
 
     /** Show item quality percentages */
     itemQuality: { type: bool, fieldNum: 2 },
@@ -108,16 +107,16 @@ export const Settings = itemType('Settings', {
     // TODO: Default should be ["primStat", "name"] but we don't support list defaults
     itemSortOrderCustom: { type: arrayOf(string), fieldNum: 5 },
     /** supplements itemSortOrderCustom by allowing each sort to be reversed */
-    itemSortReversals: { type: arrayOf(string), fieldNum: 6 },
+    itemSortReversals: { type: arrayOf(string), fieldNum: 6, required: false },
     /** How many columns to display character buckets */
     charCol: { type: Columns, fieldNum: 7, required: false },
     /** How many columns to display character buckets on Mobile */
     charColMobile: { type: Columns, fieldNum: 8, required: false },
     /** How big in pixels to draw items - start smaller for iPad */
-    itemSize: { type: uint, fieldNum: 9, valid: 'this <= 66', required: false },
+    itemSize: { type: uint32, fieldNum: 9, valid: 'this <= 66', required: false },
     /** Which categories or buckets should be collapsed? */
     // TODO: Some support for maps would be great
-    collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10 },
+    collapsedSections: { type: arrayOf(CollapsedSection), fieldNum: 10, required: false },
     /** Hide triumphs once they're completed */
     completedRecordsHidden: { type: bool, fieldNum: 11 },
     /** Hide show triumphs the manifest recommends be redacted */
@@ -125,7 +124,7 @@ export const Settings = itemType('Settings', {
     /** Whether to keep one slot per item type open */
     farmingMakeRoomForItems: { type: bool, fieldNum: 13 },
     /** How many spaces to clear when using Farming Mode (make space). */
-    inventoryClearSpaces: { type: uint, fieldNum: 14, required: false, valid: 'this <= 9' },
+    inventoryClearSpaces: { type: uint32, fieldNum: 14, required: false, valid: 'this <= 9' },
 
     /** Hide completed triumphs/collections */
     hideCompletedRecords: { type: bool, fieldNum: 15 },
@@ -191,7 +190,7 @@ export const Settings = itemType('Settings', {
     perkList: { type: bool, fieldNum: 30 },
 
     /** How the loadouts menu and page should be sorted */
-    loadoutSort: { type: LoadoutSort, fieldNum: 31 },
+    loadoutSort: { type: LoadoutSort, fieldNum: 31, required: false },
 
     /** Hide tagged items in the Item Feed */
     itemFeedHideTagged: { type: bool, fieldNum: 32 },

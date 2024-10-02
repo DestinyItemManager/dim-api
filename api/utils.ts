@@ -146,3 +146,16 @@ export function checkPlatformMembershipId(
     }
   }
 }
+
+/** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
+export function subtractObject<T extends object>(obj: Partial<T>, defaults: T): Partial<T> {
+  const result: Partial<T> = {};
+  if (obj) {
+    for (const key in defaults) {
+      if (obj[key] !== undefined && obj[key] !== defaults[key]) {
+        result[key] = obj[key];
+      }
+    }
+  }
+  return result;
+}

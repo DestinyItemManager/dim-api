@@ -23,7 +23,7 @@ export async function replaceSettings(
   client: ClientBase,
   appId: string,
   bungieMembershipId: number,
-  settings: Settings,
+  settings: Partial<Settings>,
 ): Promise<QueryResult> {
   const result = await client.query({
     name: 'upsert_settings',
