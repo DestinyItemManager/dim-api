@@ -151,7 +151,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           req,
           updates,
           bungieMembershipId,
-          platformMembershipId,
+          platformMembershipId ?? profileIds[0],
           destinyVersion,
           appId,
         );
@@ -171,7 +171,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
         req,
         updates,
         bungieMembershipId,
-        platformMembershipId,
+        platformMembershipId ?? profileIds[0],
         destinyVersion,
         appId,
       );

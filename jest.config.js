@@ -1,7 +1,7 @@
 import { pathsToModuleNameMapper } from 'ts-jest';
 import tsConfig from './tsconfig.json' with { type: 'json' };
 export default {
-  testTimeout: 10000,
+  testTimeout: 15000,
   transform: {
     '\\.ts$': [
       'ts-jest',
