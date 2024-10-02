@@ -258,6 +258,9 @@ async function statelyUpdate(
           message: `Unknown action type: ${(update as { action: string }).action}`,
         };
     }
+    if (result.status !== 'Success') {
+      console.log('Stately failed update', update.action, result, appId);
+    }
     results.push(result);
   }
 
