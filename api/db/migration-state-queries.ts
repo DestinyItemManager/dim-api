@@ -1,4 +1,5 @@
 import { ClientBase } from 'pg';
+import { metrics } from '../metrics/index.js';
 import { transaction } from './index.js';
 
 export const MAX_MIGRATION_ATTEMPTS = 3;
@@ -185,6 +186,7 @@ export async function doMigration(
   onBeforeFinish?: (client: ClientBase) => Promise<any>,
 ): Promise<void> {
   try {
+    metrics.increment('migration.start.count');
     await transaction(async (client) => {
       await startMigrationToStately(client, bungieMembershipId);
     });
@@ -193,6 +195,7 @@ export async function doMigration(
       await onBeforeFinish?.(client);
       await finishMigrationToStately(client, bungieMembershipId);
     });
+    metrics.increment('migration.finish.count');
   } catch (e) {
     await transaction(async (client) => {
       await abortMigrationToStately(
@@ -201,6 +204,7 @@ export async function doMigration(
         e instanceof Error ? e.message : 'Unknown error',
       );
     });
+    metrics.increment('migration.abort.count');
     throw e;
   }
 }
