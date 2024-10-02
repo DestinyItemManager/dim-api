@@ -23,13 +23,16 @@ import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
+import { client } from '../stately/client.js';
+import { AnyItem } from '../stately/generated/index.js';
 import { importTags } from '../stately/item-annotations-queries.js';
 import { importHashTags } from '../stately/item-hash-tags-queries.js';
 import { importLoadouts } from '../stately/loadouts-queries.js';
 import { importSearches } from '../stately/searches-queries.js';
-import { replaceSettings as replaceSettingsStately } from '../stately/settings-queries.js';
+import { convertToStatelyItem } from '../stately/settings-queries.js';
+import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
-import { badRequest } from '../utils.js';
+import { badRequest, subtractObject } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
@@ -229,22 +232,26 @@ export async function statelyImport(
   searches: ExportResponse['searches'],
   itemHashTags: ItemHashTag[],
 ): Promise<number> {
-  // TODO: this could all be parallelized but it's not very performance-sensitive
+  // TODO: what we should do, is map all these to items, and then we can just do
+  // batch puts, 25 at a time.
 
   let numTriumphs = 0;
   await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
-  await replaceSettingsStately(bungieMembershipId, { ...defaultSettings, ...settings });
-  await importLoadouts(loadouts);
-  await importTags(itemAnnotations);
+
+  const items: AnyItem[] = [
+    convertToStatelyItem({ ...defaultSettings, ...settings }, bungieMembershipId),
+  ];
+  items.push(...importLoadouts(loadouts));
+  items.push(...importTags(itemAnnotations));
   for (const platformMembershipId of platformMembershipIds) {
     // TODO: I guess save them to each platform? I should really refactor the
     // import shape to have hashtags per platform, or merge/unique them.
-    await importHashTags(platformMembershipId, itemHashTags);
+    items.push(...importHashTags(platformMembershipId, itemHashTags));
   }
   if (Array.isArray(triumphs)) {
     for (const triumphData of triumphs) {
       if (Array.isArray(triumphData?.triumphs)) {
-        await importTriumphs(triumphData.platformMembershipId, triumphData.triumphs);
+        items.push(...importTriumphs(triumphData.platformMembershipId, triumphData.triumphs));
         numTriumphs += triumphData.triumphs.length;
       }
     }
@@ -252,22 +259,15 @@ export async function statelyImport(
   for (const platformMembershipId of platformMembershipIds) {
     // TODO: I guess save them to each platform? I should really refactor the
     // import shape to have searches per platform, or merge/unique them.
-    await importSearches(platformMembershipId, searches);
+    items.push(...importSearches(platformMembershipId, searches));
   }
-  return numTriumphs;
-}
 
-/** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */
-function subtractObject<T extends object>(obj: Partial<T>, defaults: T): Partial<T> {
-  const result: Partial<T> = {};
-  if (obj) {
-    for (const key in defaults) {
-      if (obj[key] !== undefined && obj[key] !== defaults[key]) {
-        result[key] = obj[key];
-      }
-    }
+  // OK now put them in as fast as we can
+  for (const batch of batches(items)) {
+    await client.putBatch(...batch);
   }
-  return result;
+
+  return numTriumphs;
 }
 
 function extractSettings(importData: ExportResponse): Partial<Settings> {

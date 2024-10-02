@@ -295,18 +295,15 @@ export async function updateLoadout(
   await client.put(item);
 }
 
-export async function importLoadouts(
+export function importLoadouts(
   loadouts: (Loadout & {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
   })[],
 ) {
-  const loadoutItems = loadouts
+  return loadouts
     .filter((v) => v.platformMembershipId && v.destinyVersion)
     .map((v) => convertLoadoutToStately(v, v.platformMembershipId, v.destinyVersion));
-  for (const items of batches(loadoutItems)) {
-    await client.putBatch(...items);
-  }
 }
 
 /**

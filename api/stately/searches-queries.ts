@@ -219,14 +219,14 @@ export async function importSearch(
   );
 }
 
-export async function importSearches(
+export function importSearches(
   platformMembershipId: string,
   searches: {
     destinyVersion: DestinyVersion;
     search: Search;
   }[],
-): Promise<void> {
-  const searchItems = searches.map(({ destinyVersion, search }) =>
+) {
+  return searches.map(({ destinyVersion, search }) =>
     client.create('Search', {
       query: search.query,
       qhash: queryHash(search.query),
@@ -241,9 +241,6 @@ export async function importSearches(
       destinyVersion,
     }),
   );
-  for (const items of batches(searchItems)) {
-    await client.putBatch(...items);
-  }
 }
 
 /**

@@ -3,6 +3,8 @@ import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
+import { defaultSettings } from '../shapes/settings.js';
+import { subtractObject } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
 import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
@@ -112,7 +114,7 @@ export async function exportDataForUser(
 
   const settings = await settingsPromise;
   const initialResponse: ExportResponse = {
-    settings,
+    settings: subtractObject(settings, defaultSettings),
     loadouts: [],
     tags: [],
     itemHashTags: [],

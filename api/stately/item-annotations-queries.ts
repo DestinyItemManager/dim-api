@@ -128,13 +128,13 @@ export async function updateItemAnnotation(
   });
 }
 
-export async function importTags(
+export function importTags(
   itemAnnotations: (ItemAnnotation & {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
   })[],
 ) {
-  const tagItems = itemAnnotations.map((v) =>
+  return itemAnnotations.map((v) =>
     client.create('ItemAnnotation', {
       id: BigInt(v.id),
       profileId: BigInt(v.platformMembershipId),
@@ -144,9 +144,6 @@ export async function importTags(
       craftedDate: v.craftedDate ? BigInt(v.craftedDate * 1000) : undefined,
     }),
   );
-  for (const items of batches(tagItems)) {
-    await client.putBatch(...items);
-  }
 }
 
 /**

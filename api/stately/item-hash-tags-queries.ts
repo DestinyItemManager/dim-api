@@ -83,11 +83,8 @@ export async function updateItemHashTag(
   });
 }
 
-export async function importHashTags(
-  platformMembershipId: string,
-  itemHashTags: ItemHashTag[],
-): Promise<void> {
-  const tagItems = itemHashTags.map((v) =>
+export function importHashTags(platformMembershipId: string, itemHashTags: ItemHashTag[]) {
+  return itemHashTags.map((v) =>
     client.create('ItemHashTag', {
       hash: v.hash,
       profileId: BigInt(platformMembershipId),
@@ -96,9 +93,6 @@ export async function importHashTags(
       notes: v.notes || '',
     }),
   );
-  for (const items of batches(tagItems)) {
-    await client.putBatch(...items);
-  }
 }
 
 /**
