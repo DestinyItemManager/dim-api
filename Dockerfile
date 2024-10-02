@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# for node-gyp to install cloud profiler
+RUN apk add python3 g++ make py-setuptools
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
