@@ -154,9 +154,9 @@ export async function deleteItemAnnotation(
   destinyVersion: DestinyVersion,
   ...inventoryItemIds: string[]
 ): Promise<void> {
-  return client.del(
-    ...inventoryItemIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)),
-  );
+  for (const batch of batches(inventoryItemIds)) {
+    await client.del(...batch.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
+  }
 }
 
 /**
