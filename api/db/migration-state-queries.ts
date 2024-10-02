@@ -135,6 +135,8 @@ export async function deleteMigrationState(
 const forceStatelyMembershipIds = new Set([
   // Ben
   7094,
+  // Test user
+  1234,
 ]);
 
 export async function getDesiredMigrationState(migrationState: MigrationStateInfo) {
