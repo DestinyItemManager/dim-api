@@ -69,7 +69,11 @@ export const createAppHandler = asyncHandler(async (req, res) => {
   // Only return the recovered app if it's for the same origin and key
   if (app.origin === originUrl.origin && app.bungieApiKey === request.bungieApiKey) {
     res.send({
-      app,
+      app: {
+        id: app.id,
+        dimApiKey: app.dimApiKey,
+        origin: app.origin,
+      },
     });
   } else {
     badRequest(res, 'An app already exists with that id');
