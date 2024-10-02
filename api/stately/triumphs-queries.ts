@@ -38,6 +38,23 @@ export async function trackTriumph(
   );
 }
 
+export async function importTriumphs(
+  platformMembershipId: string,
+  recordHashes: number[],
+): Promise<void> {
+  for (const batch of batches(recordHashes)) {
+    await client.putBatch(
+      ...batch.map((recordHash) =>
+        client.create('Triumph', {
+          recordHash,
+          profileId: BigInt(platformMembershipId),
+          destinyVersion: 2,
+        }),
+      ),
+    );
+  }
+}
+
 /**
  * Remove a tracked triumph.
  */

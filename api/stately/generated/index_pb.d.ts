@@ -457,9 +457,9 @@ export declare type LoadoutParameters = Message<"stately.generated.LoadoutParame
   clearArmor: boolean;
 
   /**
-   * @generated from field: stately.generated.ModsByBucketEntry modsByBucket = 6;
+   * @generated from field: repeated stately.generated.ModsByBucketEntry modsByBucket = 6;
    */
-  modsByBucket?: ModsByBucketEntry;
+  modsByBucket: ModsByBucketEntry[];
 
   /**
    * @generated from field: stately.generated.ArtifactUnlocks artifactUnlocks = 7;

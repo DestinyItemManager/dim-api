@@ -1074,7 +1074,8 @@ async function importData() {
     (await promisify(readFile)('./dim-data.json')).toString(),
   ) as ExportResponse;
 
-  (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
+  const resp = (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
+  expect(resp.tags).toBeGreaterThan(1);
 
   return file;
 }

@@ -128,6 +128,27 @@ export async function updateItemAnnotation(
   });
 }
 
+export async function importTags(
+  itemAnnotations: (ItemAnnotation & {
+    platformMembershipId: string;
+    destinyVersion: DestinyVersion;
+  })[],
+) {
+  const tagItems = itemAnnotations.map((v) =>
+    client.create('ItemAnnotation', {
+      id: BigInt(v.id),
+      profileId: BigInt(v.platformMembershipId),
+      destinyVersion: v.destinyVersion,
+      tag: v.tag ? StatelyTagValue[`TagValue_${v.tag}`] : StatelyTagValue.TagValue_UNSPECIFIED,
+      notes: v.notes || '',
+      craftedDate: v.craftedDate ? BigInt(v.craftedDate * 1000) : undefined,
+    }),
+  );
+  for (const items of batches(tagItems)) {
+    await client.putBatch(...items);
+  }
+}
+
 /**
  * Delete an item annotation.
  */

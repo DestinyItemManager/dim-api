@@ -49,13 +49,13 @@ export const CollapsedSection = objectType('CollapsedSection', {
 
 export const StatConstraintsEntry = objectType('StatConstraintsEntry', {
   fields: {
-    classType: { type: DestinyClass, fieldNum: 1 },
+    classType: { type: DestinyClass, fieldNum: 1, required: false },
     constraints: { type: arrayOf(StatConstraint), fieldNum: 2 },
   },
 });
 export const CustomStatsEntry = objectType('CustomStatsEntry', {
   fields: {
-    classType: { type: DestinyClass, fieldNum: 1 },
+    classType: { type: DestinyClass, fieldNum: 1, required: false },
     customStats: { type: arrayOf(HashID), fieldNum: 2 },
   },
 });
@@ -72,7 +72,7 @@ export const DescriptionOptions = enumType('DescriptionOptions', {
 export const CustomStatWeightsEntry = objectType('CustomStatWeightsEntry', {
   fields: {
     statHash: { type: HashID, fieldNum: 1 },
-    weight: { type: double, fieldNum: 2 },
+    weight: { type: double, fieldNum: 2, required: false },
   },
 });
 
@@ -85,7 +85,7 @@ export const CustomStatDef = objectType('CustomStatDef', {
     /** an abbreviated/crunched form of the stat label, for use in search filters */
     shortLabel: { type: string, fieldNum: 3 },
     /** which guardian class this stat should be used for. DestinyClass.Unknown makes a global (all 3 classes) stat */
-    class: { type: DestinyClass, fieldNum: 4 },
+    class: { type: DestinyClass, fieldNum: 4, required: false },
     /** info about how to calculate the stat total */
     weights: { type: arrayOf(CustomStatWeightsEntry), fieldNum: 5 },
   },

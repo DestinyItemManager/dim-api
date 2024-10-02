@@ -15,7 +15,7 @@ import { DestinyClass, DestinyVersion, HashID, ItemID, ProfileID, uint32 } from 
 export const SocketOverride = objectType('SocketOverride', {
   fields: {
     /** The index of the socket in the item */
-    socketIndex: { type: uint32, fieldNum: 1 },
+    socketIndex: { type: uint32, fieldNum: 1, required: false },
     /** The hash of the item that should be in this socket */
     itemHash: { type: HashID, fieldNum: 2 },
   },
@@ -122,7 +122,7 @@ export function ModsByBucketEntry() {
   return objectType('ModsByBucketEntry', {
     fields: {
       bucketHash: { type: HashID, fieldNum: 1 },
-      modHashes: { type: arrayOf(HashID), fieldNum: 2 },
+      modHashes: { type: arrayOf(HashID), fieldNum: 2, required: false },
     },
   });
 }
@@ -131,7 +131,7 @@ export function ArtifactUnlocks() {
   return objectType('ArtifactUnlocks', {
     fields: {
       /** The item hashes of the unlocked artifact perk items. */
-      unlockedItemHashes: { type: arrayOf(HashID), fieldNum: 1 },
+      unlockedItemHashes: { type: arrayOf(HashID), fieldNum: 1, required: false },
       /** The season this set of artifact unlocks was chosen from. */
       seasonNumber: { type: uint32, fieldNum: 2 },
     },
@@ -191,7 +191,7 @@ export function LoadoutParameters() {
        * be automatically assigned to the right piece. These only apply to the equipped
        * item.
        */
-      modsByBucket: { type: ModsByBucketEntry, fieldNum: 6, required: false },
+      modsByBucket: { type: arrayOf(ModsByBucketEntry), fieldNum: 6, required: false },
 
       /** The artifact unlocks relevant to this build. */
       artifactUnlocks: { type: ArtifactUnlocks, fieldNum: 7, required: false },
@@ -208,7 +208,7 @@ export function LoadoutParameters() {
       /**
        * Whether armor of this type will have assumed masterwork stats in the Loadout Optimizer.
        */
-      assumeArmorMasterwork: { type: AssumeArmorMasterwork, fieldNum: 10 },
+      assumeArmorMasterwork: { type: AssumeArmorMasterwork, fieldNum: 10, required: false },
 
       /**
        * The InventoryItemHash of the pinned exotic, if any was chosen.

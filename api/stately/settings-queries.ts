@@ -26,7 +26,7 @@ import {
 import { bigIntToNumber, enumToStringUnion, listToMap, stripTypeName } from './stately-utils.js';
 
 export function keyFor(bungieMembershipId: number) {
-  return keyPath`/member-${bungieMembershipId}/settings`;
+  return keyPath`/member-${BigInt(bungieMembershipId)}/settings`;
 }
 
 /**
@@ -88,6 +88,7 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
     itemPopupTab,
     ...rest
   } = settings;
+
   const collapsedSectionsMap = Object.fromEntries(
     collapsedSections.map((s) => [s.key, s.collapsed]),
   );
@@ -101,8 +102,9 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
   );
 
   const customStatsFixed: CustomStatDef[] = customStats.map((c) => {
-    const { class: klass, weights, ...rest } = stripTypeName(bigIntToNumber(c));
+    const { class: klass, statHash, weights, ...rest } = stripTypeName(bigIntToNumber(c));
     return {
+      statHash: -statHash, // we stored it negated, because it's always negative
       class: klass as number as DestinyClass,
       weights: listToMap('statHash', 'weight', weights),
       ...rest,
@@ -189,9 +191,12 @@ export function convertToStatelyItem(
 
   const customStatsFixed = customStats.map((c) => {
     const { class: klass, statHash, weights, ...rest } = c;
+    if (statHash >= 0 || !Number.isInteger(statHash)) {
+      throw new Error(`Expected fake custom stat hash to be negative integer, was ${statHash}`);
+    }
     return client.create('CustomStatDef', {
       class: klass as number,
-      statHash: Number(statHash),
+      statHash: -statHash,
       weights: Object.entries(weights).map(([statHash, weight]) => ({
         statHash: Number(statHash),
         weight: weight ?? 0,
@@ -245,7 +250,8 @@ export async function replaceSettings(
   bungieMembershipId: number,
   settings: Settings,
 ): Promise<void> {
-  await client.put(convertToStatelyItem(settings, bungieMembershipId));
+  const item = convertToStatelyItem(settings, bungieMembershipId);
+  await client.put(item);
 }
 
 /**

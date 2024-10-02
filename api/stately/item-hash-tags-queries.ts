@@ -83,6 +83,24 @@ export async function updateItemHashTag(
   });
 }
 
+export async function importHashTags(
+  platformMembershipId: string,
+  itemHashTags: ItemHashTag[],
+): Promise<void> {
+  const tagItems = itemHashTags.map((v) =>
+    client.create('ItemHashTag', {
+      hash: v.hash,
+      profileId: BigInt(platformMembershipId),
+      destinyVersion: 2,
+      tag: v.tag ? StatelyTagValue[`TagValue_${v.tag}`] : StatelyTagValue.TagValue_UNSPECIFIED,
+      notes: v.notes || '',
+    }),
+  );
+  for (const items of batches(tagItems)) {
+    await client.putBatch(...items);
+  }
+}
+
 /**
  * Delete an item hash tags.
  */

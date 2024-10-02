@@ -188,7 +188,7 @@ export async function doMigration(
     await transaction(async (client) => {
       await startMigrationToStately(client, bungieMembershipId);
     });
-    fn();
+    await fn();
     await transaction(async (client) => {
       await onBeforeFinish?.(client);
       await finishMigrationToStately(client, bungieMembershipId);

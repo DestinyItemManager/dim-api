@@ -2,7 +2,7 @@ import { MessageInitShape } from '@bufbuild/protobuf';
 import { keyPath } from '@stately-cloud/client';
 import { DestinyClass } from 'bungie-api-ts/destiny2';
 import _ from 'lodash';
-import { parse as parseUUID, stringify as stringifyUUID } from 'uuid';
+import { stringify as stringifyUUID } from 'uuid';
 import { DestinyVersion } from '../shapes/general.js';
 import { Loadout, LoadoutItem, LoadoutParameters, StatConstraint } from '../shapes/loadouts.js';
 import { isValidItemId } from '../utils.js';
@@ -98,7 +98,7 @@ export function convertLoadoutFromStately(item: StatelyLoadout | StatelyLoadoutS
 export function convertLoadoutParametersFromStately(
   loParameters: StatelyLoadoutParameters,
 ): LoadoutParameters {
-  const { assumeArmorMasterwork, statConstraints, ...loParametersDefaulted } =
+  const { assumeArmorMasterwork, statConstraints, modsByBucket, ...loParametersDefaulted } =
     stripTypeName(loParameters);
   return {
     ...stripDefaults(loParametersDefaulted),
@@ -120,6 +120,7 @@ export function convertLoadoutParametersFromStately(
             return constraint;
           })
         : undefined,
+    modsByBucket: listToMap('bucketHash', 'modHashes', modsByBucket),
     autoStatMods: true,
     includeRuntimeStatBenefits: true,
   };
@@ -142,6 +143,37 @@ function convertLoadoutItemFromStately(item: StatelyLoadoutItem): LoadoutItem {
     result.craftedDate = Number(item.craftedDate);
   }
   return result;
+}
+
+// This is a copy of the UUID parsing code from the uuid package, but without
+// the validation - I don't really care whether it's a perfectly valid UUID,
+// just that it's 16 bytes.
+function parseUUID(uuid: string): Uint8Array {
+  let v;
+  const arr = new Uint8Array(16); // Parse ########-....-....-....-............
+
+  arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+  arr[1] = (v >>> 16) & 0xff;
+  arr[2] = (v >>> 8) & 0xff;
+  arr[3] = v & 0xff; // Parse ........-####-....-....-............
+
+  arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+  arr[5] = v & 0xff; // Parse ........-....-####-....-............
+
+  arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+  arr[7] = v & 0xff; // Parse ........-....-....-####-............
+
+  arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+  arr[9] = v & 0xff; // Parse ........-....-....-....-############
+  // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
+
+  arr[10] = ((v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff;
+  arr[11] = (v / 0x100000000) & 0xff;
+  arr[12] = (v >>> 24) & 0xff;
+  arr[13] = (v >>> 16) & 0xff;
+  arr[14] = (v >>> 8) & 0xff;
+  arr[15] = v & 0xff;
+  return arr;
 }
 
 export function convertLoadoutToStately(
@@ -199,7 +231,8 @@ export function convertLoadoutParametersToStately(
 ): MessageInitShape<typeof LoadoutParametersSchema> | undefined {
   let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
   if (!_.isEmpty(loParameters)) {
-    const { assumeArmorMasterwork, statConstraints, ...loParametersDefaulted } = loParameters;
+    const { assumeArmorMasterwork, statConstraints, modsByBucket, ...loParametersDefaulted } =
+      loParameters;
     loParametersFixed = {
       ...loParametersDefaulted,
       statConstraints:
@@ -211,7 +244,13 @@ export function convertLoadoutParametersToStately(
             }))
           : [],
       // DIM's AssumArmorMasterwork enum starts at 1
-      assumeArmorMasterwork: Number(assumeArmorMasterwork) - 1,
+      assumeArmorMasterwork: Number(assumeArmorMasterwork ?? 0) - 1,
+      modsByBucket: modsByBucket
+        ? Object.entries(modsByBucket).map(([bucketHash, modHashes]) => ({
+            bucketHash: Number(bucketHash),
+            modHashes,
+          }))
+        : undefined,
     };
   }
   return loParametersFixed;
@@ -225,7 +264,22 @@ export async function updateLoadout(
   destinyVersion: DestinyVersion,
   loadout: Loadout,
 ): Promise<void> {
-  await client.put(convertLoadoutToStately(loadout, platformMembershipId, destinyVersion));
+  const item = convertLoadoutToStately(loadout, platformMembershipId, destinyVersion);
+  await client.put(item);
+}
+
+export async function importLoadouts(
+  loadouts: (Loadout & {
+    platformMembershipId: string;
+    destinyVersion: DestinyVersion;
+  })[],
+) {
+  const loadoutItems = loadouts
+    .filter((v) => v.platformMembershipId && v.destinyVersion)
+    .map((v) => convertLoadoutToStately(v, v.platformMembershipId, v.destinyVersion));
+  for (const items of batches(loadoutItems)) {
+    await client.putBatch(...items);
+  }
 }
 
 /**

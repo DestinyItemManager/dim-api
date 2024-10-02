@@ -219,6 +219,33 @@ export async function importSearch(
   );
 }
 
+export async function importSearches(
+  platformMembershipId: string,
+  searches: {
+    destinyVersion: DestinyVersion;
+    search: Search;
+  }[],
+): Promise<void> {
+  const searchItems = searches.map(({ destinyVersion, search }) =>
+    client.create('Search', {
+      query: search.query,
+      qhash: queryHash(search.query),
+      saved: search.saved,
+      usageCount: search.usageCount,
+      lastUsage: BigInt(search.lastUsage),
+      type:
+        search.type === SearchType.Item
+          ? StatelySearchType.SearchType_Item
+          : StatelySearchType.SearchType_Loadout,
+      profileId: BigInt(platformMembershipId),
+      destinyVersion,
+    }),
+  );
+  for (const items of batches(searchItems)) {
+    await client.putBatch(...items);
+  }
+}
+
 /**
  * Delete a single search
  */

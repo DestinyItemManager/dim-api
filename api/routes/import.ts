@@ -23,12 +23,12 @@ import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
-import { updateItemAnnotation as updateItemAnnotationStately } from '../stately/item-annotations-queries.js';
-import { updateItemHashTag as updateItemHashTagStately } from '../stately/item-hash-tags-queries.js';
-import { updateLoadout as updateLoadoutStately } from '../stately/loadouts-queries.js';
-import { importSearch as importSearchStately } from '../stately/searches-queries.js';
+import { importTags } from '../stately/item-annotations-queries.js';
+import { importHashTags } from '../stately/item-hash-tags-queries.js';
+import { importLoadouts } from '../stately/loadouts-queries.js';
+import { importSearches } from '../stately/searches-queries.js';
 import { replaceSettings as replaceSettingsStately } from '../stately/settings-queries.js';
-import { trackTriumph as trackTriumphStately } from '../stately/triumphs-queries.js';
+import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
@@ -80,7 +80,7 @@ export const importHandler = asyncHandler(async (req, res) => {
   switch (migrationState.state) {
     case MigrationState.Postgres:
       if (shouldMigrateToStately) {
-        doMigration(bungieMembershipId, importToStately, async (client) =>
+        await doMigration(bungieMembershipId, importToStately, async (client) =>
           deleteAllData(client, bungieMembershipId),
         );
       } else {
@@ -97,7 +97,7 @@ export const importHandler = asyncHandler(async (req, res) => {
       }
       break;
     case MigrationState.Stately:
-      importToStately();
+      await importToStately();
       break;
     default:
       // in-progress migration
@@ -233,59 +233,40 @@ export async function statelyImport(
 
   let numTriumphs = 0;
   await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+  console.log('Deleted all stately data');
+
   await replaceSettingsStately(bungieMembershipId, { ...defaultSettings, ...settings });
+  console.log('Replaced Settings');
 
-  for (const loadout of loadouts) {
-    // For now, ignore ancient loadouts
-    if (!loadout.platformMembershipId || !loadout.destinyVersion) {
-      continue;
-    }
-    await updateLoadoutStately(loadout.platformMembershipId, loadout.destinyVersion, loadout);
-  }
+  await importLoadouts(loadouts);
+  console.log('Updated loadouts');
 
-  // TODO: query first so we can delete after?
-  for (const annotation of itemAnnotations) {
-    await updateItemAnnotationStately(
-      annotation.platformMembershipId,
-      annotation.destinyVersion,
-      annotation,
-    );
-  }
+  await importTags(itemAnnotations);
+  console.log('Updated tags');
 
-  for (const tag of itemHashTags) {
-    for (const platformMembershipId of platformMembershipIds) {
-      // TODO: I guess save them to each platform? I should really refactor the
-      // import shape to have hashtags per platform, or merge/unique them.
-      await updateItemHashTagStately(platformMembershipId, tag);
-    }
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have hashtags per platform, or merge/unique them.
+    await importHashTags(platformMembershipId, itemHashTags);
   }
+  console.log('Updated hashtags');
 
   if (Array.isArray(triumphs)) {
     for (const triumphData of triumphs) {
       if (Array.isArray(triumphData?.triumphs)) {
-        for (const triumph of triumphData.triumphs) {
-          trackTriumphStately(triumphData.platformMembershipId, triumph);
-          numTriumphs++;
-        }
+        await importTriumphs(triumphData.platformMembershipId, triumphData.triumphs);
+        numTriumphs += triumphData.triumphs.length;
       }
     }
   }
+  console.log('Updated triumphs');
 
-  for (const search of searches) {
-    for (const platformMembershipId of platformMembershipIds) {
-      // TODO: I guess save them to each platform? I should really refactor the
-      // import shape to have searches per platform, or merge/unique them.
-      importSearchStately(
-        platformMembershipId,
-        search.destinyVersion,
-        search.search.query,
-        search.search.saved,
-        search.search.lastUsage,
-        search.search.usageCount,
-        search.search.type ?? SearchType.Item,
-      );
-    }
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have searches per platform, or merge/unique them.
+    await importSearches(platformMembershipId, searches);
   }
+  console.log('Updated searches');
 
   return numTriumphs;
 }
