@@ -25,9 +25,21 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   let result: DeleteAllResponse['deleted'];
   switch (migrationState.state) {
     case MigrationState.Postgres:
+      // Also delete from Stately, just to honor the "no data left here" promise
+      try {
+        await deleteAllDataForUser(bungieMembershipId, profileIds);
+      } catch (e) {
+        console.error('Error deleting data from Stately', e);
+      }
       result = await transaction(async (client) => deleteAllData(client, bungieMembershipId));
       break;
     case MigrationState.Stately:
+      // Also delete from Postgres, just to honor the "no data left here" promise
+      try {
+        await transaction(async (client) => deleteAllData(client, bungieMembershipId));
+      } catch (e) {
+        console.error('Error deleting data from Postgres', e);
+      }
       result = await deleteAllDataForUser(bungieMembershipId, profileIds);
       break;
     default:

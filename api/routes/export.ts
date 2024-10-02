@@ -37,7 +37,7 @@ export const exportHandler = asyncHandler(async (req, res) => {
   res.send(response);
 });
 
-async function pgExport(bungieMembershipId: number): Promise<ExportResponse> {
+export async function pgExport(bungieMembershipId: number): Promise<ExportResponse> {
   const response = await readTransaction(async (client) => {
     const settings = await getSettings(client, bungieMembershipId);
     const loadouts = await getAllLoadoutsForUser(client, bungieMembershipId);

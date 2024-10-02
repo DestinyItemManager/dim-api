@@ -39,12 +39,8 @@ export const importHandler = asyncHandler(async (req, res) => {
   // Support only new API exports
   const importData = req.body as ExportResponse;
 
-  const settings = extractSettings(importData);
-  const loadouts = extractLoadouts(importData);
-  const itemAnnotations = extractItemAnnotations(importData);
-  const triumphs = importData.triumphs || [];
-  const searches = extractSearches(importData);
-  const itemHashTags = importData.itemHashTags || [];
+  const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
+    extractImportData(importData);
 
   if (
     _.isEmpty(settings) &&
@@ -120,6 +116,24 @@ export const importHandler = asyncHandler(async (req, res) => {
   // default 200 OK
   res.status(200).send(response);
 });
+
+export function extractImportData(importData: ExportResponse) {
+  const settings = extractSettings(importData);
+  const loadouts = extractLoadouts(importData);
+  const itemAnnotations = extractItemAnnotations(importData);
+  const triumphs = importData.triumphs || [];
+  const searches = extractSearches(importData);
+  const itemHashTags = importData.itemHashTags || [];
+
+  return {
+    settings,
+    loadouts,
+    itemAnnotations,
+    triumphs,
+    searches,
+    itemHashTags,
+  };
+}
 
 async function pgImport(
   bungieMembershipId: number,
@@ -205,7 +219,7 @@ async function pgImport(
   return numTriumphs;
 }
 
-async function statelyImport(
+export async function statelyImport(
   bungieMembershipId: number,
   platformMembershipIds: string[],
   settings: Partial<Settings>,

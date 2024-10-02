@@ -233,7 +233,6 @@ async function pgProfile(
 
 // TODO: Probably could enable allowStale, since profiles are cached anyway
 // TODO: It'd be nice to pass a signal in so we can abort all the parallel fetches
-// TODO: right now we get each component separately, but we should do it in one big query, at least for DIM
 async function statelyProfile(
   res: express.Response,
   components: ProfileComponent[],
