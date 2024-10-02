@@ -3,7 +3,13 @@ import { keyPath } from '@stately-cloud/client';
 import { DestinyClass } from 'bungie-api-ts/destiny2';
 import _ from 'lodash';
 import { DestinyVersion } from '../shapes/general.js';
-import { Loadout, LoadoutItem, LoadoutParameters, StatConstraint } from '../shapes/loadouts.js';
+import {
+  AssumeArmorMasterwork,
+  Loadout,
+  LoadoutItem,
+  LoadoutParameters,
+  StatConstraint,
+} from '../shapes/loadouts.js';
 import { isValidItemId } from '../utils.js';
 import { client } from './client.js';
 import {
@@ -273,7 +279,7 @@ export function convertLoadoutParametersToStately(
             }))
           : [],
       // DIM's AssumArmorMasterwork enum starts at 1
-      assumeArmorMasterwork: Number(assumeArmorMasterwork ?? 0) - 1,
+      assumeArmorMasterwork: Number(assumeArmorMasterwork ?? AssumeArmorMasterwork.None) - 1,
       modsByBucket: modsByBucket
         ? Object.entries(modsByBucket).map(([bucketHash, modHashes]) => ({
             bucketHash: Number(bucketHash),
