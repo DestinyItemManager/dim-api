@@ -30,7 +30,7 @@ export const Search = itemType('Search', {
     /**
      * The full search query. These are
      */
-    query: { type: string, fieldNum: 1, valid: 'this.size() <= 2048' },
+    query: { type: string, fieldNum: 1 },
     /** A zero usage count means this is a suggested/preloaded search. */
     usageCount: { type: uint32, fieldNum: 2, required: false },
     /** Has this search been saved/favorite'd/pinned by the user? */
