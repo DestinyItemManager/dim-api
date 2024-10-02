@@ -1,4 +1,5 @@
 import { createTerminus } from '@godaddy/terminus';
+import profiler from '@google-cloud/profiler';
 import * as Sentry from '@sentry/node';
 import * as Tracing from '@sentry/tracing';
 import express from 'express';
@@ -98,6 +99,18 @@ if (process.env.SENTRY_DSN) {
       new Tracing.Integrations.Postgres(),
     ],
     tracesSampleRate: 0.001,
+  });
+}
+
+if (process.env.GCP_CREDENTIALS) {
+  await profiler.start({
+    projectId: 'statelycloud-prod',
+    serviceContext: {
+      service: 'dim',
+      version: process.env.COMMITHASH,
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    credentials: JSON.parse(process.env.GCP_CREDENTIALS),
   });
 }
 
