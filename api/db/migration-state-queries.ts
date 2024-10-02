@@ -140,11 +140,20 @@ const forceStatelyMembershipIds = new Set([
   1234,
 ]);
 
+const dialPercentage = 0.001; // 0 - 1.0
+
+// This would be better as a uniform hash but this is good enough for now
+function isUserDialedIn(bungieMembershipId: number) {
+  return (bungieMembershipId % 10000) / 10000 < dialPercentage;
+}
+
 export async function getDesiredMigrationState(migrationState: MigrationStateInfo) {
   // TODO: use a uniform hash and a percentage dial to control this
-  const desiredState = forceStatelyMembershipIds.has(migrationState.bungieMembershipId)
-    ? MigrationState.Stately
-    : MigrationState.Postgres;
+  const desiredState =
+    forceStatelyMembershipIds.has(migrationState.bungieMembershipId) ||
+    isUserDialedIn(migrationState.bungieMembershipId)
+      ? MigrationState.Stately
+      : MigrationState.Postgres;
 
   if (desiredState === migrationState.state) {
     return migrationState.state;

@@ -251,7 +251,7 @@ async function statelyProfile(
         const start = new Date();
         const storedSettings = await getSettingsStately(bungieMembershipId);
         response.settings = storedSettings;
-        metrics.timing('profile.settings', start);
+        metrics.timing('profileStately.settings', start);
       })(),
     );
   }
@@ -265,7 +265,7 @@ async function statelyProfile(
   ) {
     const start = new Date();
     const profileResponse = await getProfile(platformMembershipId, destinyVersion);
-    metrics.timing('profile.all', start);
+    metrics.timing('profileStately.allComponents', start);
     await Promise.all(promises); // wait for settings
     metrics.timing('profile.loadouts.numReturned', profileResponse.loadouts?.length ?? 0);
     metrics.timing('profile.tags.numReturned', profileResponse.tags?.length ?? 0);
@@ -288,7 +288,7 @@ async function statelyProfile(
           destinyVersion,
         );
         metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
-        metrics.timing('profile.loadouts', start);
+        metrics.timing('profileStately.loadouts', start);
       })(),
     );
   }
@@ -306,7 +306,7 @@ async function statelyProfile(
           destinyVersion,
         );
         metrics.timing('profile.tags.numReturned', response.tags.length);
-        metrics.timing('profile.tags', start);
+        metrics.timing('profileStately.tags', start);
       })(),
     );
   }
@@ -321,7 +321,7 @@ async function statelyProfile(
         const start = new Date();
         response.itemHashTags = await getItemHashTagsForProfileStately(platformMembershipId);
         metrics.timing('profile.hashtags.numReturned', response.itemHashTags.length);
-        metrics.timing('profile.hashtags', start);
+        metrics.timing('profileStately.hashtags', start);
       })(),
     );
   }
@@ -336,7 +336,7 @@ async function statelyProfile(
         const start = new Date();
         response.triumphs = await getTrackedTriumphsForProfileStately(platformMembershipId);
         metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
-        metrics.timing('profile.triumphs', start);
+        metrics.timing('profileStately.triumphs', start);
       })(),
     );
   }
@@ -354,7 +354,7 @@ async function statelyProfile(
           destinyVersion,
         );
         metrics.timing('profile.searches.numReturned', response.searches.length);
-        metrics.timing('profile.searches', start);
+        metrics.timing('profileStately.searches', start);
       })(),
     );
   }
