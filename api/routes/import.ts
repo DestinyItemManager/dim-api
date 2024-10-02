@@ -233,24 +233,14 @@ export async function statelyImport(
 
   let numTriumphs = 0;
   await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
-  console.log('Deleted all stately data');
-
   await replaceSettingsStately(bungieMembershipId, { ...defaultSettings, ...settings });
-  console.log('Replaced Settings');
-
   await importLoadouts(loadouts);
-  console.log('Updated loadouts');
-
   await importTags(itemAnnotations);
-  console.log('Updated tags');
-
   for (const platformMembershipId of platformMembershipIds) {
     // TODO: I guess save them to each platform? I should really refactor the
     // import shape to have hashtags per platform, or merge/unique them.
     await importHashTags(platformMembershipId, itemHashTags);
   }
-  console.log('Updated hashtags');
-
   if (Array.isArray(triumphs)) {
     for (const triumphData of triumphs) {
       if (Array.isArray(triumphData?.triumphs)) {
@@ -259,15 +249,11 @@ export async function statelyImport(
       }
     }
   }
-  console.log('Updated triumphs');
-
   for (const platformMembershipId of platformMembershipIds) {
     // TODO: I guess save them to each platform? I should really refactor the
     // import shape to have searches per platform, or merge/unique them.
     await importSearches(platformMembershipId, searches);
   }
-  console.log('Updated searches');
-
   return numTriumphs;
 }
 

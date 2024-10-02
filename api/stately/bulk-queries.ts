@@ -119,6 +119,7 @@ export async function exportDataForUser(
     triumphs: [],
     searches: [],
   };
+
   return responses.reduce<ExportResponse>((acc, r) => {
     acc.loadouts.push(...r.loadouts);
     acc.tags.push(...r.tags);

@@ -31,11 +31,17 @@ beforeAll(async () => {
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
-  testUserToken = jwt.sign({}, process.env.JWT_SECRET!, {
-    subject: bungieMembershipId.toString(),
-    issuer: testApiKey,
-    expiresIn: 60 * 60,
-  });
+  testUserToken = jwt.sign(
+    {
+      profileIds: [platformMembershipId],
+    },
+    process.env.JWT_SECRET!,
+    {
+      subject: bungieMembershipId.toString(),
+      issuer: testApiKey,
+      expiresIn: 60 * 60,
+    },
+  );
 
   // Make sure we have global settings
   const globalSettings = ['dev', 'beta', 'app'].map((stage) =>
@@ -1043,7 +1049,6 @@ describe('loadouts', () => {
       .expect(200)
       .json()) as LoadoutShareResponse;
 
-    console.log(updateResult.shareUrl);
     expect(updateResult.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
   });
 });
