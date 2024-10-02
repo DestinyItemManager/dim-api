@@ -147,7 +147,9 @@ export function convertLoadoutParametersFromStately(
             return constraint;
           })
         : undefined,
-    modsByBucket: listToMap('bucketHash', 'modHashes', modsByBucket),
+    modsByBucket: _.isEmpty(modsByBucket)
+      ? undefined
+      : listToMap('bucketHash', 'modHashes', modsByBucket),
     autoStatMods: true,
     includeRuntimeStatBenefits: true,
   };
