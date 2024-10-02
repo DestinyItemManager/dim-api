@@ -140,7 +140,7 @@ const forceStatelyMembershipIds = new Set([
   1234,
 ]);
 
-const dialPercentage = 0.1; // 0 - 1.0
+const dialPercentage = 0.05; // 0 - 1.0
 
 // This would be better as a uniform hash but this is good enough for now
 function isUserDialedIn(bungieMembershipId: number) {
@@ -206,6 +206,7 @@ export async function doMigration(
     });
     metrics.increment('migration.finish.count');
   } catch (e) {
+    console.error('Stately migration failed', e);
     await transaction(async (client) => {
       await abortMigrationToStately(
         client,
