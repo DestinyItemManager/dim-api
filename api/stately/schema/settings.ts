@@ -50,7 +50,7 @@ export const CollapsedSection = objectType('CollapsedSection', {
 export const StatConstraintsEntry = objectType('StatConstraintsEntry', {
   fields: {
     classType: { type: DestinyClass, fieldNum: 1, required: false },
-    constraints: { type: arrayOf(StatConstraint), fieldNum: 2 },
+    constraints: { type: arrayOf(StatConstraint), fieldNum: 2, required: false },
   },
 });
 export const CustomStatsEntry = objectType('CustomStatsEntry', {
@@ -105,7 +105,7 @@ export const Settings = itemType('Settings', {
     characterOrder: { type: CharacterOrder, fieldNum: 4 },
     /** Custom sorting properties, in order of application */
     // TODO: Default should be ["primStat", "name"] but we don't support list defaults
-    itemSortOrderCustom: { type: arrayOf(string), fieldNum: 5 },
+    itemSortOrderCustom: { type: arrayOf(string), fieldNum: 5, required: false },
     /** supplements itemSortOrderCustom by allowing each sort to be reversed */
     itemSortReversals: { type: arrayOf(string), fieldNum: 6, required: false },
     /** How many columns to display character buckets */

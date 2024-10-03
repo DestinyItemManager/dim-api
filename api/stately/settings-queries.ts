@@ -22,6 +22,8 @@ import {
 import {
   convertLoadoutParametersFromStately,
   convertLoadoutParametersToStately,
+  statConstraintsFromStately,
+  statConstraintsToStately,
 } from './loadouts-queries.js';
 import { bigIntToNumber, enumToStringUnion, listToMap, stripTypeName } from './stately-utils.js';
 
@@ -95,10 +97,11 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
   const loParametersFixed = loParameters
     ? convertLoadoutParametersFromStately(loParameters)
     : undefined;
-  const loStatConstraintsByClassMap = listToMap(
-    'classType',
-    'constraints',
-    loStatConstraintsByClass,
+  const loStatConstraintsByClassMap = Object.fromEntries(
+    loStatConstraintsByClass.map(({ classType, constraints }) => [
+      classType,
+      statConstraintsFromStately(constraints) ?? [],
+    ]),
   );
 
   const customStatsFixed: CustomStatDef[] = customStats.map((c) => {
@@ -121,7 +124,7 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
         ? InfuseDirection.FUEL
         : InfuseDirection.INFUSE,
     loParameters: loParametersFixed ?? defaultSettings.loParameters,
-    loStatConstraintsByClass: bigIntToNumber(loStatConstraintsByClassMap),
+    loStatConstraintsByClass: loStatConstraintsByClassMap,
     customTotalStatsByClass: listToMap(
       'classType',
       'customStats',
@@ -185,7 +188,7 @@ export function convertToStatelyItem(
   const loStatConstraintsByClassList = Object.entries(loStatConstraintsByClass).map(
     ([classType, constraints]) => ({
       classType: Number(classType),
-      constraints: constraints,
+      constraints: statConstraintsToStately(constraints),
     }),
   );
 
