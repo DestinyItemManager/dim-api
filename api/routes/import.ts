@@ -264,7 +264,12 @@ export async function statelyImport(
 
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
-    await client.putBatch(...batch);
+    try {
+      await client.putBatch(...batch);
+    } catch (e) {
+      console.error('Stately error importing batch', e, batch);
+      throw e;
+    }
   }
 
   return numTriumphs;
