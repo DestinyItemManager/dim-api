@@ -136,6 +136,8 @@ export function convertLoadoutParametersFromStately(
     stripTypeName(loParameters);
   return {
     ...stripDefaults(loParametersDefaulted),
+    exoticArmorHash:
+      loParameters.exoticArmorHash === 0n ? undefined : Number(loParameters.exoticArmorHash),
     // DIM's AssumArmorMasterwork enum starts at 1
     assumeArmorMasterwork: (assumeArmorMasterwork ?? 0) + 1,
     statConstraints: statConstraintsFromStately(statConstraints),
@@ -271,10 +273,16 @@ export function convertLoadoutParametersToStately(
 ): MessageInitShape<typeof LoadoutParametersSchema> | undefined {
   let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
   if (!_.isEmpty(loParameters)) {
-    const { assumeArmorMasterwork, statConstraints, modsByBucket, ...loParametersDefaulted } =
-      loParameters;
+    const {
+      assumeArmorMasterwork,
+      exoticArmorHash,
+      statConstraints,
+      modsByBucket,
+      ...loParametersDefaulted
+    } = loParameters;
     loParametersFixed = {
       ...loParametersDefaulted,
+      exoticArmorHash: BigInt(exoticArmorHash ?? 0),
       statConstraints: statConstraintsToStately(statConstraints),
       // DIM's AssumArmorMasterwork enum starts at 1
       assumeArmorMasterwork: Number(assumeArmorMasterwork ?? AssumeArmorMasterwork.None) - 1,

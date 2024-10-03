@@ -1,8 +1,13 @@
+import { toBinary } from '@bufbuild/protobuf';
 import _ from 'lodash';
 import { v4 as uuid } from 'uuid';
-import { Loadout } from '../shapes/loadouts.js';
+import { defaultLoadoutParameters, Loadout, LoadoutParameters } from '../shapes/loadouts.js';
+import { client } from './client.js';
+import { LoadoutParametersSchema, LoadoutSchema } from './generated/index.js';
 import {
   convertLoadoutFromStately,
+  convertLoadoutParametersFromStately,
+  convertLoadoutParametersToStately,
   convertLoadoutToStately,
   deleteAllLoadouts,
   deleteLoadout,
@@ -41,10 +46,41 @@ export const loadout: Loadout = {
 
 it('can roundtrip between DIM loadout and Stately loadout', () => {
   const statelyLoadout = convertLoadoutToStately(loadout, platformMembershipId, 2);
+  expect(() => toBinary(LoadoutSchema, statelyLoadout)).not.toThrow();
   const loadout2 = convertLoadoutFromStately(statelyLoadout);
   expect(_.omit(loadout2, 'profileId', 'destinyVersion', 'createdAt', 'lastUpdatedAt')).toEqual(
     loadout,
   );
+});
+
+it('can roundtrip loadout parameters', () => {
+  const loParams: LoadoutParameters = {
+    ...defaultLoadoutParameters,
+    exoticArmorHash: 3045642045,
+  };
+
+  const statelyLoParams = client.create(
+    'LoadoutParameters',
+    convertLoadoutParametersToStately(loParams),
+  );
+  expect(() => toBinary(LoadoutParametersSchema, statelyLoParams)).not.toThrow();
+  const loParams2 = convertLoadoutParametersFromStately(statelyLoParams);
+  expect(loParams2).toEqual(loParams);
+});
+
+it('can roundtrip loadout parameters w/ a negative armor hash', () => {
+  const loParams: LoadoutParameters = {
+    ...defaultLoadoutParameters,
+    exoticArmorHash: -1,
+  };
+
+  const statelyLoParams = client.create(
+    'LoadoutParameters',
+    convertLoadoutParametersToStately(loParams),
+  );
+  expect(() => toBinary(LoadoutParametersSchema, statelyLoParams)).not.toThrow();
+  const loParams2 = convertLoadoutParametersFromStately(statelyLoParams);
+  expect(loParams2).toEqual(loParams);
 });
 
 it('can record a loadout', async () => {
