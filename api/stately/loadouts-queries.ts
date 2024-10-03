@@ -20,6 +20,7 @@ import {
   LoadoutItem as StatelyLoadoutItem,
   LoadoutParameters as StatelyLoadoutParameters,
   LoadoutShare as StatelyLoadoutShare,
+  StatConstraint as StatelyStatConstraint,
 } from './generated/index.js';
 import { batches, listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
 
@@ -137,28 +138,32 @@ export function convertLoadoutParametersFromStately(
     ...stripDefaults(loParametersDefaulted),
     // DIM's AssumArmorMasterwork enum starts at 1
     assumeArmorMasterwork: (assumeArmorMasterwork ?? 0) + 1,
-    statConstraints:
-      statConstraints.length > 0
-        ? statConstraints.map((c) => {
-            const constraint: StatConstraint = {
-              statHash: c.statHash,
-            };
-            if (c.minTier !== 0) {
-              constraint.minTier = c.minTier;
-            }
-            // This is the tricky one - an undefined value means max tier 10
-            if (c.maxTier !== 10) {
-              constraint.maxTier = c.maxTier;
-            }
-            return constraint;
-          })
-        : undefined,
+    statConstraints: statConstraintsFromStately(statConstraints),
     modsByBucket: _.isEmpty(modsByBucket)
       ? undefined
       : listToMap('bucketHash', 'modHashes', modsByBucket),
     autoStatMods: true,
     includeRuntimeStatBenefits: true,
   };
+}
+
+export function statConstraintsFromStately(statConstraints: StatelyStatConstraint[]) {
+  if (statConstraints.length === 0) {
+    return undefined;
+  }
+  return statConstraints.map((c) => {
+    const constraint: StatConstraint = {
+      statHash: c.statHash,
+    };
+    if (c.minTier !== 0) {
+      constraint.minTier = c.minTier;
+    }
+    // This is the tricky one - an undefined value means max tier 10
+    if (c.maxTier !== 10) {
+      constraint.maxTier = c.maxTier;
+    }
+    return constraint;
+  });
 }
 
 function convertLoadoutItemFromStately(item: StatelyLoadoutItem): LoadoutItem {
@@ -270,14 +275,7 @@ export function convertLoadoutParametersToStately(
       loParameters;
     loParametersFixed = {
       ...loParametersDefaulted,
-      statConstraints:
-        statConstraints && statConstraints.length > 0
-          ? statConstraints.map((c) => ({
-              statHash: c.statHash,
-              minTier: Math.max(0, c.minTier ?? 0),
-              maxTier: Math.min(c.maxTier ?? 10, 10),
-            }))
-          : [],
+      statConstraints: statConstraintsToStately(statConstraints),
       // DIM's AssumArmorMasterwork enum starts at 1
       assumeArmorMasterwork: Number(assumeArmorMasterwork ?? AssumeArmorMasterwork.None) - 1,
       modsByBucket: modsByBucket
@@ -289,6 +287,16 @@ export function convertLoadoutParametersToStately(
     };
   }
   return loParametersFixed;
+}
+
+export function statConstraintsToStately(statConstraints: StatConstraint[] | undefined) {
+  return statConstraints && statConstraints.length > 0
+    ? statConstraints.map((c) => ({
+        statHash: c.statHash,
+        minTier: Math.max(0, c.minTier ?? 0),
+        maxTier: Math.min(c.maxTier ?? 10, 10),
+      }))
+    : [];
 }
 
 /**

@@ -226,21 +226,23 @@ export function importSearches(
     search: Search;
   }[],
 ) {
-  return searches.map(({ destinyVersion, search }) =>
-    client.create('Search', {
-      query: search.query,
-      qhash: queryHash(search.query),
-      saved: search.saved,
-      usageCount: search.usageCount,
-      lastUsage: BigInt(search.lastUsage),
-      type:
-        search.type === SearchType.Item
-          ? StatelySearchType.SearchType_Item
-          : StatelySearchType.SearchType_Loadout,
-      profileId: BigInt(platformMembershipId),
-      destinyVersion,
-    }),
-  );
+  return searches
+    .filter(({ search }) => search.query)
+    .map(({ destinyVersion, search }) =>
+      client.create('Search', {
+        query: search.query,
+        qhash: queryHash(search.query),
+        saved: search.saved,
+        usageCount: search.usageCount,
+        lastUsage: BigInt(search.lastUsage),
+        type:
+          search.type === SearchType.Item
+            ? StatelySearchType.SearchType_Item
+            : StatelySearchType.SearchType_Loadout,
+        profileId: BigInt(platformMembershipId),
+        destinyVersion,
+      }),
+    );
 }
 
 /**
