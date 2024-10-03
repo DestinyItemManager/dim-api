@@ -274,8 +274,8 @@ export function convertLoadoutParametersToStately(
         statConstraints && statConstraints.length > 0
           ? statConstraints.map((c) => ({
               statHash: c.statHash,
-              minTier: c.minTier ?? 0,
-              maxTier: c.maxTier ?? 10,
+              minTier: Math.max(0, c.minTier ?? 0),
+              maxTier: Math.min(c.maxTier ?? 10, 10),
             }))
           : [],
       // DIM's AssumArmorMasterwork enum starts at 1

@@ -1,8 +1,8 @@
 import {
-  Fields,
   arrayOf,
   bool,
   enumType,
+  Fields,
   itemType,
   objectType,
   string,
@@ -10,7 +10,15 @@ import {
   timestampSeconds,
   uuid,
 } from '@stately-cloud/schema';
-import { DestinyClass, DestinyVersion, HashID, ItemID, ProfileID, uint32 } from './types.js';
+import {
+  DestinyClass,
+  DestinyVersion,
+  HashID,
+  ItemID,
+  LockedExoticHash,
+  ProfileID,
+  uint32,
+} from './types.js';
 
 export const SocketOverride = objectType('SocketOverride', {
   fields: {
@@ -213,7 +221,7 @@ export function LoadoutParameters() {
       /**
        * The InventoryItemHash of the pinned exotic, if any was chosen.
        */
-      exoticArmorHash: { type: HashID, fieldNum: 11, required: false },
+      exoticArmorHash: { type: LockedExoticHash, fieldNum: 11, required: false },
 
       /**
        * a user may optionally specify which icon/color/name will be used,
