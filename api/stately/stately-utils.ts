@@ -138,3 +138,33 @@ export function* batches<T>(input: T[]): Generator<T[]> {
     yield input.slice(i * STATELY_MAX_BATCH_SIZE, (i + 1) * STATELY_MAX_BATCH_SIZE);
   }
 }
+
+export function findNegativeNumbers(batch: any[]) {
+  for (const item of batch) {
+    try {
+      recursiveNegative(item);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+function recursiveNegative<T>(value: T): void {
+  if (typeof value === 'number') {
+    if (value === -1) {
+      throw new Error(value.toString());
+    }
+  } else if (Array.isArray(value)) {
+    return value.forEach(recursiveNegative);
+  } else if (typeof value === 'object') {
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      try {
+        recursiveNegative(val);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new Error(`${key}: ${e.message}`);
+        }
+      }
+    }
+  }
+}
