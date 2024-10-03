@@ -482,7 +482,7 @@ export declare type LoadoutParameters = Message<"stately.generated.LoadoutParame
   assumeArmorMasterwork: AssumeArmorMasterwork;
 
   /**
-   * @generated from field: uint32 exoticArmorHash = 11;
+   * @generated from field: int32 exoticArmorHash = 11;
    */
   exoticArmorHash: number;
 
