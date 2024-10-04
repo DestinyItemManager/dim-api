@@ -48,10 +48,11 @@ export const profileHandler = asyncHandler(async (req, res) => {
   }
 
   if (!checkPlatformMembershipId(platformMembershipId, profileIds)) {
-    badRequest(
-      res,
-      `platformMembershipId ${platformMembershipId} is not one of the profiles associated with this user's Bungie.net account`,
-    );
+    // This should force a re-auth
+    res.status(401).send({
+      error: 'UnknownProfileId',
+      message: `platformMembershipId ${platformMembershipId} is not one of the profiles associated with your Bungie.net account. Try logging out and logging back in.`,
+    });
     return;
   }
 

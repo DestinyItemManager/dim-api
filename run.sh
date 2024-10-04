@@ -3,4 +3,4 @@
 export NODE_ENV="production"
 
 # Use "exec" so we inherit signals
-exec node api/index.js --async-stack-traces --experimental-json-modules
+exec node api/index.js --async-stack-traces --experimental-json-modules --enable-source-maps

@@ -67,6 +67,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     shareId = generateRandomShareId();
     try {
       await addLoadoutShareStately(platformMembershipId, shareId, loadout);
+      break;
     } catch (e) {
       // This is a unique constraint violation, generate another random share ID
       if (e instanceof LoadoutShareCollision) {

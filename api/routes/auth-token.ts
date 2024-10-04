@@ -41,19 +41,23 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     );
 
     if (!bungieResponse.ok) {
-      // TODO: try/catch
-      const errorBody = (await bungieResponse.json()) as ApiError;
-      if (errorBody.ErrorStatus === 'WebAuthRequired') {
-        metrics.increment('authToken.webAuthRequired.count');
-        res.status(401).send({
-          error: 'WebAuthRequired',
-          message: `Bungie.net token is not valid`,
-        });
-        return;
-      } else {
-        throw new Error(
-          `Error from Bungie.net while verifying token: ${errorBody.ErrorStatus}: ${errorBody.Message}`,
-        );
+      try {
+        const errorBody = (await bungieResponse.json()) as ApiError;
+        if (errorBody.ErrorStatus === 'WebAuthRequired') {
+          metrics.increment('authToken.webAuthRequired.count');
+          res.status(401).send({
+            error: 'WebAuthRequired',
+            message: `Bungie.net token is not valid`,
+          });
+          return;
+        } else {
+          throw new Error(
+            `Error from Bungie.net while verifying token: ${errorBody.ErrorStatus}: ${errorBody.Message}`,
+          );
+        }
+      } catch {
+        const errorBody = await bungieResponse.text();
+        throw new Error(`Error from Bungie.net while verifying token: ${errorBody}`);
       }
     }
 
