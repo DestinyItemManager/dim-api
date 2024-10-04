@@ -30,7 +30,7 @@ const getShareURL = (loadout: Loadout, shareId: string) => {
 };
 
 // Turn this on to save all loadout shares to StatelyDB as well as Postgres
-const saveToStately = false;
+const saveToStately = true;
 
 /**
  * Save a loadout to be shared via a dim.gg link.
@@ -140,6 +140,20 @@ export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
     return;
   }
 
+  const loadout = await loadLoadoutShare(shareId);
+  if (loadout) {
+    const response: GetSharedLoadoutResponse = {
+      loadout,
+      shareUrl: getShareURL(loadout, shareId),
+    };
+
+    res.send(response);
+  } else {
+    res.status(404).send();
+  }
+});
+
+export async function loadLoadoutShare(shareId: string) {
   if (saveToStately) {
     // This is just dual-reading to Stately for now
     try {
@@ -154,20 +168,12 @@ export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
   }
 
   // Always read from Postgres
-  await transaction(async (client) => {
+  return transaction(async (client) => {
     const loadout = await getLoadoutShare(client, shareId);
     if (loadout) {
       // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
       await recordAccess(client, shareId);
-
-      const response: GetSharedLoadoutResponse = {
-        loadout,
-        shareUrl: getShareURL(loadout, shareId),
-      };
-
-      res.send(response);
-    } else {
-      res.status(404).send();
     }
+    return loadout;
   });
-});
+}
