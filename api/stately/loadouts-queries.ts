@@ -132,12 +132,17 @@ export function convertLoadoutFromStately(item: StatelyLoadout | StatelyLoadoutS
 export function convertLoadoutParametersFromStately(
   loParameters: StatelyLoadoutParameters,
 ): LoadoutParameters {
-  const { assumeArmorMasterwork, statConstraints, modsByBucket, ...loParametersDefaulted } =
-    stripTypeName(loParameters);
+  const {
+    assumeArmorMasterwork,
+    statConstraints,
+    modsByBucket,
+    artifactUnlocks,
+    inGameIdentifiers,
+    ...loParametersDefaulted
+  } = stripTypeName(loParameters);
   return {
     ...stripDefaults(loParametersDefaulted),
-    exoticArmorHash:
-      loParameters.exoticArmorHash === 0n ? undefined : Number(loParameters.exoticArmorHash),
+    exoticArmorHash: exoticArmorHashFromStately(loParameters.exoticArmorHash),
     // DIM's AssumArmorMasterwork enum starts at 1
     assumeArmorMasterwork: (assumeArmorMasterwork ?? 0) + 1,
     statConstraints: statConstraintsFromStately(statConstraints),
@@ -146,14 +151,30 @@ export function convertLoadoutParametersFromStately(
       : listToMap('bucketHash', 'modHashes', modsByBucket),
     autoStatMods: true,
     includeRuntimeStatBenefits: true,
+    artifactUnlocks: artifactUnlocks ? stripTypeName(artifactUnlocks) : undefined,
+    inGameIdentifiers: inGameIdentifiers ? stripTypeName(inGameIdentifiers) : undefined,
   };
+}
+
+function exoticArmorHashFromStately(hash: bigint) {
+  if (hash === 0n) {
+    return undefined;
+  }
+  // Some hashes got sign-flipped when I was changing data types from uint32 to
+  // int32 to int64 - the signed versions interpreted larger numbers (> 2^31) as
+  // signed, and everything got messed up. -1 and -2 are still valid special
+  // cases.
+  if (hash < -2) {
+    hash = 4294967296n + hash; // The constant is 32 set bits, plus one
+  }
+  return Number(hash);
 }
 
 export function statConstraintsFromStately(statConstraints: StatelyStatConstraint[]) {
   if (statConstraints.length === 0) {
     return undefined;
   }
-  return statConstraints.map((c) => {
+  const constraints = statConstraints.map((c) => {
     const constraint: StatConstraint = {
       statHash: c.statHash,
     };
@@ -166,6 +187,14 @@ export function statConstraintsFromStately(statConstraints: StatelyStatConstrain
     }
     return constraint;
   });
+
+  // I screwed up the max constraints for some stored items, so we'll fix them here
+  if (constraints.every((c) => c.maxTier === 0)) {
+    for (const c of constraints) {
+      delete c.maxTier;
+    }
+  }
+  return constraints;
 }
 
 function convertLoadoutItemFromStately(item: StatelyLoadoutItem): LoadoutItem {
