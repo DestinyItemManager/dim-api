@@ -90,7 +90,13 @@ export const updateHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  checkPlatformMembershipId(platformMembershipId, profileIds, 'update');
+  if (!checkPlatformMembershipId(platformMembershipId, profileIds)) {
+    badRequest(
+      res,
+      `platformMembershipId ${platformMembershipId} is not one of the profiles associated with this user's Bungie.net account`,
+    );
+    return;
+  }
 
   if (destinyVersion !== 1 && destinyVersion !== 2) {
     badRequest(res, `destinyVersion ${destinyVersion as number} is not in the right format`);
