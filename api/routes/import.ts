@@ -30,7 +30,7 @@ import { importHashTags } from '../stately/item-hash-tags-queries.js';
 import { importLoadouts } from '../stately/loadouts-queries.js';
 import { importSearches } from '../stately/searches-queries.js';
 import { convertToStatelyItem } from '../stately/settings-queries.js';
-import { batches, findNegativeNumbers } from '../stately/stately-utils.js';
+import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest, subtractObject } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
@@ -264,13 +264,7 @@ export async function statelyImport(
 
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
-    try {
-      await client.putBatch(...batch);
-    } catch (e) {
-      findNegativeNumbers(batch);
-      console.error('Stately error importing batch', e, batch);
-      throw e;
-    }
+    await client.putBatch(...batch);
   }
 
   return numTriumphs;
