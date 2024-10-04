@@ -273,8 +273,6 @@ export function convertLoadoutCommonFieldsToStately(
     classType: loadout.classType as number,
     equipped: (loadout.equipped || []).map(convertLoadoutItemToStately),
     unequipped: (loadout.unequipped || []).map(convertLoadoutItemToStately),
-    createdAt: BigInt(loadout.createdAt ?? 0),
-    lastUpdatedAt: BigInt(loadout.lastUpdatedAt ?? 0),
     notes: loadout.notes,
     parameters: convertLoadoutParametersToStately(loadout.parameters),
   };
