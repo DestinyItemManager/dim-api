@@ -48,6 +48,8 @@ export async function addLoadoutShare(
 ): Promise<void> {
   const loadoutShare = convertLoadoutShareToStately(loadout, platformMembershipId, shareId);
 
+  // TODO: This would be a nice place for Stately's initialValue option which
+  // would guarantee uniqueness. But it'd have to support our weird shareIDs.s
   await client.transaction(async (txn) => {
     const existing = await txn.get('LoadoutShare', keyFor(shareId));
     // We do not want to overwrite an existing share! This is another place

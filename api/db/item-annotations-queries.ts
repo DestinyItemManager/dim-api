@@ -76,7 +76,7 @@ function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
 }
 
 /**
- * Insert or update (upsert) a single item annotation. Loadouts are totally replaced when updated.
+ * Insert or update (upsert) a single item annotation.
  */
 export async function updateItemAnnotation(
   client: ClientBase,

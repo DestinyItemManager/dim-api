@@ -193,6 +193,10 @@ export const updateHandler = asyncHandler(async (req, res) => {
   });
 });
 
+// TODO: For ease of porting, I made each update a separate transaction. But it
+// would be more efficient to batch them all into one transaction. That said,
+// aside from bulk-tagging, it's most likely that only one update will be sent
+// at a time.
 async function statelyUpdate(
   req: express.Request,
   updates: ProfileUpdate[],
@@ -202,6 +206,9 @@ async function statelyUpdate(
   appId: string,
 ) {
   const results: ProfileUpdateResult[] = [];
+
+  // TODO: batch these up - one phase for validation, then do all the reads,
+  // then all the updates, then all the deletes
 
   for (const update of updates) {
     let result: ProfileUpdateResult;
