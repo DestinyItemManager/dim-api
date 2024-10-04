@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import _ from 'lodash';
-import { metrics } from './metrics/index.js';
 
 /**
  * This is a utility function to extract the types of a subset of value types
@@ -130,21 +129,11 @@ function isNumberSequence(str: string) {
 export function checkPlatformMembershipId(
   platformMembershipId: string | undefined,
   profileIds: string[],
-  metricsPrefix: string,
 ) {
-  // For now, don't enforce that the JWT includes profile IDs, but track whether they would
   if (platformMembershipId) {
-    if (profileIds.length) {
-      metrics.increment(
-        `${metricsPrefix}.profileIds.${
-          profileIds.includes(platformMembershipId) ? 'match' : 'noMatch'
-        }.count`,
-        1,
-      );
-    } else {
-      metrics.increment(`${metricsPrefix}.profileIds.missing.count`, 1);
-    }
+    return profileIds.includes(platformMembershipId);
   }
+  return true; // This API presumably doesn't require a platformMembershipId
 }
 
 /** Produce a new object that's only the key/values of obj that are also keys in defaults and which have values different from defaults. */

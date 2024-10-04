@@ -47,7 +47,13 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  checkPlatformMembershipId(platformMembershipId, profileIds, 'profile');
+  if (!checkPlatformMembershipId(platformMembershipId, profileIds)) {
+    badRequest(
+      res,
+      `platformMembershipId ${platformMembershipId} is not one of the profiles associated with this user's Bungie.net account`,
+    );
+    return;
+  }
 
   const destinyVersion: DestinyVersion =
     req.query.destinyVersion && typeof req.query.destinyVersion === 'string'
