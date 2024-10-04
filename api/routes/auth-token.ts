@@ -42,7 +42,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
 
     if (!bungieResponse.ok) {
       try {
-        const errorBody = (await bungieResponse.json()) as ApiError;
+        const errorBody = (await bungieResponse.clone().json()) as ApiError;
         if (errorBody.ErrorStatus === 'WebAuthRequired') {
           metrics.increment('authToken.webAuthRequired.count');
           res.status(401).send({
