@@ -1,7 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import path from 'path';
-import { transaction } from '../db/index.js';
-import { getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
+import { loadLoadoutShare } from '../routes/loadout-share.js';
 
 /**
  * Save a loadout to be shared via a dim.gg link.
@@ -9,19 +8,12 @@ import { getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
   const { shareId } = req.params;
 
-  const loadout = await transaction(async (client) => {
-    const loadout = await getLoadoutShare(client, shareId);
-    if (loadout) {
-      // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
-      await recordAccess(client, shareId);
-    }
-    return loadout;
-  });
+  const loadout = await loadLoadoutShare(shareId);
 
   if (!loadout) {
     // Instruct CF to cache for 15 minutes
     res.set('Cache-Control', 'max-age=900');
-    res.status(404).sendFile(path.join(`${__dirname  }/views/loadout404.html`));
+    res.status(404).sendFile(path.join(`${__dirname}/views/loadout404.html`));
     return;
   }
 
@@ -52,7 +44,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
 
   const description = loadout.notes
     ? loadout.notes.length > 197
-      ? `${loadout.notes.substring(0, 197)  }...`
+      ? `${loadout.notes.substring(0, 197)}...`
       : loadout.notes
     : 'Destiny 2 loadout settings shared from DIM';
 
