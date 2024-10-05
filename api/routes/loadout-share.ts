@@ -54,7 +54,7 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
     });
   }
 
-  const validationResult = validateLoadout('loadout_share', loadout);
+  const validationResult = validateLoadout('loadout_share', loadout, appId);
   if (validationResult) {
     res.status(400).send(validationResult);
     return;

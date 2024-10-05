@@ -1,3 +1,4 @@
+import { captureMessage } from '@sentry/node';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import _ from 'lodash';
@@ -222,7 +223,12 @@ async function statelyUpdate(
         break;
 
       case 'loadout':
-        result = await updateLoadoutStately(platformMembershipId, destinyVersion, update.payload);
+        result = await updateLoadoutStately(
+          platformMembershipId,
+          destinyVersion,
+          update.payload,
+          appId,
+        );
         break;
 
       case 'delete_loadout':
@@ -234,6 +240,7 @@ async function statelyUpdate(
           platformMembershipId,
           destinyVersion,
           update.payload,
+          appId,
         );
         break;
 
@@ -430,7 +437,7 @@ async function updateLoadout(
     };
   }
 
-  const validationResult = validateLoadout('update', loadout);
+  const validationResult = validateLoadout('update', loadout, appId);
   if (validationResult) {
     return validationResult;
   }
@@ -453,6 +460,7 @@ async function updateLoadoutStately(
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
   loadout: Loadout,
+  appId: string,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -462,7 +470,7 @@ async function updateLoadoutStately(
     };
   }
 
-  const validationResult = validateLoadout('update', loadout);
+  const validationResult = validateLoadout('update', loadout, appId);
   if (validationResult) {
     return validationResult;
   }
@@ -474,7 +482,7 @@ async function updateLoadoutStately(
   return { status: 'Success' };
 }
 
-export function validateLoadout(metricPrefix: string, loadout: Loadout) {
+export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: string) {
   if (!loadout.name) {
     metrics.increment(`${metricPrefix}.validation.loadoutNameMissing.count`);
     return {
@@ -529,6 +537,12 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   }
   if ([...loadout.equipped, ...loadout.unequipped].some((i) => i.id && !isValidItemId(i.id))) {
     metrics.increment(`${metricPrefix}.validation.itemIdFormat.count`);
+    captureMessage('item ID is not in the right format', {
+      extra: {
+        loadout,
+        appId,
+      },
+    });
     return {
       status: 'InvalidArgument',
       message: 'Item ID is invalid',
@@ -593,6 +607,14 @@ async function updateItemAnnotation(
   }
 
   if (!isValidItemId(itemAnnotation.id)) {
+    captureMessage('item ID is not in the right format', {
+      extra: {
+        itemAnnotation,
+        bungieMembershipId,
+        platformMembershipId,
+        appId,
+      },
+    });
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
@@ -636,6 +658,7 @@ async function updateItemAnnotationStately(
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation,
+  appId: string,
 ): Promise<ProfileUpdateResult> {
   if (!platformMembershipId) {
     metrics.increment('update.validation.platformMembershipIdMissing.count');
@@ -646,6 +669,13 @@ async function updateItemAnnotationStately(
   }
 
   if (!isValidItemId(itemAnnotation.id)) {
+    captureMessage('item ID is not in the right format', {
+      extra: {
+        itemAnnotation,
+        platformMembershipId,
+        appId,
+      },
+    });
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
