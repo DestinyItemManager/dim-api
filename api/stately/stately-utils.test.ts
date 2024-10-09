@@ -148,7 +148,7 @@ describe('batches', () => {
       let num = 0;
       for (const batch of batches(input)) {
         num += batch.length;
-        expect(batch.length).toBeLessThanOrEqual(25);
+        expect(batch.length).toBeLessThanOrEqual(50);
       }
       expect(num).toBe(size);
     });

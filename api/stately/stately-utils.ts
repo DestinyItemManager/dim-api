@@ -126,7 +126,7 @@ export function clearValue<T extends string>(val: T | null | undefined): T | 'cl
   }
 }
 
-const STATELY_MAX_BATCH_SIZE = 25;
+const STATELY_MAX_BATCH_SIZE = 50;
 
 /**
  * Yield batches of no more than STATELY_MAX_BATCH_SIZE items from an array.
