@@ -122,7 +122,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
       });
     }
   } catch (e) {
-    Sentry.captureException(e);
+    Sentry.captureException(e, { tags: { dimApp: apiApp?.id } });
     console.error('Error issuing auth token', e);
     throw e;
   }
