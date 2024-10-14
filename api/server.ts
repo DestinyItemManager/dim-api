@@ -157,7 +157,7 @@ app.post('/loadout_share', loadoutShareHandler);
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const dimApp = req.dimApp as ApiApp | undefined;
   const user = req.user as UserInfo | undefined;
-  Sentry.captureException(err);
+  Sentry.captureException(err, { tags: { dimApp: dimApp?.id, user: user?.bungieMembershipId } });
   // Allow any origin to see the response
   res.header('Access-Control-Allow-Origin', '*');
   if (err instanceof Error && err.name === 'UnauthorizedError') {
