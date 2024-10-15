@@ -140,7 +140,7 @@ const forceStatelyMembershipIds = new Set([
   1234,
 ]);
 
-const dialPercentage = 0.6; // 0 - 1.0
+const dialPercentage = 0.7; // 0 - 1.0
 
 // This would be better as a uniform hash but this is good enough for now
 function isUserDialedIn(bungieMembershipId: number) {
