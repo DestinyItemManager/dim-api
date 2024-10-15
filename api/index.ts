@@ -99,6 +99,7 @@ if (process.env.SENTRY_DSN) {
       new Tracing.Integrations.Postgres(),
     ],
     tracesSampleRate: 0.001,
+    maxValueLength: 10_000,
   });
 }
 
