@@ -157,7 +157,10 @@ app.post('/loadout_share', loadoutShareHandler);
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const dimApp = req.dimApp as ApiApp | undefined;
   const user = req.user as UserInfo | undefined;
-  Sentry.captureException(err, { tags: { dimApp: dimApp?.id, user: user?.bungieMembershipId } });
+  const dimVersion = req.headers['x-dim-version']?.[0];
+  Sentry.captureException(err, {
+    tags: { dimApp: dimApp?.id, user: user?.bungieMembershipId, dimVersion },
+  });
   // Allow any origin to see the response
   res.header('Access-Control-Allow-Origin', '*');
   if (err instanceof Error && err.name === 'UnauthorizedError') {
