@@ -812,6 +812,12 @@ async function recordSearch(
       status: 'InvalidArgument',
       message: 'Search query must be under 2048 characters',
     };
+  } else if (payload.query.length === 0) {
+    metrics.increment('update.validation.searchEmpty.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must not be empty',
+    };
   }
 
   const start = new Date();
@@ -847,6 +853,12 @@ async function recordSearchStately(
       status: 'InvalidArgument',
       message: 'Search query must be under 2048 characters',
     };
+  } else if (payload.query.length === 0) {
+    metrics.increment('update.validation.searchEmpty.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must not be empty',
+    };
   }
 
   const start = new Date();
@@ -873,6 +885,12 @@ async function saveSearch(
     return {
       status: 'InvalidArgument',
       message: 'Search query must be under 2048 characters',
+    };
+  } else if (payload.query.length === 0) {
+    metrics.increment('update.validation.searchEmpty.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must not be empty',
     };
   }
 
@@ -909,6 +927,12 @@ async function saveSearchStately(
     return {
       status: 'InvalidArgument',
       message: 'Search query must be under 2048 characters',
+    };
+  } else if (payload.query.length === 0) {
+    metrics.increment('update.validation.searchEmpty.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must not be empty',
     };
   }
 
