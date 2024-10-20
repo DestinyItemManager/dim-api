@@ -548,6 +548,27 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: s
       message: 'Item ID is invalid',
     };
   }
+  for (const constraint of loadout.parameters?.statConstraints ?? []) {
+    for (const tier of [constraint.minTier, constraint.maxTier]) {
+      if (tier === undefined) {
+        continue;
+      }
+      if (!Number.isInteger(tier)) {
+        metrics.increment(`${metricPrefix}.validation.tierValueNotInteger.count`);
+        return {
+          status: 'InvalidArgument',
+          message: 'Loadout Optimizer stat tiers must be integers, not ${tier}',
+        };
+      }
+      if (tier < 0 || tier > 10) {
+        metrics.increment(`${metricPrefix}.validation.tierValueOutOfRange.count`);
+        return {
+          status: 'InvalidArgument',
+          message: 'Loadout Optimizer stat tiers must be between 0 and 10',
+        };
+      }
+    }
+  }
 
   return undefined;
 }
