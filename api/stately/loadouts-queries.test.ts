@@ -57,6 +57,10 @@ it('can roundtrip loadout parameters', () => {
   const loParams: LoadoutParameters = {
     ...defaultLoadoutParameters,
     exoticArmorHash: 3045642045,
+    autoStatMods: false,
+    clearArmor: true,
+    clearMods: true,
+    clearWeapons: true,
   };
 
   const statelyLoParams = client.create(
@@ -72,6 +76,9 @@ it('can roundtrip loadout parameters w/ a negative armor hash', () => {
   const loParams: LoadoutParameters = {
     ...defaultLoadoutParameters,
     exoticArmorHash: -1,
+    clearArmor: true,
+    clearMods: true,
+    clearWeapons: true,
   };
 
   const statelyLoParams = client.create(

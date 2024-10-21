@@ -104,7 +104,7 @@ export function convertEnum(
  */
 export function stripDefaults<T extends Record<string, unknown>>(data: T): Partial<T> {
   return Object.entries(data).reduce<Record<string, unknown>>((result, [key, value]) => {
-    if (value) {
+    if (value || value === false) {
       result[key] = value;
     }
     return result;
