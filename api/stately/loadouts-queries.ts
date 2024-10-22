@@ -149,8 +149,6 @@ export function convertLoadoutParametersFromStately(
     modsByBucket: _.isEmpty(modsByBucket)
       ? undefined
       : listToMap('bucketHash', 'modHashes', modsByBucket),
-    autoStatMods: true,
-    includeRuntimeStatBenefits: true,
     artifactUnlocks: artifactUnlocks ? stripTypeName(artifactUnlocks) : undefined,
     inGameIdentifiers: inGameIdentifiers ? stripTypeName(inGameIdentifiers) : undefined,
   };
