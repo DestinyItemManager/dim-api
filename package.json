@@ -20,7 +20,7 @@
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --detectOpenHandles --verbose --coverage --forceExit",
     "test:watch": "jest --watch",
     "eslint-inspect": "pnpm dlx @eslint/config-inspector",
-    "generate": "stately schema generate api/stately/schema/index.ts -l js api/stately/generated",
+    "generate": "stately schema generate -l js --schema-id 8030842688320564 --version 1 api/stately/schema/index.ts api/stately/generated",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
