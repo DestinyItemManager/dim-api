@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@bufbuild/protobuf':
-    specifier: ^2.1.0
-    version: 2.1.0
+    specifier: ^2.2.1
+    version: 2.2.1
   '@godaddy/terminus':
     specifier: ^4.12.1
     version: 4.12.1
@@ -1618,10 +1618,6 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@bufbuild/protobuf@2.1.0:
-    resolution: {integrity: sha512-+2Mx67Y3skJ4NCD/qNSdBJNWtu6x6Qr53jeNg+QcwiL6mt0wK+3jwHH2x1p7xaYH6Ve2JKOVn0OxU35WsmqI9A==}
-    dev: false
-
   /@bufbuild/protobuf@2.2.1:
     resolution: {integrity: sha512-gdWzq7eX017a1kZCU/bP/sbk4e0GZ6idjsXOcMrQwODCb/rx985fHJJ8+hCu79KpuG7PfZh7bo3BBjPH37JuZw==}
 
@@ -1638,15 +1634,15 @@ packages:
       '@connectrpc/connect': 2.0.0-rc.1
     dependencies:
       '@bufbuild/protobuf': 2.2.1
-      '@connectrpc/connect': 2.0.0-rc.1(@bufbuild/protobuf@2.1.0)
+      '@connectrpc/connect': 2.0.0-rc.1(@bufbuild/protobuf@2.2.1)
     dev: false
 
-  /@connectrpc/connect@2.0.0-rc.1(@bufbuild/protobuf@2.1.0):
+  /@connectrpc/connect@2.0.0-rc.1(@bufbuild/protobuf@2.2.1):
     resolution: {integrity: sha512-AupiGDh2Ht0wgslatfdU/Jp8zDPHwvsCrLcChi7Ea3zZT/biSpPMqj8LiaR5ri/EHexZ58jYvtBbTNqCP7H3fg==}
     peerDependencies:
       '@bufbuild/protobuf': ^2.2.0
     dependencies:
-      '@bufbuild/protobuf': 2.1.0
+      '@bufbuild/protobuf': 2.2.1
     dev: false
 
   /@cspotcode/source-map-support@0.8.1:
@@ -2678,7 +2674,7 @@ packages:
     engines: {node: '>=18'}
     dependencies:
       '@bufbuild/protobuf': 2.2.1
-      '@connectrpc/connect': 2.0.0-rc.1(@bufbuild/protobuf@2.1.0)
+      '@connectrpc/connect': 2.0.0-rc.1(@bufbuild/protobuf@2.2.1)
       '@connectrpc/connect-node': 2.0.0-rc.1(@bufbuild/protobuf@2.2.1)(@connectrpc/connect@2.0.0-rc.1)
     dev: false
 
