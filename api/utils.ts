@@ -148,3 +148,7 @@ export function subtractObject<T extends object>(obj: Partial<T>, defaults: T): 
   }
   return result;
 }
+
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
