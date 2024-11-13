@@ -4,7 +4,7 @@ import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
 import { defaultSettings } from '../shapes/settings.js';
-import { subtractObject } from '../utils.js';
+import { delay, subtractObject } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
 import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
@@ -76,6 +76,7 @@ async function deleteAllDataForProfile(
   // Then delete them all. We're not in a transaction!
   for (const batch of batches(keys)) {
     await client.del(...batch);
+    await delay(100); // give it some time to flush
   }
   return response;
 }

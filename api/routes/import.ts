@@ -32,7 +32,7 @@ import { importSearches } from '../stately/searches-queries.js';
 import { convertToStatelyItem } from '../stately/settings-queries.js';
 import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
-import { badRequest, subtractObject } from '../utils.js';
+import { badRequest, delay, subtractObject } from '../utils.js';
 import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
@@ -265,6 +265,7 @@ export async function statelyImport(
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
     await client.putBatch(...batch);
+    await delay(100); // give it some time to flush
   }
 
   return numTriumphs;
