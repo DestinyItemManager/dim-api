@@ -2,6 +2,7 @@
 /* eslint-disable */
 
 import { createClient as createGenericClient, StatelyError } from "@stately-cloud/client";
+import clientPackageJson from "@stately-cloud/client/package.json" with { "type": "json" };
 import {
   ApiAppSchema,
   GlobalSettingsSchema,
@@ -53,9 +54,14 @@ export const typeToSchema = {
   "StatConstraintsEntry": StatConstraintsEntrySchema,
 };
 
-const SCHEMA_VERSION_ID = 1
+/** The version of the schema that this client was generated for. */
+const SCHEMA_VERSION_ID = 2;
 
 export function createClient(storeId, opts) {
   
   return createGenericClient(storeId, typeToSchema, SCHEMA_VERSION_ID, opts);
+}
+
+if (createGenericClient.length < 3) {
+  throw new Error("Your version of @stately-cloud/client is too old. Please update to the latest version.");
 }
