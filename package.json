@@ -69,7 +69,7 @@
     "@bufbuild/protobuf": "^2.2.2",
     "@godaddy/terminus": "^4.12.1",
     "@google-cloud/profiler": "^6.0.2",
-    "@sentry/node": "^8.38.0",
+    "@sentry/node": "^7.119.2",
     "@sentry/tracing": "^7.114.0",
     "@stately-cloud/client": "^0.12.0",
     "bungie-api-ts": "^5.1.0",
