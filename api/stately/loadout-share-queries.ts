@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, StatelyError } from '@stately-cloud/client';
 import { Loadout } from '../shapes/loadouts.js';
 import { client } from './client.js';
 import { LoadoutShare as StatelyLoadoutShare } from './generated/index.js';
@@ -47,18 +47,13 @@ export async function addLoadoutShare(
   loadout: Loadout,
 ): Promise<void> {
   const loadoutShare = convertLoadoutShareToStately(loadout, platformMembershipId, shareId);
-
-  // TODO: This would be a nice place for Stately's initialValue option which
-  // would guarantee uniqueness. But it'd have to support our weird shareIDs.s
-  await client.transaction(async (txn) => {
-    const existing = await txn.get('LoadoutShare', keyFor(shareId));
-    // We do not want to overwrite an existing share! This is another place
-    // where a Put-If-Not-Exists would be nice.
-    if (existing) {
+  try {
+    await client.put(loadoutShare, { mustNotExist: true });
+  } catch (e) {
+    if (e instanceof StatelyError && e.statelyCode === 'ConditionalCheckFailed') {
       throw new LoadoutShareCollision();
     }
-    await txn.put(loadoutShare);
-  });
+  }
 }
 
 /**

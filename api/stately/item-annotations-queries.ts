@@ -95,6 +95,8 @@ export async function updateItemAnnotation(
     return deleteItemAnnotation(platformMembershipId, destinyVersion, itemAnnotation.id);
   }
 
+  // We want to merge the incoming values with the existing values, so we need
+  // to read the existing values first in a transaction.
   await client.transaction(async (txn) => {
     let existing = await txn.get(
       'ItemAnnotation',

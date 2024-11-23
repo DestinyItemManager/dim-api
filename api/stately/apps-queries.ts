@@ -74,8 +74,8 @@ export async function getAppById(id: string): Promise<ApiApp | undefined> {
  */
 export async function insertApp(app: ApiApp): Promise<ApiApp> {
   let resultApp: ApiApp | undefined;
-  // TODO: wish I could set an if-not-exists condition here, to avoid
-  // accidentally updating an app. Instead I got a transaction.
+  // We can't use `mustNotExist` here because we want to return the existing app
+  // on conflict.
   const result = await client.transaction(async (txn) => {
     const getResult = await txn.get('ApiApp', keyPathFor(app.id));
     if (getResult) {
