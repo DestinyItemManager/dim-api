@@ -6,19 +6,17 @@ export const uint32 = type('uint32', FieldDescriptorProto_Type.UINT32);
 // it included some signed special values.
 export const LockedExoticHash = type('LockedExoticHash', FieldDescriptorProto_Type.INT64);
 
-export const ItemID = type('ItemID', uint, { docs: 'The unique ID of an inventory item' });
+/** The unique ID of an inventory item */
+export const ItemID = type('ItemID', uint);
 
+/** The hash ID of a definition */
 // Manifest hashes are actually a uint32
-export const HashID = type('HashID', uint32, {
-  docs: 'The hash ID of a definition',
-});
+export const HashID = type('HashID', uint32);
 
-export const MembershipID = type('MembershipID', uint, {
-  docs: 'The unique ID of a Bungie.net membership',
-});
-export const ProfileID = type('ProfileID', uint, {
-  docs: 'The unique ID of a Destiny profile. These can be moved between different Bungie.net memberships.',
-});
+/** The unique ID of a Bungie.net membership */
+export const MembershipID = type('MembershipID', uint);
+/** The unique ID of a Destiny profile. These can be moved between different Bungie.net memberships. */
+export const ProfileID = type('ProfileID', uint);
 
 // This could be an enum, but it's easy enough as a constrained number.
 export const DestinyVersion = type('DestinyVersion', uint32, {

@@ -18,5 +18,5 @@ data:
   enable-modsecurity: "true"
   enable-owasp-modsecurity-crs: "false"
   proxy-body-size: "2m"
-  use-gzip: "true"
-  enable-brotli: "true"
+  #use-gzip: "true"
+  #enable-brotli: "true"

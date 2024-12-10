@@ -57,6 +57,8 @@ export async function updateItemHashTag(
     return deleteItemHashTag(platformMembershipId, itemHashTag.hash);
   }
 
+  // We want to merge the incoming values with the existing values, so we need
+  // to read the existing values first in a transaction.
   await client.transaction(async (txn) => {
     let existing = await txn.get('ItemHashTag', keyFor(platformMembershipId, itemHashTag.hash));
     if (!existing) {
