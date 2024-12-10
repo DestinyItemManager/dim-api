@@ -20,7 +20,7 @@
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --detectOpenHandles --verbose --coverage --forceExit",
     "test:watch": "jest --watch",
     "eslint-inspect": "pnpm dlx @eslint/config-inspector",
-    "generate": "stately schema generate -l js --schema-id 8030842688320564 --version 2 api/stately/generated",
+    "generate": "stately schema generate -l js --schema-id 8030842688320564 api/stately/generated",
     "generate-preview": "stately schema generate -l js --preview api/stately/schema/index.ts api/stately/generated",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
@@ -71,7 +71,7 @@
     "@google-cloud/profiler": "^6.0.2",
     "@sentry/node": "^7.119.2",
     "@sentry/tracing": "^7.114.0",
-    "@stately-cloud/client": "^0.16.0",
+    "@stately-cloud/client": "^0.17.0",
     "bungie-api-ts": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
