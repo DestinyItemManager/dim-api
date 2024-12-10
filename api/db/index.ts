@@ -21,7 +21,7 @@ pool.on('acquire', () => {
 });
 pool.on('error', (e: Error) => {
   metrics.increment('db.pool.error.count');
-  metrics.increment(`db.pool.error.${  e.name  }.count`);
+  metrics.increment(`db.pool.error.${e.name}.count`);
 });
 pool.on('remove', () => {
   metrics.increment('db.pool.remove.count');
