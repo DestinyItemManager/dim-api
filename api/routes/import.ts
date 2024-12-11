@@ -1,5 +1,5 @@
+import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
-import _ from 'lodash';
 import { readTransaction, transaction } from '../db/index.js';
 import { updateItemAnnotation } from '../db/item-annotations-queries.js';
 import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
@@ -46,7 +46,7 @@ export const importHandler = asyncHandler(async (req, res) => {
     extractImportData(importData);
 
   if (
-    _.isEmpty(settings) &&
+    isEmpty(settings) &&
     loadouts.length === 0 &&
     itemAnnotations.length === 0 &&
     triumphs.length === 0 &&

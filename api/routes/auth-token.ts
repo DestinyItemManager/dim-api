@@ -4,8 +4,8 @@ import asyncHandler from 'express-async-handler';
 import util from 'util';
 import { AuthTokenRequest, AuthTokenResponse } from '../shapes/auth.js';
 
+import { sortBy } from 'es-toolkit/compat';
 import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
-import _ from 'lodash';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { badRequest } from '../utils.js';
@@ -66,7 +66,7 @@ export const authTokenHandler = asyncHandler(async (req, res) => {
     const serverMembershipId = responseData.Response.bungieNetUser.membershipId;
     if (serverMembershipId === membershipId) {
       const primaryMembershipId = responseData.Response.primaryMembershipId;
-      const profileIds = _.sortBy(
+      const profileIds = sortBy(
         responseData.Response.destinyMemberships
           // Filter out accounts that are tied to another platform's cross-save account.
           // .filter((m) => !m.crossSaveOverride || m.crossSaveOverride === m.membershipType)

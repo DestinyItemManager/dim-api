@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { omit } from 'es-toolkit';
 import { defaultLoadoutParameters } from '../shapes/loadouts.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import {
@@ -14,14 +14,14 @@ it('can roundtrip between DIM settings and Stately settings', () => {
   const settings: Settings = defaultSettings;
   const statelySettings = convertToStatelyItem(settings, 1234);
   const settings2 = convertToDimSettings(statelySettings);
-  expect(_.omit(settings2, 'memberId')).toEqual(settings);
+  expect(omit(settings2, ['memberId' as keyof Settings])).toEqual(settings);
 });
 
 it('can roundtrip between DIM settings and Stately settings with loadout parameters', () => {
   const settings: Settings = { ...defaultSettings, loParameters: defaultLoadoutParameters };
   const statelySettings = convertToStatelyItem(settings, 1234);
   const settings2 = convertToDimSettings(statelySettings);
-  expect(_.omit(settings2, 'memberId')).toEqual(settings);
+  expect(omit(settings2, ['memberId' as keyof Settings])).toEqual(settings);
 });
 
 it('can insert settings where none exist before', async () => {

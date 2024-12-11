@@ -1,7 +1,7 @@
 import { captureMessage } from '@sentry/node';
+import { isEmpty } from 'es-toolkit/compat';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
-import _ from 'lodash';
 import { ClientBase } from 'pg';
 import { readTransaction, transaction } from '../db/index.js';
 import {
@@ -129,7 +129,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
       extractImportData(exportResponse);
 
     if (
-      _.isEmpty(settings) &&
+      isEmpty(settings) &&
       loadouts.length === 0 &&
       itemAnnotations.length === 0 &&
       triumphs.length === 0 &&

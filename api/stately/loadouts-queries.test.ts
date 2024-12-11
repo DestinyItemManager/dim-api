@@ -1,5 +1,5 @@
 import { toBinary } from '@bufbuild/protobuf';
-import _ from 'lodash';
+import { omit } from 'es-toolkit';
 import { v4 as uuid } from 'uuid';
 import { defaultLoadoutParameters, Loadout, LoadoutParameters } from '../shapes/loadouts.js';
 import { client } from './client.js';
@@ -48,9 +48,14 @@ it('can roundtrip between DIM loadout and Stately loadout', () => {
   const statelyLoadout = convertLoadoutToStately(loadout, platformMembershipId, 2);
   expect(() => toBinary(LoadoutSchema, statelyLoadout)).not.toThrow();
   const loadout2 = convertLoadoutFromStately(statelyLoadout);
-  expect(_.omit(loadout2, 'profileId', 'destinyVersion', 'createdAt', 'lastUpdatedAt')).toEqual(
-    loadout,
-  );
+  expect(
+    omit(loadout2, [
+      'profileId' as keyof Loadout,
+      'destinyVersion' as keyof Loadout,
+      'createdAt',
+      'lastUpdatedAt',
+    ]),
+  ).toEqual(loadout);
 });
 
 it('can roundtrip loadout parameters', () => {

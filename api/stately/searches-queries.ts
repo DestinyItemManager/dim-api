@@ -1,5 +1,5 @@
 import { keyPath } from '@stately-cloud/client';
-import _ from 'lodash';
+import { sortBy, uniqBy } from 'es-toolkit';
 import crypto from 'node:crypto';
 import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
@@ -79,8 +79,8 @@ export async function getSearchesForProfile(
 
   results.push(...(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1));
 
-  return _.sortBy(
-    _.uniqBy(results, (s) => s.query),
+  return sortBy(
+    uniqBy(results, (s) => s.query),
     [(s) => -s.lastUsage, (s) => s.usageCount],
   );
 }

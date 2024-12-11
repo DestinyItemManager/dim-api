@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import { ListToken } from '@stately-cloud/client';
+import { keyBy } from 'es-toolkit';
 import { RequestHandler } from 'express';
-import _ from 'lodash';
 import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
 import { pool } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
@@ -114,7 +114,7 @@ async function fetchAppsFromPostgres() {
   const client = await pool.connect();
   try {
     apps = await getAllAppsPostgres(client);
-    appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+    appsByApiKey = keyBy(apps, (a) => a.dimApiKey.toLowerCase());
     origins = new Set<string>();
     for (const app of apps) {
       origins.add(app.origin);
@@ -126,7 +126,7 @@ async function fetchAppsFromPostgres() {
 }
 
 function digestApps() {
-  appsByApiKey = _.keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+  appsByApiKey = keyBy(apps, (a) => a.dimApiKey.toLowerCase());
   origins = new Set<string>();
   for (const app of apps) {
     origins.add(app.origin);

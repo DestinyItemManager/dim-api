@@ -1,7 +1,7 @@
 import { MessageInitShape } from '@bufbuild/protobuf';
 import { keyPath } from '@stately-cloud/client';
 import { DestinyClass } from 'bungie-api-ts/destiny2';
-import _ from 'lodash';
+import { isEmpty } from 'es-toolkit/compat';
 import { DestinyVersion } from '../shapes/general.js';
 import {
   AssumeArmorMasterwork,
@@ -146,7 +146,7 @@ export function convertLoadoutParametersFromStately(
     // DIM's AssumArmorMasterwork enum starts at 1
     assumeArmorMasterwork: (assumeArmorMasterwork ?? 0) + 1,
     statConstraints: statConstraintsFromStately(statConstraints),
-    modsByBucket: _.isEmpty(modsByBucket)
+    modsByBucket: isEmpty(modsByBucket)
       ? undefined
       : listToMap('bucketHash', 'modHashes', modsByBucket),
     artifactUnlocks: artifactUnlocks ? stripTypeName(artifactUnlocks) : undefined,
@@ -205,7 +205,7 @@ function convertLoadoutItemFromStately(item: StatelyLoadoutItem): LoadoutItem {
   if (item.id) {
     result.id = item.id.toString();
   }
-  if (!_.isEmpty(item.socketOverrides)) {
+  if (!isEmpty(item.socketOverrides)) {
     result.socketOverrides = listToMap('socketIndex', 'itemHash', item.socketOverrides);
   }
   if (item.craftedDate) {
@@ -297,7 +297,7 @@ export function convertLoadoutParametersToStately(
   loParameters: LoadoutParameters | undefined,
 ): MessageInitShape<typeof LoadoutParametersSchema> | undefined {
   let loParametersFixed: MessageInitShape<typeof LoadoutParametersSchema> | undefined;
-  if (!_.isEmpty(loParameters)) {
+  if (!isEmpty(loParameters)) {
     const {
       assumeArmorMasterwork,
       exoticArmorHash,
