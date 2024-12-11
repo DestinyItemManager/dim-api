@@ -1,4 +1,5 @@
 import { captureMessage } from '@sentry/node';
+import { chunk, groupBy, sortBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
@@ -32,18 +33,24 @@ import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import {
+  DeleteLoadoutUpdate,
   DeleteSearchUpdate,
   ItemHashTagUpdate,
+  LoadoutUpdate,
   ProfileUpdate,
   ProfileUpdateRequest,
   ProfileUpdateResult,
   SavedSearchUpdate,
+  SettingUpdate,
+  TagCleanupUpdate,
+  TagUpdate,
   TrackTriumphUpdate,
   UsedSearchUpdate,
 } from '../shapes/profile.js';
 import { SearchType } from '../shapes/search.js';
 import { Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
+import { client } from '../stately/client.js';
 import {
   deleteItemAnnotation as deleteItemAnnotationListStately,
   updateItemAnnotation as updateItemAnnotationInStately,
@@ -269,50 +276,101 @@ async function statelyUpdate(
   // TODO: batch these up - one phase for validation, then do all the reads,
   // then all the updates, then all the deletes
 
-  for (const update of updates) {
-    metrics.increment(`update.action.${update.action}.count`);
+  const sortedUpdates = sortBy(updates, [(u) => u.action]);
 
-    switch (update.action) {
-      case 'setting':
-        await updateSettingStately(bungieMembershipId, update.payload);
-        break;
+  for (const updateChunk of chunk(sortedUpdates, 50)) {
+    client.transaction(async (txn) => {
+      for (const [action, group] of Object.entries(groupBy(updateChunk, (u) => u.action))) {
+        metrics.increment(`update.action.${action}.count`);
 
-      case 'loadout':
-        await updateLoadoutStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+        switch (action) {
+          case 'setting':
+            for (const update of group as SettingUpdate[]) {
+              await setSettingInStately(bungieMembershipId, update.payload);
+            }
+            break;
 
-      case 'delete_loadout':
-        await deleteLoadoutStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+          case 'loadout':
+            for (const update of group as LoadoutUpdate[]) {
+              await updateLoadoutInStately(platformMembershipId!, destinyVersion, update.payload);
+            }
+            break;
 
-      case 'tag':
-        await updateItemAnnotationStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+          case 'delete_loadout':
+            for (const update of group as DeleteLoadoutUpdate[]) {
+              await deleteLoadoutInStately(platformMembershipId!, destinyVersion, update.payload);
+            }
+            break;
 
-      case 'tag_cleanup':
-        await tagCleanupStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+          case 'tag':
+            for (const update of group as TagUpdate[]) {
+              await updateItemAnnotationInStately(
+                platformMembershipId!,
+                destinyVersion,
+                update.payload,
+              );
+            }
+            break;
 
-      case 'item_hash_tag':
-        await updateItemHashTagStately(platformMembershipId!, update.payload);
-        break;
+          case 'tag_cleanup':
+            for (const update of group as TagCleanupUpdate[]) {
+              await deleteItemAnnotationListStately(
+                platformMembershipId!,
+                destinyVersion,
+                ...update.payload.filter(isValidItemId),
+              );
+            }
+            break;
 
-      case 'track_triumph':
-        await trackTriumphStately(platformMembershipId!, update.payload);
-        break;
+          case 'item_hash_tag':
+            for (const update of group as ItemHashTagUpdate[]) {
+              await updateItemHashTagInStately(platformMembershipId!, update.payload);
+            }
+            break;
 
-      case 'search':
-        await recordSearchStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+          case 'track_triumph':
+            for (const update of group as TrackTriumphUpdate[]) {
+              update.payload.tracked
+                ? await trackTriumphInStately(platformMembershipId!, update.payload.recordHash)
+                : await unTrackTriumphInStately(platformMembershipId!, update.payload.recordHash);
+            }
+            break;
 
-      case 'save_search':
-        await saveSearchStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
+          case 'search':
+            for (const update of group as UsedSearchUpdate[]) {
+              await updateUsedSearchInStately(
+                platformMembershipId!,
+                destinyVersion,
+                update.payload.query,
+                update.payload.type ?? SearchType.Item,
+              );
+            }
+            break;
 
-      case 'delete_search':
-        await deleteSearchStately(platformMembershipId!, destinyVersion, update.payload);
-        break;
-    }
+          case 'save_search':
+            for (const update of group as SavedSearchUpdate[]) {
+              await saveSearchInStately(
+                platformMembershipId!,
+                destinyVersion,
+                update.payload.query,
+                update.payload.type ?? SearchType.Item,
+                update.payload.saved,
+              );
+            }
+            break;
+
+          case 'delete_search':
+            for (const update of group as DeleteSearchUpdate[]) {
+              await deleteSearchInStately(
+                platformMembershipId!,
+                destinyVersion,
+                update.payload.query,
+              );
+            }
+            break;
+        }
+      }
+    });
   }
 }
 
@@ -405,15 +463,6 @@ async function updateSetting(
   metrics.timing('update.setting', start);
 }
 
-async function updateSettingStately(
-  bungieMembershipId: number,
-  settings: Partial<Settings>,
-): Promise<void> {
-  const start = new Date();
-  await setSettingInStately(bungieMembershipId, settings);
-  metrics.timing('update.setting', start);
-}
-
 async function updateLoadout(
   client: ClientBase,
   appId: string,
@@ -453,16 +502,6 @@ function validateUpdateLoadout(
   }
 
   return { status: 'Success' };
-}
-
-async function updateLoadoutStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  loadout: Loadout,
-): Promise<void> {
-  const start = new Date();
-  await updateLoadoutInStately(platformMembershipId, destinyVersion, loadout);
-  metrics.timing('update.loadout', start);
 }
 
 export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: string) {
@@ -575,16 +614,6 @@ function validateDeleteLoadout(platformMembershipId: string | undefined): Profil
     };
   }
   return { status: 'Success' };
-}
-
-async function deleteLoadoutStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  loadoutId: string,
-): Promise<void> {
-  const start = new Date();
-  await deleteLoadoutInStately(platformMembershipId, destinyVersion, loadoutId);
-  metrics.timing('update.deleteLoadout', start);
 }
 
 async function updateItemAnnotation(
@@ -705,16 +734,6 @@ function validateUpdateItemHashTag(
   return { status: 'Success' };
 }
 
-async function updateItemAnnotationStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  itemAnnotation: ItemAnnotation,
-): Promise<void> {
-  const start = new Date();
-  await updateItemAnnotationInStately(platformMembershipId, destinyVersion, itemAnnotation);
-  metrics.timing('update.tag', start);
-}
-
 async function tagCleanup(
   client: ClientBase,
   bungieMembershipId: number,
@@ -729,20 +748,6 @@ async function tagCleanup(
   metrics.timing('update.tagCleanup', start);
 
   return { status: 'Success' };
-}
-
-async function tagCleanupStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  inventoryItemIds: string[],
-): Promise<void> {
-  const start = new Date();
-  await deleteItemAnnotationListStately(
-    platformMembershipId,
-    destinyVersion,
-    ...inventoryItemIds.filter(isValidItemId),
-  );
-  metrics.timing('update.tagCleanup', start);
 }
 
 async function trackTriumph(
@@ -776,17 +781,6 @@ function validateTrackTriumph(platformMembershipId: string | undefined): Profile
   return { status: 'Success' };
 }
 
-async function trackTriumphStately(
-  platformMembershipId: string,
-  payload: TrackTriumphUpdate['payload'],
-): Promise<void> {
-  const start = new Date();
-  payload.tracked
-    ? await trackTriumphInStately(platformMembershipId, payload.recordHash)
-    : await unTrackTriumphInStately(platformMembershipId, payload.recordHash);
-  metrics.timing('update.trackTriumph', start);
-}
-
 async function recordSearch(
   client: ClientBase,
   appId: string,
@@ -799,21 +793,6 @@ async function recordSearch(
     client,
     appId,
     bungieMembershipId,
-    destinyVersion,
-    payload.query,
-    payload.type ?? SearchType.Item,
-  );
-  metrics.timing('update.recordSearch', start);
-}
-
-async function recordSearchStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  payload: UsedSearchUpdate['payload'],
-): Promise<void> {
-  const start = new Date();
-  await updateUsedSearchInStately(
-    platformMembershipId,
     destinyVersion,
     payload.query,
     payload.type ?? SearchType.Item,
@@ -869,22 +848,6 @@ function validateSearch(
   return { status: 'Success' };
 }
 
-async function saveSearchStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  payload: SavedSearchUpdate['payload'],
-): Promise<void> {
-  const start = new Date();
-  await saveSearchInStately(
-    platformMembershipId,
-    destinyVersion,
-    payload.query,
-    payload.type ?? SearchType.Item,
-    payload.saved,
-  );
-  metrics.timing('update.saveSearch', start);
-}
-
 async function deleteSearch(
   client: ClientBase,
   bungieMembershipId: number,
@@ -913,16 +876,6 @@ function validateDeleteSearch(platformMembershipId: string | undefined): Profile
   return { status: 'Success' };
 }
 
-async function deleteSearchStately(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  payload: DeleteSearchUpdate['payload'],
-): Promise<void> {
-  const start = new Date();
-  await deleteSearchInStately(platformMembershipId, destinyVersion, payload.query);
-  metrics.timing('update.deleteSearch', start);
-}
-
 async function updateItemHashTag(
   client: ClientBase,
   appId: string,
@@ -931,14 +884,5 @@ async function updateItemHashTag(
 ): Promise<void> {
   const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
-  metrics.timing('update.updateItemHashTag', start);
-}
-
-async function updateItemHashTagStately(
-  platformMembershipId: string,
-  payload: ItemHashTagUpdate['payload'],
-): Promise<void> {
-  const start = new Date();
-  await updateItemHashTagInStately(platformMembershipId, payload);
   metrics.timing('update.updateItemHashTag', start);
 }
