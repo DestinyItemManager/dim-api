@@ -1,6 +1,6 @@
 // Utilities for dealing with Stately Items (protobufs) and other Stately-specific utilities.
 
-import _ from 'lodash';
+import { mapValues } from 'es-toolkit';
 
 /** Recursively convert bigints to regular numbers in an object. */
 type ObjectBigIntToNumber<T> = {
@@ -25,8 +25,8 @@ export function bigIntToNumber<T>(value: T): BigIntToNumber<T> {
     return Number(value) as BigIntToNumber<T>;
   } else if (Array.isArray(value)) {
     return value.map(bigIntToNumber) as BigIntToNumber<T>;
-  } else if (typeof value === 'object') {
-    return _.mapValues(value, bigIntToNumber) as BigIntToNumber<T>;
+  } else if (typeof value === 'object' && value !== null) {
+    return mapValues(value, bigIntToNumber) as BigIntToNumber<T>;
   }
   return value as BigIntToNumber<T>;
 }
@@ -51,8 +51,8 @@ export function numberToBigInt<T>(value: T): NumberToBigInt<T> {
     return BigInt(value) as NumberToBigInt<T>;
   } else if (Array.isArray(value)) {
     return value.map(numberToBigInt) as NumberToBigInt<T>;
-  } else if (typeof value === 'object') {
-    return _.mapValues(value, numberToBigInt) as NumberToBigInt<T>;
+  } else if (typeof value === 'object' && value !== null) {
+    return mapValues(value, numberToBigInt) as NumberToBigInt<T>;
   }
   return value as NumberToBigInt<T>;
 }

@@ -1,5 +1,5 @@
+import { camelCase, mapKeys } from 'es-toolkit';
 import { Response } from 'express';
-import _ from 'lodash';
 
 /**
  * This is a utility function to extract the types of a subset of value types
@@ -95,7 +95,7 @@ export type KeysToSnakeCase<T> = {
  * Convert an object to a new object with snake_case keys replaced with camelCase.
  */
 export function camelize<T extends object>(data: KeysToSnakeCase<T>): T {
-  return _.mapKeys(data, (_value, key) => _.camelCase(key)) as T;
+  return mapKeys(data, (_value, key) => camelCase(key as string)) as T;
 }
 
 export function badRequest(res: Response, message: string) {

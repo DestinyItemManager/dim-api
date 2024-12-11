@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { uniqBy } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
@@ -58,7 +58,7 @@ export async function getSearchesForProfile(
     text: 'SELECT query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
     values: [bungieMembershipId, destinyVersion],
   });
-  return _.uniqBy(
+  return uniqBy(
     results.rows
       .map(convertSearch)
       .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
