@@ -64,6 +64,11 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: stately_client_secret
+            - name: STATELY_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: stately_access_key
             - name: GCP_CREDENTIALS
               valueFrom:
                 secretKeyRef:
