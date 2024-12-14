@@ -1,6 +1,7 @@
 import { keyPath } from '@stately-cloud/client';
+import { partition } from 'es-toolkit';
 import { client } from './client.js';
-import { batches } from './stately-utils.js';
+import { batches, Transaction } from './stately-utils.js';
 
 export function keyFor(platformMembershipId: string | bigint, triumphHash: number) {
   return keyPath`/p-${BigInt(platformMembershipId)}/d-2/triumph-${triumphHash}`;
@@ -20,6 +21,33 @@ export async function getTrackedTriumphsForProfile(
     }
   }
   return results;
+}
+
+export async function trackUntrackTriumphs(
+  txn: Transaction,
+  platformMembershipId: string,
+  triumphs: {
+    recordHash: number;
+    tracked: boolean;
+  }[],
+): Promise<void> {
+  const [trackedTriumphs, untrackedTriumphs] = partition(triumphs, (t) => t.tracked);
+  if (untrackedTriumphs.length) {
+    await txn.del(
+      ...untrackedTriumphs.map(({ recordHash }) => keyFor(platformMembershipId, recordHash)),
+    );
+  }
+  if (trackedTriumphs.length) {
+    await txn.putBatch(
+      ...trackedTriumphs.map(({ recordHash }) =>
+        client.create('Triumph', {
+          recordHash,
+          profileId: BigInt(platformMembershipId),
+          destinyVersion: 2,
+        }),
+      ),
+    );
+  }
 }
 
 /**

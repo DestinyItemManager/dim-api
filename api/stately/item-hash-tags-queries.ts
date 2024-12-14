@@ -5,7 +5,7 @@ import {
   ItemHashTag as StatelyItemHashTag,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
+import { batches, clearValue, enumToStringUnion, Transaction } from './stately-utils.js';
 
 export function keyFor(platformMembershipId: string | bigint, itemHash: number) {
   // HashTags are D2-only
@@ -45,7 +45,9 @@ export function convertItemHashTag(item: StatelyItemHashTag): ItemHashTag {
 /**
  * Insert or update (upsert) a single item annotation.
  */
+// TODO: This one should also be batched
 export async function updateItemHashTag(
+  txn: Transaction,
   platformMembershipId: string,
   itemHashTag: ItemHashTag,
 ): Promise<void> {
@@ -54,35 +56,33 @@ export async function updateItemHashTag(
 
   if (tagValue === 'clear' && notesValue === 'clear') {
     // Delete the annotation entirely
-    return deleteItemHashTag(platformMembershipId, itemHashTag.hash);
+    return txn.del(keyFor(platformMembershipId, itemHashTag.hash));
   }
 
   // We want to merge the incoming values with the existing values, so we need
   // to read the existing values first in a transaction.
-  await client.transaction(async (txn) => {
-    let existing = await txn.get('ItemHashTag', keyFor(platformMembershipId, itemHashTag.hash));
-    if (!existing) {
-      existing = client.create('ItemHashTag', {
-        hash: itemHashTag.hash,
-        profileId: BigInt(platformMembershipId),
-        destinyVersion: 2,
-      });
-    }
+  let existing = await txn.get('ItemHashTag', keyFor(platformMembershipId, itemHashTag.hash));
+  if (!existing) {
+    existing = client.create('ItemHashTag', {
+      hash: itemHashTag.hash,
+      profileId: BigInt(platformMembershipId),
+      destinyVersion: 2,
+    });
+  }
 
-    if (tagValue === 'clear') {
-      existing.tag = StatelyTagValue.TagValue_UNSPECIFIED;
-    } else if (tagValue !== null) {
-      existing.tag = StatelyTagValue[`TagValue_${tagValue}`];
-    }
+  if (tagValue === 'clear') {
+    existing.tag = StatelyTagValue.TagValue_UNSPECIFIED;
+  } else if (tagValue !== null) {
+    existing.tag = StatelyTagValue[`TagValue_${tagValue}`];
+  }
 
-    if (notesValue === 'clear') {
-      existing.notes = '';
-    } else if (notesValue !== null) {
-      existing.notes = notesValue;
-    }
+  if (notesValue === 'clear') {
+    existing.notes = '';
+  } else if (notesValue !== null) {
+    existing.notes = notesValue;
+  }
 
-    await txn.put(existing);
-  });
+  await txn.put(existing);
 }
 
 export function importHashTags(platformMembershipId: string, itemHashTags: ItemHashTag[]) {

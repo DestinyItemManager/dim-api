@@ -1,6 +1,10 @@
 // Utilities for dealing with Stately Items (protobufs) and other Stately-specific utilities.
 
+import { Transaction as TXN } from '@stately-cloud/client';
 import { mapValues } from 'es-toolkit';
+import { AllItemTypes, itemTypeToSchema } from './generated/index.js';
+
+export type Transaction = TXN<typeof itemTypeToSchema, AllItemTypes>;
 
 /** Recursively convert bigints to regular numbers in an object. */
 type ObjectBigIntToNumber<T> = {

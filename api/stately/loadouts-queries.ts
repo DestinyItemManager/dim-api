@@ -22,7 +22,7 @@ import {
   LoadoutShare as StatelyLoadoutShare,
   StatConstraint as StatelyStatConstraint,
 } from './generated/index.js';
-import { batches, listToMap, stripDefaults, stripTypeName } from './stately-utils.js';
+import { batches, listToMap, stripDefaults, stripTypeName, Transaction } from './stately-utils.js';
 
 export function keyFor(
   platformMembershipId: string | bigint,
@@ -336,12 +336,15 @@ export function statConstraintsToStately(statConstraints: StatConstraint[] | und
  * Insert or update (upsert) a loadout. Loadouts are totally replaced when updated.
  */
 export async function updateLoadout(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  loadout: Loadout,
+  loadouts: Loadout[],
 ): Promise<void> {
-  const item = convertLoadoutToStately(loadout, platformMembershipId, destinyVersion);
-  await client.put(item);
+  const items = loadouts.map((loadout) =>
+    convertLoadoutToStately(loadout, platformMembershipId, destinyVersion),
+  );
+  await txn.putBatch(...items);
 }
 
 export function importLoadouts(
@@ -394,14 +397,15 @@ export function cleanItem(item: LoadoutItem): LoadoutItem {
  * Delete one or more loadouts.
  */
 export async function deleteLoadout(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  ...loadoutIds: string[]
+  loadoutIds: string[],
 ): Promise<void> {
   if (loadoutIds.length === 0) {
     return;
   }
-  await client.del(...loadoutIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
+  await txn.del(...loadoutIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
 }
 
 /**

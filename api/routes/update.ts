@@ -62,17 +62,15 @@ import {
 } from '../stately/loadouts-queries.js';
 import {
   deleteSearch as deleteSearchInStately,
-  saveSearch as saveSearchInStately,
-  updateUsedSearch as updateUsedSearchInStately,
+  UpdateSearch,
+  updateSearches,
 } from '../stately/searches-queries.js';
 import { setSetting as setSettingInStately } from '../stately/settings-queries.js';
-import {
-  trackTriumph as trackTriumphInStately,
-  unTrackTriumph as unTrackTriumphInStately,
-} from '../stately/triumphs-queries.js';
+import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
   badRequest,
   checkPlatformMembershipId,
+  delay,
   isValidItemId,
   isValidPlatformMembershipId,
 } from '../utils.js';
@@ -273,104 +271,102 @@ async function statelyUpdate(
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
 ) {
-  // TODO: batch these up - one phase for validation, then do all the reads,
-  // then all the updates, then all the deletes
+  // We want to group save search and search updates together
+  const actionKey = (u: ProfileUpdate) => (u.action === 'save_search' ? 'search' : u.action);
 
-  const sortedUpdates = sortBy(updates, [(u) => u.action]);
+  const sortedUpdates = sortBy(updates, [actionKey]);
 
-  for (const updateChunk of chunk(sortedUpdates, 50)) {
+  for (const updateChunk of chunk(sortedUpdates, 25)) {
     client.transaction(async (txn) => {
-      for (const [action, group] of Object.entries(groupBy(updateChunk, (u) => u.action))) {
+      for (const [action, group] of Object.entries(groupBy(updateChunk, actionKey))) {
         metrics.increment(`update.action.${action}.count`);
 
         switch (action) {
-          case 'setting':
+          case 'setting': {
+            // The DIM reducer already combines settings updates, but just in case...
+            let mergedSettings: Partial<Settings> = (group as SettingUpdate[]).shift()!.payload;
             for (const update of group as SettingUpdate[]) {
-              await setSettingInStately(bungieMembershipId, update.payload);
+              mergedSettings = { ...mergedSettings, ...update.payload };
             }
+            await setSettingInStately(txn, bungieMembershipId, mergedSettings);
             break;
+          }
 
           case 'loadout':
-            for (const update of group as LoadoutUpdate[]) {
-              await updateLoadoutInStately(platformMembershipId!, destinyVersion, update.payload);
-            }
+            await updateLoadoutInStately(
+              txn,
+              platformMembershipId!,
+              destinyVersion,
+              (group as LoadoutUpdate[]).map((u) => u.payload),
+            );
             break;
 
           case 'delete_loadout':
-            for (const update of group as DeleteLoadoutUpdate[]) {
-              await deleteLoadoutInStately(platformMembershipId!, destinyVersion, update.payload);
-            }
+            await deleteLoadoutInStately(
+              txn,
+              platformMembershipId!,
+              destinyVersion,
+              (group as DeleteLoadoutUpdate[]).map((u) => u.payload),
+            );
             break;
 
           case 'tag':
-            for (const update of group as TagUpdate[]) {
-              await updateItemAnnotationInStately(
-                platformMembershipId!,
-                destinyVersion,
-                update.payload,
-              );
-            }
+            await updateItemAnnotationInStately(
+              txn,
+              platformMembershipId!,
+              destinyVersion,
+              (group as TagUpdate[]).map((u) => u.payload),
+            );
             break;
 
-          case 'tag_cleanup':
-            for (const update of group as TagCleanupUpdate[]) {
-              await deleteItemAnnotationListStately(
-                platformMembershipId!,
-                destinyVersion,
-                ...update.payload.filter(isValidItemId),
-              );
-            }
+          case 'tag_cleanup': {
+            const instanceIds = (group as TagCleanupUpdate[])
+              .flatMap((u) => u.payload)
+              .filter(isValidItemId);
+            await deleteItemAnnotationListStately(
+              platformMembershipId!,
+              destinyVersion,
+              instanceIds,
+            );
             break;
+          }
 
           case 'item_hash_tag':
             for (const update of group as ItemHashTagUpdate[]) {
-              await updateItemHashTagInStately(platformMembershipId!, update.payload);
+              // TODO: Batch this one too
+              await updateItemHashTagInStately(txn, platformMembershipId!, update.payload);
             }
             break;
 
           case 'track_triumph':
-            for (const update of group as TrackTriumphUpdate[]) {
-              update.payload.tracked
-                ? await trackTriumphInStately(platformMembershipId!, update.payload.recordHash)
-                : await unTrackTriumphInStately(platformMembershipId!, update.payload.recordHash);
-            }
+            await trackUntrackTriumphs(
+              txn,
+              platformMembershipId!,
+              (group as TrackTriumphUpdate[]).map((u) => u.payload),
+            );
             break;
 
-          case 'search':
-            for (const update of group as UsedSearchUpdate[]) {
-              await updateUsedSearchInStately(
-                platformMembershipId!,
-                destinyVersion,
-                update.payload.query,
-                update.payload.type ?? SearchType.Item,
-              );
-            }
+          // saved searches and used searches are collectively "searches"
+          case 'search': {
+            const searchUpdates = consolidateSearchUpdates(
+              group as (UsedSearchUpdate | SavedSearchUpdate)[],
+            );
+            await updateSearches(txn, platformMembershipId!, destinyVersion, searchUpdates);
             break;
-
-          case 'save_search':
-            for (const update of group as SavedSearchUpdate[]) {
-              await saveSearchInStately(
-                platformMembershipId!,
-                destinyVersion,
-                update.payload.query,
-                update.payload.type ?? SearchType.Item,
-                update.payload.saved,
-              );
-            }
-            break;
+          }
 
           case 'delete_search':
-            for (const update of group as DeleteSearchUpdate[]) {
-              await deleteSearchInStately(
-                platformMembershipId!,
-                destinyVersion,
-                update.payload.query,
-              );
-            }
+            await deleteSearchInStately(
+              txn,
+              platformMembershipId!,
+              destinyVersion,
+              (group as DeleteSearchUpdate[]).map((u) => u.payload.query),
+            );
             break;
         }
       }
     });
+    await delay(100); // sleep to let transaction flush
   }
 }
 
@@ -885,4 +881,24 @@ async function updateItemHashTag(
   const start = new Date();
   await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
   metrics.timing('update.updateItemHashTag', start);
+}
+
+function consolidateSearchUpdates(updates: (UsedSearchUpdate | SavedSearchUpdate)[]) {
+  const updatesByQuery = groupBy(updates, (u) => u.payload.query);
+  return Object.values(updatesByQuery).map((group) => {
+    const u: UpdateSearch = {
+      query: group[0].payload.query,
+      type: group[0].payload.type ?? SearchType.Item,
+      saved: false,
+      incrementUsed: 0,
+    };
+    for (const update of group) {
+      if (update.action === 'save_search') {
+        u.saved = update.payload.saved;
+      } else {
+        u.incrementUsed++;
+      }
+    }
+    return u;
+  });
 }
