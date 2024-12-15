@@ -277,7 +277,7 @@ async function statelyUpdate(
   const sortedUpdates = sortBy(updates, [actionKey]);
 
   for (const updateChunk of chunk(sortedUpdates, 25)) {
-    client.transaction(async (txn) => {
+    await client.transaction(async (txn) => {
       for (const [action, group] of Object.entries(groupBy(updateChunk, actionKey))) {
         metrics.increment(`update.action.${action}.count`);
 

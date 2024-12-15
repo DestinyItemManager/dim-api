@@ -26,7 +26,7 @@ it('can roundtrip between DIM settings and Stately settings with loadout paramet
 });
 
 it('can insert settings where none exist before', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
       showNewItems: true,
     });
@@ -37,7 +37,7 @@ it('can insert settings where none exist before', async () => {
 });
 
 it('can update settings', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
       showNewItems: true,
     });
@@ -46,7 +46,7 @@ it('can update settings', async () => {
   const settings = await getSettings(bungieMembershipId);
   expect(settings.showNewItems).toBe(true);
 
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
       showNewItems: false,
     });
@@ -57,7 +57,7 @@ it('can update settings', async () => {
 });
 
 it('can partially update settings', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
       showNewItems: true,
     });
@@ -66,7 +66,7 @@ it('can partially update settings', async () => {
   const settings = await getSettings(bungieMembershipId);
   expect(settings.showNewItems).toBe(true);
 
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
       singleCharacter: true,
     });

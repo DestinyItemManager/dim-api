@@ -13,7 +13,7 @@ const platformMembershipId = '213512057';
 
 beforeEach(async () => deleteAllSearches(platformMembershipId));
 
-function updateUsedSearch(
+async function updateUsedSearch(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
@@ -31,7 +31,7 @@ function updateUsedSearch(
   });
 }
 
-function saveSearch(
+async function saveSearch(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
@@ -96,12 +96,10 @@ it('can mark a search as favorite', async () => {
 it('can mark a search as favorite even when it hasnt been used', async () => {
   await saveSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item, true);
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
-    (s) => s.usageCount > 0,
-  );
+  const searches = await getSearchesForProfile(platformMembershipId, 2);
   expect(searches[0].query).toBe('tag:junk');
   expect(searches[0].saved).toBe(true);
-  expect(searches[0].usageCount).toBe(1);
+  expect(searches[0].usageCount).toBe(0);
 });
 
 it('can get all searches across profiles', async () => {
@@ -128,7 +126,7 @@ it('can increment usage for one of the built-in searches', async () => {
 
 it('can delete a search', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await deleteSearch(txn, platformMembershipId, 2, ['tag:junk']);
   });
 

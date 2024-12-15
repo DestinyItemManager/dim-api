@@ -11,7 +11,7 @@ const platformMembershipId = '213512057';
 beforeEach(async () => deleteAllItemAnnotations(platformMembershipId));
 
 it('can insert tags where none exist before', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
@@ -30,7 +30,7 @@ it('can insert tags where none exist before', async () => {
 });
 
 it('can update tags where none exist before', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
@@ -54,13 +54,17 @@ it('can update tags where none exist before', async () => {
 });
 
 it('can update tags clearing value', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
         tag: 'favorite',
         notes: 'the best',
       },
+    ]);
+  });
+  await client.transaction(async (txn) => {
+    await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
         tag: null,
@@ -76,7 +80,7 @@ it('can update tags clearing value', async () => {
 });
 
 it('can delete tags', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
@@ -84,7 +88,8 @@ it('can delete tags', async () => {
         notes: 'the best',
       },
     ]);
-
+  });
+  await client.transaction(async (txn) => {
     await deleteItemAnnotation(txn, platformMembershipId, 2, ['123456']);
   });
 
@@ -93,13 +98,17 @@ it('can delete tags', async () => {
 });
 
 it('can delete tags by setting both values to null/empty', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
         tag: 'favorite',
         notes: 'the best',
       },
+    ]);
+  });
+  await client.transaction(async (txn) => {
+    await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
         tag: null,
@@ -113,20 +122,16 @@ it('can delete tags by setting both values to null/empty', async () => {
 });
 
 it('can clear tags', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
       {
         id: '123456',
         tag: 'favorite',
         notes: 'the best',
       },
-      {
-        id: '654321',
-        tag: 'junk',
-        notes: 'the worst',
-      },
     ]);
-
+  });
+  await client.transaction(async (txn) => {
     await deleteItemAnnotation(txn, platformMembershipId, 2, ['123456', '654321']);
   });
 

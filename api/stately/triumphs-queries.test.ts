@@ -9,14 +9,14 @@ const platformMembershipId = '213512057';
 
 beforeEach(async () => deleteAllTrackedTriumphs(platformMembershipId));
 
-function trackTriumph(platformMembershipId: string, triumphHash: number) {
+async function trackTriumph(platformMembershipId: string, triumphHash: number) {
   return client.transaction(async (txn) => {
     await trackUntrackTriumphs(txn, platformMembershipId, [
       { recordHash: triumphHash, tracked: true },
     ]);
   });
 }
-function unTrackTriumph(platformMembershipId: string, triumphHash: number) {
+async function unTrackTriumph(platformMembershipId: string, triumphHash: number) {
   return client.transaction(async (txn) => {
     await trackUntrackTriumphs(txn, platformMembershipId, [
       { recordHash: triumphHash, tracked: false },

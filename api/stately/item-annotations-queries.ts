@@ -194,7 +194,7 @@ export async function deleteItemAnnotation(
   destinyVersion: DestinyVersion,
   inventoryItemIds: string[],
 ): Promise<void> {
-  txn.del(...inventoryItemIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
+  await txn.del(...inventoryItemIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
 }
 
 /**

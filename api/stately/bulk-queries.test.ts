@@ -16,7 +16,7 @@ beforeEach(async () => deleteAllDataForUser(bungieMembershipId, [platformMembers
 
 describe('deleteAllDataForUser', () => {
   it('should delete all kinds of data', async () => {
-    client.transaction(async (txn) => {
+    await client.transaction(async (txn) => {
       await updateItemAnnotation(txn, platformMembershipId, 2, [
         {
           id: '123456',
@@ -70,7 +70,7 @@ describe('deleteAllDataForUser', () => {
 
 describe('exportDataForUser', () => {
   it('should delete all kinds of data', async () => {
-    client.transaction(async (txn) => {
+    await client.transaction(async (txn) => {
       await updateItemAnnotation(txn, platformMembershipId, 2, [
         {
           id: '123456',

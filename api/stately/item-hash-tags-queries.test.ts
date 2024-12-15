@@ -11,7 +11,7 @@ const platformMembershipId = '213512057';
 beforeEach(async () => deleteAllItemHashTags(platformMembershipId));
 
 it('can insert item hash tags where none exist before', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
@@ -28,7 +28,7 @@ it('can insert item hash tags where none exist before', async () => {
 });
 
 it('can update item hash tags where none exist before', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
@@ -51,19 +51,19 @@ it('can update item hash tags where none exist before', async () => {
 });
 
 it('can update item hash tags clearing value', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
-
+  });
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: null,
     });
   });
-
   const annotations = await getItemHashTagsForProfile(platformMembershipId);
   expect(annotations[0]).toEqual({
     hash: 2926662838,
@@ -72,13 +72,15 @@ it('can update item hash tags clearing value', async () => {
 });
 
 it('can delete item hash tags', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
+  });
 
+  await client.transaction(async (txn) => {
     await deleteItemHashTag(txn, platformMembershipId, 2926662838);
   });
 
@@ -87,13 +89,15 @@ it('can delete item hash tags', async () => {
 });
 
 it('can delete item hash tags by setting both values to null/empty', async () => {
-  client.transaction(async (txn) => {
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
     });
+  });
 
+  await client.transaction(async (txn) => {
     await updateItemHashTag(txn, platformMembershipId, {
       hash: 2926662838,
       tag: null,
