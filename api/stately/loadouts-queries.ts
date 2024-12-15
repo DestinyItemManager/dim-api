@@ -58,7 +58,7 @@ export async function getLoadoutsForProfile(
 /**
  * Get ALL of loadouts for a particular user across all platforms.
  */
-export async function getAllLoadoutsForUser(platformMembershipId: string): Promise<
+async function getAllLoadoutsForUser(platformMembershipId: string): Promise<
   {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
@@ -333,7 +333,7 @@ export function statConstraintsToStately(statConstraints: StatConstraint[] | und
 }
 
 /**
- * Insert or update (upsert) a loadout. Loadouts are totally replaced when updated.
+ * Insert or update (upsert) loadouts. Loadouts are totally replaced when updated.
  */
 export async function updateLoadout(
   txn: Transaction,

@@ -40,7 +40,7 @@ export async function getItemAnnotationsForProfile(
  * all Destiny versions. This is a bit different from the PG version which gets
  * everything under a bungieMembershipId.
  */
-export async function getAllItemAnnotationsForUser(platformMembershipId: string): Promise<
+async function getAllItemAnnotationsForUser(platformMembershipId: string): Promise<
   {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
@@ -81,7 +81,7 @@ export function convertItemAnnotation(item: StatelyItemAnnotation): ItemAnnotati
 }
 
 /**
- * Insert or update (upsert) a single item annotation.
+ * Insert or update (upsert) item annotations.
  */
 export async function updateItemAnnotation(
   txn: Transaction,
@@ -186,16 +186,15 @@ export function importTags(
 }
 
 /**
- * Delete an item annotation.
+ * Delete item annotations.
  */
 export async function deleteItemAnnotation(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   inventoryItemIds: string[],
 ): Promise<void> {
-  for (const batch of batches(inventoryItemIds)) {
-    await client.del(...batch.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
-  }
+  txn.del(...inventoryItemIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
 }
 
 /**

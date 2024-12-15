@@ -1,13 +1,28 @@
+import { client } from './client.js';
 import {
   deleteAllTrackedTriumphs,
   getTrackedTriumphsForProfile,
-  trackTriumph,
-  unTrackTriumph,
+  trackUntrackTriumphs,
 } from './triumphs-queries.js';
 
 const platformMembershipId = '213512057';
 
 beforeEach(async () => deleteAllTrackedTriumphs(platformMembershipId));
+
+function trackTriumph(platformMembershipId: string, triumphHash: number) {
+  return client.transaction(async (txn) => {
+    await trackUntrackTriumphs(txn, platformMembershipId, [
+      { recordHash: triumphHash, tracked: true },
+    ]);
+  });
+}
+function unTrackTriumph(platformMembershipId: string, triumphHash: number) {
+  return client.transaction(async (txn) => {
+    await trackUntrackTriumphs(txn, platformMembershipId, [
+      { recordHash: triumphHash, tracked: false },
+    ]);
+  });
+}
 
 it('can track a triumph where none was tracked before', async () => {
   await trackTriumph(platformMembershipId, 3851137658);

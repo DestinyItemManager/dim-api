@@ -1,7 +1,6 @@
 import { keyPath } from '@stately-cloud/client';
 import { sortBy, uniqBy } from 'es-toolkit';
 import crypto from 'node:crypto';
-import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
@@ -151,34 +150,6 @@ export async function updateSearches(
   await txn.putBatch(...updated);
 }
 
-/**
- * Insert or update (upsert) a single search.
- *
- * It's a bit odd that saving/unsaving a search counts as a "usage" but that's probably OK
- */
-export async function updateUsedSearch(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  query: string,
-  type: SearchType,
-): Promise<void> {
-  // Either update an existing search, or create a new one
-  await client.transaction(async (txn) => {
-    let search = await txn.get('Search', keyFor(platformMembershipId, destinyVersion, query));
-    if (search && search.query !== query) {
-      // This should never happen!
-      metrics.increment('db.searches.hashCollision.count', 1);
-      throw new Error('searches - query hash collision');
-    }
-    if (!search) {
-      search = newSearch(platformMembershipId, destinyVersion, type, query);
-    }
-    search.usageCount++;
-    search.lastUsage = BigInt(Date.now());
-    await txn.put(search);
-  });
-}
-
 function newSearch(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
@@ -196,68 +167,6 @@ function newSearch(
     profileId: BigInt(platformMembershipId),
     destinyVersion,
   });
-}
-
-/**
- * Save/unsave a search. This assumes the search exists.
- */
-export async function saveSearch(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  query: string,
-  type: SearchType,
-  saved?: boolean,
-): Promise<void> {
-  await client.transaction(async (txn) => {
-    let search = await txn.get('Search', keyFor(platformMembershipId, destinyVersion, query));
-    if (search && search.query !== query) {
-      // This should never happen!
-      metrics.increment('db.searches.hashCollision.count', 1);
-      throw new Error('searches - query hash collision');
-    }
-    if (!search) {
-      search = newSearch(platformMembershipId, destinyVersion, type, query);
-      search.usageCount = 1;
-    }
-    if (saved !== undefined) {
-      // Save/unsave doesn't increment usage
-      search.saved = saved;
-    } else {
-      // It's just a search usage, not a save/unsave
-      search.usageCount++;
-    }
-    search.lastUsage = BigInt(Date.now());
-    await txn.put(search);
-  });
-}
-
-/**
- * Insert a single search as part of an import.
- */
-export async function importSearch(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  query: string,
-  saved: boolean,
-  lastUsage: number,
-  usageCount: number,
-  type: SearchType,
-): Promise<void> {
-  await client.put(
-    client.create('Search', {
-      query,
-      qhash: queryHash(query),
-      saved,
-      usageCount,
-      lastUsage: BigInt(lastUsage),
-      type:
-        type === SearchType.Item
-          ? StatelySearchType.SearchType_Item
-          : StatelySearchType.SearchType_Loadout,
-      profileId: BigInt(platformMembershipId),
-      destinyVersion,
-    }),
-  );
 }
 
 export function importSearches(

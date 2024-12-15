@@ -324,6 +324,7 @@ async function statelyUpdate(
               .flatMap((u) => u.payload)
               .filter(isValidItemId);
             await deleteItemAnnotationListStately(
+              txn,
               platformMembershipId!,
               destinyVersion,
               instanceIds,

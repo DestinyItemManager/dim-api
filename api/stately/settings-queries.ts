@@ -253,17 +253,6 @@ export function convertToStatelyItem(
 }
 
 /**
- * Insert or update (upsert) an entire settings tree, totally replacing whatever's there.
- */
-export async function replaceSettings(
-  bungieMembershipId: number,
-  settings: Settings,
-): Promise<void> {
-  const item = convertToStatelyItem(settings, bungieMembershipId);
-  await client.put(item);
-}
-
-/**
  * Update specific key/value pairs within settings, leaving the rest alone. Creates the settings row if it doesn't exist.
  */
 export async function setSetting(

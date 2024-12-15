@@ -1,17 +1,54 @@
+import { DestinyVersion } from '../shapes/general.js';
 import { SearchType } from '../shapes/search.js';
+import { client } from './client.js';
 import {
   deleteAllSearches,
   deleteSearch,
   getSearchesForProfile,
   getSearchesForUser,
-  importSearch,
-  saveSearch,
-  updateUsedSearch,
+  updateSearches,
 } from './searches-queries.js';
 
 const platformMembershipId = '213512057';
 
 beforeEach(async () => deleteAllSearches(platformMembershipId));
+
+function updateUsedSearch(
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  query: string,
+  type: SearchType,
+) {
+  return client.transaction(async (txn) => {
+    await updateSearches(txn, platformMembershipId, destinyVersion, [
+      {
+        query,
+        type,
+        saved: false,
+        incrementUsed: 1,
+      },
+    ]);
+  });
+}
+
+function saveSearch(
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  query: string,
+  type: SearchType,
+  saved: boolean,
+) {
+  return client.transaction(async (txn) => {
+    await updateSearches(txn, platformMembershipId, destinyVersion, [
+      {
+        query,
+        type,
+        saved,
+        incrementUsed: 0,
+      },
+    ]);
+  });
+}
 
 it('can record a used search where none was recorded before', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
@@ -91,23 +128,14 @@ it('can increment usage for one of the built-in searches', async () => {
 
 it('can delete a search', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
-  await deleteSearch(platformMembershipId, 2, 'tag:junk');
+  client.transaction(async (txn) => {
+    await deleteSearch(txn, platformMembershipId, 2, ['tag:junk']);
+  });
 
   const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
     (s) => s.usageCount > 0,
   );
   expect(searches.length).toBe(0);
-});
-
-it('can import a search', async () => {
-  await importSearch(platformMembershipId, 2, 'tag:junk', true, 1598199188576, 5, SearchType.Item);
-
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
-    (s) => s.usageCount > 0,
-  );
-  expect(searches[0].query).toBe('tag:junk');
-  expect(searches[0].saved).toBe(true);
-  expect(searches[0].usageCount).toBe(5);
 });
 
 it('can record searches for loadouts', async () => {

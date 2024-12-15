@@ -1,3 +1,4 @@
+import { client } from './client.js';
 import {
   deleteAllItemHashTags,
   deleteItemHashTag,
@@ -10,10 +11,12 @@ const platformMembershipId = '213512057';
 beforeEach(async () => deleteAllItemHashTags(platformMembershipId));
 
 it('can insert item hash tags where none exist before', async () => {
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'favorite',
-    notes: 'the best',
+  client.transaction(async (txn) => {
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
   });
 
   const annotations = await getItemHashTagsForProfile(platformMembershipId);
@@ -25,16 +28,18 @@ it('can insert item hash tags where none exist before', async () => {
 });
 
 it('can update item hash tags where none exist before', async () => {
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'favorite',
-    notes: 'the best',
-  });
+  client.transaction(async (txn) => {
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
 
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'junk',
-    notes: 'the worst',
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'junk',
+      notes: 'the worst',
+    });
   });
 
   const annotations = await getItemHashTagsForProfile(platformMembershipId);
@@ -46,15 +51,17 @@ it('can update item hash tags where none exist before', async () => {
 });
 
 it('can update item hash tags clearing value', async () => {
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'favorite',
-    notes: 'the best',
-  });
+  client.transaction(async (txn) => {
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
 
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: null,
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: null,
+    });
   });
 
   const annotations = await getItemHashTagsForProfile(platformMembershipId);
@@ -65,29 +72,33 @@ it('can update item hash tags clearing value', async () => {
 });
 
 it('can delete item hash tags', async () => {
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'favorite',
-    notes: 'the best',
-  });
+  client.transaction(async (txn) => {
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
 
-  await deleteItemHashTag(platformMembershipId, 2926662838);
+    await deleteItemHashTag(txn, platformMembershipId, 2926662838);
+  });
 
   const annotations = await getItemHashTagsForProfile(platformMembershipId);
   expect(annotations).toEqual([]);
 });
 
 it('can delete item hash tags by setting both values to null/empty', async () => {
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: 'favorite',
-    notes: 'the best',
-  });
+  client.transaction(async (txn) => {
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
 
-  await updateItemHashTag(platformMembershipId, {
-    hash: 2926662838,
-    tag: null,
-    notes: '',
+    await updateItemHashTag(txn, platformMembershipId, {
+      hash: 2926662838,
+      tag: null,
+      notes: '',
+    });
   });
 
   const annotations = await getItemHashTagsForProfile(platformMembershipId);

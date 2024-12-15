@@ -50,22 +50,6 @@ export async function trackUntrackTriumphs(
   }
 }
 
-/**
- * Add a tracked triumph.
- */
-export async function trackTriumph(
-  platformMembershipId: string,
-  recordHash: number,
-): Promise<void> {
-  await client.put(
-    client.create('Triumph', {
-      recordHash,
-      profileId: BigInt(platformMembershipId),
-      destinyVersion: 2,
-    }),
-  );
-}
-
 export function importTriumphs(platformMembershipId: string, recordHashes: number[]) {
   return recordHashes.map((recordHash) =>
     client.create('Triumph', {
@@ -74,16 +58,6 @@ export function importTriumphs(platformMembershipId: string, recordHashes: numbe
       destinyVersion: 2,
     }),
   );
-}
-
-/**
- * Remove a tracked triumph.
- */
-export async function unTrackTriumph(
-  platformMembershipId: string,
-  recordHash: number,
-): Promise<void> {
-  await client.del(keyFor(platformMembershipId, recordHash));
 }
 
 /**

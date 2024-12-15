@@ -101,10 +101,11 @@ export function importHashTags(platformMembershipId: string, itemHashTags: ItemH
  * Delete an item hash tags.
  */
 export async function deleteItemHashTag(
+  txn: Transaction,
   platformMembershipId: string,
   ...inventoryItemHashes: number[]
 ): Promise<void> {
-  return client.del(...inventoryItemHashes.map((hash) => keyFor(platformMembershipId, hash)));
+  return txn.del(...inventoryItemHashes.map((hash) => keyFor(platformMembershipId, hash)));
 }
 
 /**
