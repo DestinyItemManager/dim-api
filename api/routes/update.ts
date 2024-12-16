@@ -274,7 +274,13 @@ async function statelyUpdate(
   // We want to group save search and search updates together
   const actionKey = (u: ProfileUpdate) => (u.action === 'save_search' ? 'search' : u.action);
 
-  const sortedUpdates = sortBy(updates, [actionKey]);
+  const sortedUpdates = sortBy(updates, [actionKey]).flatMap((u): ProfileUpdate[] => {
+    // Separate out tag_cleanup updates into individual updates
+    if (u.action === 'tag_cleanup') {
+      return u.payload.map((p) => ({ action: 'tag_cleanup', payload: [p] }));
+    }
+    return [u];
+  });
 
   for (const updateChunk of chunk(sortedUpdates, 25)) {
     await client.transaction(async (txn) => {
