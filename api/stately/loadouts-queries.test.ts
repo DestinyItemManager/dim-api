@@ -96,7 +96,9 @@ it('can roundtrip loadout parameters w/ a negative armor hash', () => {
 });
 
 it('can record a loadout', async () => {
-  await updateLoadout(platformMembershipId, 2, loadout);
+  await client.transaction(async (txn) => {
+    await updateLoadout(txn, platformMembershipId, 2, [loadout]);
+  });
 
   const loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
 
@@ -112,12 +114,18 @@ it('can record a loadout', async () => {
 });
 
 it('can update a loadout', async () => {
-  await updateLoadout(platformMembershipId, 2, loadout);
+  await client.transaction(async (txn) => {
+    await updateLoadout(txn, platformMembershipId, 2, [loadout]);
+  });
 
-  await updateLoadout(platformMembershipId, 2, {
-    ...loadout,
-    name: 'Updated',
-    unequipped: [],
+  await client.transaction(async (txn) => {
+    await updateLoadout(txn, platformMembershipId, 2, [
+      {
+        ...loadout,
+        name: 'Updated',
+        unequipped: [],
+      },
+    ]);
   });
 
   const loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
@@ -129,11 +137,15 @@ it('can update a loadout', async () => {
 });
 
 it('can delete a loadout', async () => {
-  await updateLoadout(platformMembershipId, 2, loadout);
+  await client.transaction(async (txn) => {
+    await updateLoadout(txn, platformMembershipId, 2, [loadout]);
+  });
   let loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
   expect(loadouts.length).toBe(1);
 
-  await deleteLoadout(platformMembershipId, 2, loadout.id);
+  await client.transaction(async (txn) => {
+    await deleteLoadout(txn, platformMembershipId, 2, [loadout.id]);
+  });
   loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
   expect(loadouts.length).toBe(0);
 });

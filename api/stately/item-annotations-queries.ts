@@ -1,4 +1,5 @@
 import { keyPath } from '@stately-cloud/client';
+import { partition } from 'es-toolkit';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, TagValue } from '../shapes/item-annotations.js';
 import { client } from './client.js';
@@ -6,7 +7,7 @@ import {
   ItemAnnotation as StatelyItemAnnotation,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { batches, clearValue, enumToStringUnion } from './stately-utils.js';
+import { batches, clearValue, enumToStringUnion, Transaction } from './stately-utils.js';
 
 export function keyFor(
   platformMembershipId: string | bigint,
@@ -39,7 +40,7 @@ export async function getItemAnnotationsForProfile(
  * all Destiny versions. This is a bit different from the PG version which gets
  * everything under a bungieMembershipId.
  */
-export async function getAllItemAnnotationsForUser(platformMembershipId: string): Promise<
+async function getAllItemAnnotationsForUser(platformMembershipId: string): Promise<
   {
     platformMembershipId: string;
     destinyVersion: DestinyVersion;
@@ -80,54 +81,90 @@ export function convertItemAnnotation(item: StatelyItemAnnotation): ItemAnnotati
 }
 
 /**
- * Insert or update (upsert) a single item annotation.
+ * Insert or update (upsert) item annotations.
  */
 export async function updateItemAnnotation(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  itemAnnotation: ItemAnnotation,
+  itemAnnotations: ItemAnnotation[],
 ): Promise<void> {
-  const tagValue = clearValue(itemAnnotation.tag);
-  const notesValue = clearValue(itemAnnotation.notes);
+  interface DelInstr {
+    type: 'delete';
+    key: string;
+  }
+  interface PutInstr {
+    type: 'put';
+    itemAnnotation: ItemAnnotation;
+    tagValue: TagValue | 'clear' | null;
+    notesValue: string | null;
+  }
 
-  if (tagValue === 'clear' && notesValue === 'clear') {
-    // Delete the annotation entirely
-    return deleteItemAnnotation(platformMembershipId, destinyVersion, itemAnnotation.id);
+  const [deletes, puts] = partition(
+    itemAnnotations.map((itemAnnotation): DelInstr | PutInstr => {
+      const tagValue = clearValue(itemAnnotation.tag);
+      const notesValue = clearValue(itemAnnotation.notes);
+
+      if (tagValue === 'clear' && notesValue === 'clear') {
+        return {
+          type: 'delete',
+          key: keyFor(platformMembershipId, destinyVersion, itemAnnotation.id),
+        };
+      }
+
+      return {
+        type: 'put',
+        itemAnnotation,
+        tagValue,
+        notesValue,
+      };
+    }),
+    (v) => v.type === 'delete',
+  ) as [DelInstr[], PutInstr[]];
+
+  if (deletes.length) {
+    await txn.del(...deletes.map((v) => v.key));
+  }
+
+  if (!puts.length) {
+    return;
   }
 
   // We want to merge the incoming values with the existing values, so we need
-  // to read the existing values first in a transaction.
-  await client.transaction(async (txn) => {
-    let existing = await txn.get(
-      'ItemAnnotation',
-      keyFor(platformMembershipId, destinyVersion, itemAnnotation.id),
-    );
-    if (!existing) {
-      existing = client.create('ItemAnnotation', {
-        id: BigInt(itemAnnotation.id),
+  // to read the existing values first.
+  const existingTags = (
+    await txn.getBatch(
+      ...puts.map((v) => keyFor(platformMembershipId, destinyVersion, v.itemAnnotation.id)),
+    )
+  ).filter((i) => client.isType(i, 'ItemAnnotation'));
+  const itemsToPut = puts.map(({ itemAnnotation, tagValue, notesValue }) => {
+    const idBigInt = BigInt(itemAnnotation.id);
+    const ia =
+      existingTags.find((t) => t.id === idBigInt) ??
+      client.create('ItemAnnotation', {
+        id: idBigInt,
         profileId: BigInt(platformMembershipId),
         destinyVersion,
       });
-    }
 
     if (tagValue === 'clear') {
-      existing.tag = StatelyTagValue.TagValue_UNSPECIFIED;
+      ia.tag = StatelyTagValue.TagValue_UNSPECIFIED;
     } else if (tagValue !== null) {
-      existing.tag = StatelyTagValue[`TagValue_${tagValue}`];
+      ia.tag = StatelyTagValue[`TagValue_${tagValue}`];
     }
 
     if (notesValue === 'clear') {
-      existing.notes = '';
+      ia.notes = '';
     } else if (notesValue !== null) {
-      existing.notes = notesValue;
+      ia.notes = notesValue;
     }
 
     if (itemAnnotation.craftedDate) {
-      existing.craftedDate = BigInt(itemAnnotation.craftedDate * 1000);
+      ia.craftedDate = BigInt(itemAnnotation.craftedDate * 1000);
     }
-
-    await txn.put(existing);
+    return ia;
   });
+  await txn.putBatch(...itemsToPut);
 }
 
 export function importTags(
@@ -149,16 +186,15 @@ export function importTags(
 }
 
 /**
- * Delete an item annotation.
+ * Delete item annotations.
  */
 export async function deleteItemAnnotation(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  ...inventoryItemIds: string[]
+  inventoryItemIds: string[],
 ): Promise<void> {
-  for (const batch of batches(inventoryItemIds)) {
-    await client.del(...batch.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
-  }
+  await txn.del(...inventoryItemIds.map((id) => keyFor(platformMembershipId, destinyVersion, id)));
 }
 
 /**

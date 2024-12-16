@@ -25,7 +25,13 @@ import {
   statConstraintsFromStately,
   statConstraintsToStately,
 } from './loadouts-queries.js';
-import { bigIntToNumber, enumToStringUnion, listToMap, stripTypeName } from './stately-utils.js';
+import {
+  bigIntToNumber,
+  enumToStringUnion,
+  listToMap,
+  stripTypeName,
+  Transaction,
+} from './stately-utils.js';
 
 export function keyFor(bungieMembershipId: number) {
   return keyPath`/member-${BigInt(bungieMembershipId)}/settings`;
@@ -247,38 +253,24 @@ export function convertToStatelyItem(
 }
 
 /**
- * Insert or update (upsert) an entire settings tree, totally replacing whatever's there.
- */
-export async function replaceSettings(
-  bungieMembershipId: number,
-  settings: Settings,
-): Promise<void> {
-  const item = convertToStatelyItem(settings, bungieMembershipId);
-  await client.put(item);
-}
-
-/**
  * Update specific key/value pairs within settings, leaving the rest alone. Creates the settings row if it doesn't exist.
  */
 export async function setSetting(
+  txn: Transaction,
   bungieMembershipId: number,
   settings: Partial<Settings>,
 ): Promise<void> {
-  // TODO: maybe we should accept an in-progress transaction?
-
-  await client.transaction(async (txn) => {
-    const storedSettings = await txn.get('Settings', keyFor(bungieMembershipId));
-    await txn.put(
-      convertToStatelyItem(
-        // Merge in the partial settings
-        {
-          ...(storedSettings ? convertToDimSettings(storedSettings) : defaultSettings),
-          ...settings,
-        },
-        bungieMembershipId,
-      ),
-    );
-  });
+  const storedSettings = await txn.get('Settings', keyFor(bungieMembershipId));
+  await txn.put(
+    convertToStatelyItem(
+      // Merge in the partial settings
+      {
+        ...(storedSettings ? convertToDimSettings(storedSettings) : defaultSettings),
+        ...settings,
+      },
+      bungieMembershipId,
+    ),
+  );
 }
 
 /**

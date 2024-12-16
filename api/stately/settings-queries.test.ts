@@ -1,6 +1,7 @@
 import { omit } from 'es-toolkit';
 import { defaultLoadoutParameters } from '../shapes/loadouts.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
+import { client } from './client.js';
 import {
   convertToDimSettings,
   convertToStatelyItem,
@@ -25,8 +26,10 @@ it('can roundtrip between DIM settings and Stately settings with loadout paramet
 });
 
 it('can insert settings where none exist before', async () => {
-  await setSetting(bungieMembershipId, {
-    showNewItems: true,
+  await client.transaction(async (txn) => {
+    await setSetting(txn, bungieMembershipId, {
+      showNewItems: true,
+    });
   });
 
   const settings = await getSettings(bungieMembershipId);
@@ -34,15 +37,19 @@ it('can insert settings where none exist before', async () => {
 });
 
 it('can update settings', async () => {
-  await setSetting(bungieMembershipId, {
-    showNewItems: true,
+  await client.transaction(async (txn) => {
+    await setSetting(txn, bungieMembershipId, {
+      showNewItems: true,
+    });
   });
 
   const settings = await getSettings(bungieMembershipId);
   expect(settings.showNewItems).toBe(true);
 
-  await setSetting(bungieMembershipId, {
-    showNewItems: false,
+  await client.transaction(async (txn) => {
+    await setSetting(txn, bungieMembershipId, {
+      showNewItems: false,
+    });
   });
 
   const settings2 = await getSettings(bungieMembershipId);
@@ -50,15 +57,19 @@ it('can update settings', async () => {
 });
 
 it('can partially update settings', async () => {
-  await setSetting(bungieMembershipId, {
-    showNewItems: true,
+  await client.transaction(async (txn) => {
+    await setSetting(txn, bungieMembershipId, {
+      showNewItems: true,
+    });
   });
 
   const settings = await getSettings(bungieMembershipId);
   expect(settings.showNewItems).toBe(true);
 
-  await setSetting(bungieMembershipId, {
-    singleCharacter: true,
+  await client.transaction(async (txn) => {
+    await setSetting(txn, bungieMembershipId, {
+      singleCharacter: true,
+    });
   });
 
   const settings2 = await getSettings(bungieMembershipId);

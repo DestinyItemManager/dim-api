@@ -1,13 +1,12 @@
 import { keyPath } from '@stately-cloud/client';
 import { sortBy, uniqBy } from 'es-toolkit';
 import crypto from 'node:crypto';
-import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { client } from './client.js';
 import { Search as StatelySearch, SearchType as StatelySearchType } from './generated/index.js';
-import { batches } from './stately-utils.js';
+import { batches, Transaction } from './stately-utils.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -116,32 +115,39 @@ export async function getSearchesForUser(
     );
 }
 
+export interface UpdateSearch {
+  query: string;
+  type: SearchType;
+  /**
+   * Whether the search should be saved
+   */
+  saved: boolean;
+  /** How much to increment the used count by. */
+  incrementUsed: number;
+}
+
 /**
- * Insert or update (upsert) a single search.
- *
- * It's a bit odd that saving/unsaving a search counts as a "usage" but that's probably OK
+ * Update multiple searches. This can both save/unsave them and increase their usage count.
  */
-export async function updateUsedSearch(
+export async function updateSearches(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  query: string,
-  type: SearchType,
+  updates: UpdateSearch[],
 ): Promise<void> {
-  // Either update an existing search, or create a new one
-  await client.transaction(async (txn) => {
-    let search = await txn.get('Search', keyFor(platformMembershipId, destinyVersion, query));
-    if (search && search.query !== query) {
-      // This should never happen!
-      metrics.increment('db.searches.hashCollision.count', 1);
-      throw new Error('searches - query hash collision');
-    }
-    if (!search) {
-      search = newSearch(platformMembershipId, destinyVersion, type, query);
-    }
-    search.usageCount++;
+  const existingSearches = (
+    await txn.getBatch(...updates.map((v) => keyFor(platformMembershipId, destinyVersion, v.query)))
+  ).filter((i) => client.isType(i, 'Search'));
+  const updated = updates.map(({ query, type, saved, incrementUsed }) => {
+    const search =
+      existingSearches.find((s) => s.query === query) ??
+      newSearch(platformMembershipId, destinyVersion, type, query);
+    search.usageCount += incrementUsed;
+    search.saved = saved;
     search.lastUsage = BigInt(Date.now());
-    await txn.put(search);
+    return search;
   });
+  await txn.putBatch(...updated);
 }
 
 function newSearch(
@@ -161,62 +167,6 @@ function newSearch(
     profileId: BigInt(platformMembershipId),
     destinyVersion,
   });
-}
-
-/**
- * Save/unsave a search. This assumes the search exists.
- */
-export async function saveSearch(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  query: string,
-  type: SearchType,
-  saved: boolean,
-): Promise<void> {
-  await client.transaction(async (txn) => {
-    let search = await txn.get('Search', keyFor(platformMembershipId, destinyVersion, query));
-    if (search && search.query !== query) {
-      // This should never happen!
-      metrics.increment('db.searches.hashCollision.count', 1);
-      throw new Error('searches - query hash collision');
-    }
-    if (!search) {
-      search = newSearch(platformMembershipId, destinyVersion, type, query);
-      search.usageCount = 1;
-    }
-    search.saved = saved;
-    search.lastUsage = BigInt(Date.now());
-    await txn.put(search);
-  });
-}
-
-/**
- * Insert a single search as part of an import.
- */
-export async function importSearch(
-  platformMembershipId: string,
-  destinyVersion: DestinyVersion,
-  query: string,
-  saved: boolean,
-  lastUsage: number,
-  usageCount: number,
-  type: SearchType,
-): Promise<void> {
-  await client.put(
-    client.create('Search', {
-      query,
-      qhash: queryHash(query),
-      saved,
-      usageCount,
-      lastUsage: BigInt(lastUsage),
-      type:
-        type === SearchType.Item
-          ? StatelySearchType.SearchType_Item
-          : StatelySearchType.SearchType_Loadout,
-      profileId: BigInt(platformMembershipId),
-      destinyVersion,
-    }),
-  );
 }
 
 export function importSearches(
@@ -249,12 +199,13 @@ export function importSearches(
  * Delete a single search
  */
 export async function deleteSearch(
+  txn: Transaction,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-  query: string,
+  queries: string[],
 ): Promise<void> {
   // TODO: We really should check that it's the right type of query, but realistically they're unique by query text.
-  await client.del(keyFor(platformMembershipId, destinyVersion, query));
+  await txn.del(...queries.map((q) => keyFor(platformMembershipId, destinyVersion, q)));
 }
 
 /**

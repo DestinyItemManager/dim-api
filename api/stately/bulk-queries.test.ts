@@ -1,12 +1,13 @@
 import { SearchType } from '../shapes/search.js';
 import { deleteAllDataForUser, exportDataForUser } from './bulk-queries.js';
+import { client } from './client.js';
 import { getItemAnnotationsForProfile, updateItemAnnotation } from './item-annotations-queries.js';
 import { getItemHashTagsForProfile, updateItemHashTag } from './item-hash-tags-queries.js';
 import { getLoadoutsForProfile, updateLoadout } from './loadouts-queries.js';
 import { loadout } from './loadouts-queries.test.js';
-import { getSearchesForProfile, updateUsedSearch } from './searches-queries.js';
+import { getSearchesForProfile, updateSearches } from './searches-queries.js';
 import { getSettings, setSetting } from './settings-queries.js';
-import { getTrackedTriumphsForProfile, trackTriumph } from './triumphs-queries.js';
+import { getTrackedTriumphsForProfile, trackUntrackTriumphs } from './triumphs-queries.js';
 
 const platformMembershipId = '213512057';
 const bungieMembershipId = 4321;
@@ -15,27 +16,39 @@ beforeEach(async () => deleteAllDataForUser(bungieMembershipId, [platformMembers
 
 describe('deleteAllDataForUser', () => {
   it('should delete all kinds of data', async () => {
-    await updateItemAnnotation(platformMembershipId, 2, {
-      id: '123456',
-      tag: 'favorite',
-      notes: 'the best',
-    });
-    await updateItemAnnotation(platformMembershipId, 1, {
-      id: '1234567',
-      tag: 'favorite',
-      notes: 'the best??',
-    });
-    await updateItemHashTag(platformMembershipId, {
-      hash: 2926662838,
-      tag: 'favorite',
-      notes: 'the best',
-    });
-    await updateLoadout(platformMembershipId, 2, loadout);
-    await updateUsedSearch(platformMembershipId, 1, 'is:handcannon', SearchType.Item);
-    await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
-    await trackTriumph(platformMembershipId, 3851137658);
-    await setSetting(bungieMembershipId, {
-      showNewItems: true,
+    await client.transaction(async (txn) => {
+      await updateItemAnnotation(txn, platformMembershipId, 2, [
+        {
+          id: '123456',
+          tag: 'favorite',
+          notes: 'the best',
+        },
+      ]);
+      await updateItemAnnotation(txn, platformMembershipId, 1, [
+        {
+          id: '1234567',
+          tag: 'favorite',
+          notes: 'the best??',
+        },
+      ]);
+      await updateItemHashTag(txn, platformMembershipId, {
+        hash: 2926662838,
+        tag: 'favorite',
+        notes: 'the best',
+      });
+      await updateLoadout(txn, platformMembershipId, 2, [loadout]);
+      await updateSearches(txn, platformMembershipId, 1, [
+        { query: 'is:handcannon', type: SearchType.Item, incrementUsed: 1, saved: false },
+      ]);
+      await updateSearches(txn, platformMembershipId, 2, [
+        { query: 'tag:junk', type: SearchType.Item, incrementUsed: 1, saved: false },
+      ]);
+      await trackUntrackTriumphs(txn, platformMembershipId, [
+        { recordHash: 3851137658, tracked: true },
+      ]);
+      await setSetting(txn, bungieMembershipId, {
+        showNewItems: true,
+      });
     });
 
     await deleteAllDataForUser(bungieMembershipId, [platformMembershipId]);
@@ -57,27 +70,39 @@ describe('deleteAllDataForUser', () => {
 
 describe('exportDataForUser', () => {
   it('should delete all kinds of data', async () => {
-    await updateItemAnnotation(platformMembershipId, 2, {
-      id: '123456',
-      tag: 'favorite',
-      notes: 'the best',
-    });
-    await updateItemAnnotation(platformMembershipId, 1, {
-      id: '1234567',
-      tag: 'favorite',
-      notes: 'the best??',
-    });
-    await updateItemHashTag(platformMembershipId, {
-      hash: 2926662838,
-      tag: 'favorite',
-      notes: 'the best',
-    });
-    await updateLoadout(platformMembershipId, 2, loadout);
-    await updateUsedSearch(platformMembershipId, 1, 'is:handcannon', SearchType.Item);
-    await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
-    await trackTriumph(platformMembershipId, 3851137658);
-    await setSetting(bungieMembershipId, {
-      showNewItems: true,
+    await client.transaction(async (txn) => {
+      await updateItemAnnotation(txn, platformMembershipId, 2, [
+        {
+          id: '123456',
+          tag: 'favorite',
+          notes: 'the best',
+        },
+      ]);
+      await updateItemAnnotation(txn, platformMembershipId, 1, [
+        {
+          id: '1234567',
+          tag: 'favorite',
+          notes: 'the best??',
+        },
+      ]);
+      await updateItemHashTag(txn, platformMembershipId, {
+        hash: 2926662838,
+        tag: 'favorite',
+        notes: 'the best',
+      });
+      await updateLoadout(txn, platformMembershipId, 2, [loadout]);
+      await updateSearches(txn, platformMembershipId, 1, [
+        { query: 'is:handcannon', type: SearchType.Item, incrementUsed: 1, saved: false },
+      ]);
+      await updateSearches(txn, platformMembershipId, 2, [
+        { query: 'tag:junk', type: SearchType.Item, incrementUsed: 1, saved: false },
+      ]);
+      await trackUntrackTriumphs(txn, platformMembershipId, [
+        { recordHash: 3851137658, tracked: true },
+      ]);
+      await setSetting(txn, bungieMembershipId, {
+        showNewItems: true,
+      });
     });
 
     const exportResponse = await exportDataForUser(bungieMembershipId, [platformMembershipId]);

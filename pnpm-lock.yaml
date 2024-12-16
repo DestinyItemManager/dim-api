@@ -21,8 +21,8 @@ dependencies:
     specifier: ^7.114.0
     version: 7.114.0
   '@stately-cloud/client':
-    specifier: ^0.17.0
-    version: 0.17.0(@bufbuild/protobuf@2.2.2)
+    specifier: ^0.17.1
+    version: 0.17.1(@bufbuild/protobuf@2.2.2)
   bungie-api-ts:
     specifier: ^5.1.0
     version: 5.1.0
@@ -110,8 +110,8 @@ devDependencies:
     specifier: ^2.38.2
     version: 2.38.2
   '@stately-cloud/schema':
-    specifier: ^0.12.0
-    version: 0.12.0
+    specifier: ^0.13.0
+    version: 0.13.0
   '@types/cors':
     specifier: ^2.8.17
     version: 2.8.17
@@ -2656,8 +2656,8 @@ packages:
       '@sinonjs/commons': 3.0.1
     dev: true
 
-  /@stately-cloud/client@0.17.0(@bufbuild/protobuf@2.2.2):
-    resolution: {integrity: sha512-V4C4okX7VhAKRkbB/LC82L7M6t8FxmWmi1dvdCd9aU909vFMYV2/+5sSVPtUICu0rI9jxXcGT3CWcjp2bcJ6+w==}
+  /@stately-cloud/client@0.17.1(@bufbuild/protobuf@2.2.2):
+    resolution: {integrity: sha512-R6P99w1DxNUSztuSMVyvKxnnGeWNcaAyp9+oC0n/sLl8G+zTmT564QBsPHJDHLvrfQVjkTRQqovtdqVcgflXkg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@bufbuild/protobuf': ^2.2.0
@@ -2667,8 +2667,8 @@ packages:
       '@connectrpc/connect-node': 2.0.0(@bufbuild/protobuf@2.2.2)(@connectrpc/connect@2.0.0)
     dev: false
 
-  /@stately-cloud/schema@0.12.0:
-    resolution: {integrity: sha512-+uzFh4OFs8gmeFN1sN1McGQoK4gphuuQxP8+xKv0IjHm/QCDKJHmrP2X/tEZ91cfaVoJu5PoolJEgpmg840cBw==}
+  /@stately-cloud/schema@0.13.0:
+    resolution: {integrity: sha512-y2IYRad3qateRsyFYdDDyC+DBThGRWj2p5XIacs1DPr+SE19r+1zs2+hilB/kHW3dqTaDcBHKbqBECgyJvixbQ==}
     hasBin: true
     dependencies:
       '@bufbuild/protobuf': 2.2.2
