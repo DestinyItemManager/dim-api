@@ -323,12 +323,14 @@ async function statelyUpdate(
             const instanceIds = (group as TagCleanupUpdate[])
               .flatMap((u) => u.payload)
               .filter(isValidItemId);
-            await deleteItemAnnotationListStately(
-              txn,
-              platformMembershipId!,
-              destinyVersion,
-              instanceIds,
-            );
+            if (instanceIds.length) {
+              await deleteItemAnnotationListStately(
+                txn,
+                platformMembershipId!,
+                destinyVersion,
+                instanceIds,
+              );
+            }
             break;
           }
 
