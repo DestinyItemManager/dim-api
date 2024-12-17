@@ -206,39 +206,38 @@ function validateUpdates(
 
     metrics.increment(`update.action.${update.action}.count`);
 
+    if (update.action !== 'setting' && !platformMembershipId) {
+      metrics.increment('update.validation.platformMembershipIdMissing.count');
+      result = {
+        status: 'InvalidArgument',
+        message: `${update.action} requires platform membership ID to be set`,
+      };
+    }
+
     switch (update.action) {
       case 'setting':
       case 'tag_cleanup':
+      case 'delete_loadout':
+      case 'track_triumph':
+      case 'delete_search':
         // no special validation
         break;
 
       case 'loadout':
-        result = validateUpdateLoadout(platformMembershipId, update.payload, appId);
-        break;
-
-      case 'delete_loadout':
-        result = validateDeleteLoadout(platformMembershipId);
+        result = validateUpdateLoadout(update.payload, appId);
         break;
 
       case 'tag':
-        result = validateUpdateItemAnnotation(platformMembershipId, update.payload, appId);
+        result = validateUpdateItemAnnotation(update.payload);
         break;
 
       case 'item_hash_tag':
-        result = validateUpdateItemHashTag(platformMembershipId, update.payload, appId);
-        break;
-
-      case 'track_triumph':
-        result = validateTrackTriumph(platformMembershipId);
+        result = validateUpdateItemHashTag(update.payload);
         break;
 
       case 'search':
       case 'save_search':
-        result = validateSearch(platformMembershipId, update.payload);
-        break;
-
-      case 'delete_search':
-        result = validateDeleteSearch(platformMembershipId);
+        result = validateSearch(update.payload);
         break;
 
       default:
@@ -253,6 +252,14 @@ function validateUpdates(
         };
     }
     if (result.status !== 'Success') {
+      captureMessage(`update ${update.action} failed validation`, {
+        extra: {
+          update,
+          result,
+          platformMembershipId,
+          appId,
+        },
+      });
       console.log('Stately failed update', update.action, result, appId);
     }
     results.push(result);
@@ -282,11 +289,16 @@ async function statelyUpdate(
     return [u];
   });
 
+  const tagIds = new Set<string>();
+  for (const update of sortedUpdates) {
+    if (update.action === 'tag') {
+      tagIds.add(update.payload.id);
+    }
+  }
+
   for (const updateChunk of chunk(sortedUpdates, 25)) {
     await client.transaction(async (txn) => {
       for (const [action, group] of Object.entries(groupBy(updateChunk, actionKey))) {
-        metrics.increment(`update.action.${action}.count`);
-
         switch (action) {
           case 'setting': {
             // The DIM reducer already combines settings updates, but just in case...
@@ -328,7 +340,11 @@ async function statelyUpdate(
           case 'tag_cleanup': {
             const instanceIds = (group as TagCleanupUpdate[])
               .flatMap((u) => u.payload)
-              .filter(isValidItemId);
+              .filter(
+                (id) =>
+                  // We've seen a problem where DIM sends a tag_cleanup and a tag for the same item in the same update
+                  !tagIds.has(id) && isValidItemId(id),
+              );
             if (instanceIds.length) {
               await deleteItemAnnotationListStately(
                 txn,
@@ -388,8 +404,6 @@ async function pgUpdate(
 ) {
   return transaction(async (client) => {
     for (const update of updates) {
-      metrics.increment(`update.action.${update.action}.count`);
-
       switch (update.action) {
         case 'setting':
           await updateSetting(client, appId, bungieMembershipId, update.payload);
@@ -488,25 +502,8 @@ async function updateLoadout(
   metrics.timing('update.loadout', start);
 }
 
-function validateUpdateLoadout(
-  platformMembershipId: string | undefined,
-  loadout: Loadout,
-  appId: string,
-): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadouts require platform membership ID to be set',
-    };
-  }
-
-  const validationResult = validateLoadout('update', loadout, appId);
-  if (validationResult) {
-    return validationResult;
-  }
-
-  return { status: 'Success' };
+function validateUpdateLoadout(loadout: Loadout, appId: string): ProfileUpdateResult {
+  return validateLoadout('update', loadout, appId) ?? { status: 'Success' };
 }
 
 export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: string) {
@@ -610,17 +607,6 @@ async function deleteLoadout(
   metrics.timing('update.deleteLoadout', start);
 }
 
-function validateDeleteLoadout(platformMembershipId: string | undefined): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Loadouts require platform membership ID to be set',
-    };
-  }
-  return { status: 'Success' };
-}
-
 async function updateItemAnnotation(
   client: ClientBase,
   appId: string,
@@ -641,27 +627,8 @@ async function updateItemAnnotation(
   metrics.timing('update.tag', start);
 }
 
-function validateUpdateItemAnnotation(
-  platformMembershipId: string | undefined,
-  itemAnnotation: ItemAnnotation,
-  appId: string,
-): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Tags require platform membership ID to be set',
-    };
-  }
-
+function validateUpdateItemAnnotation(itemAnnotation: ItemAnnotation): ProfileUpdateResult {
   if (!isValidItemId(itemAnnotation.id)) {
-    captureMessage('item ID is not in the right format', {
-      extra: {
-        itemAnnotation,
-        platformMembershipId,
-        appId,
-      },
-    });
     metrics.increment('update.validation.badItemId.count');
     return {
       status: 'InvalidArgument',
@@ -690,27 +657,8 @@ function validateUpdateItemAnnotation(
   return { status: 'Success' };
 }
 
-function validateUpdateItemHashTag(
-  platformMembershipId: string | undefined,
-  itemAnnotation: ItemHashTag,
-  appId: string,
-): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Tags require platform membership ID to be set',
-    };
-  }
-
+function validateUpdateItemHashTag(itemAnnotation: ItemHashTag): ProfileUpdateResult {
   if (!Number.isInteger(itemAnnotation.hash)) {
-    captureMessage('item hash is not in the right format', {
-      extra: {
-        itemAnnotation,
-        platformMembershipId,
-        appId,
-      },
-    });
     metrics.increment('update.validation.badItemHash.count');
     return {
       status: 'InvalidArgument',
@@ -775,17 +723,6 @@ async function trackTriumph(
   metrics.timing('update.trackTriumph', start);
 }
 
-function validateTrackTriumph(platformMembershipId: string | undefined): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Tracked triumphs require platform membership ID to be set',
-    };
-  }
-  return { status: 'Success' };
-}
-
 async function recordSearch(
   client: ClientBase,
   appId: string,
@@ -825,18 +762,7 @@ async function saveSearch(
   metrics.timing('update.saveSearch', start);
 }
 
-function validateSearch(
-  platformMembershipId: string | undefined,
-  payload: UsedSearchUpdate['payload'],
-): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Searches require platform membership ID to be set',
-    };
-  }
-
+function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResult {
   if (payload.query.length > 2048) {
     metrics.increment('update.validation.searchTooLong.count');
     return {
@@ -868,17 +794,6 @@ async function deleteSearch(
     payload.type ?? SearchType.Item,
   );
   metrics.timing('update.deleteSearch', start);
-}
-
-function validateDeleteSearch(platformMembershipId: string | undefined): ProfileUpdateResult {
-  if (!platformMembershipId) {
-    metrics.increment('update.validation.platformMembershipIdMissing.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Searches require platform membership ID to be set',
-    };
-  }
-  return { status: 'Success' };
 }
 
 async function updateItemHashTag(
