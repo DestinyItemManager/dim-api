@@ -159,7 +159,11 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const user = req.user as UserInfo | undefined;
   const dimVersion = req.headers['x-dim-version']?.[0];
   Sentry.captureException(err, {
-    tags: { dimApp: dimApp?.id, user: user?.bungieMembershipId, dimVersion },
+    tags: {
+      dimApp: dimApp?.id,
+      user: user?.bungieMembershipId,
+      dimVersion: `v${dimVersion ?? 'Unknown'}`,
+    },
   });
   // Allow any origin to see the response
   res.header('Access-Control-Allow-Origin', '*');

@@ -589,7 +589,7 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: s
         metrics.increment(`${metricPrefix}.validation.tierValueNotInteger.count`);
         return {
           status: 'InvalidArgument',
-          message: 'Loadout Optimizer stat tiers must be integers, not ${tier}',
+          message: `Loadout Optimizer stat tiers must be integers, not ${tier}`,
         };
       }
       if (tier < 0 || tier > 10) {
