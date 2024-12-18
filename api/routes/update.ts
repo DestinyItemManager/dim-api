@@ -813,7 +813,6 @@ function consolidateSearchUpdates(updates: (UsedSearchUpdate | SavedSearchUpdate
     const u: UpdateSearch = {
       query: group[0].payload.query,
       type: group[0].payload.type ?? SearchType.Item,
-      saved: false,
       incrementUsed: 0,
     };
     for (const update of group) {
