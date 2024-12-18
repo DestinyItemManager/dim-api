@@ -119,9 +119,10 @@ export interface UpdateSearch {
   query: string;
   type: SearchType;
   /**
-   * Whether the search should be saved
+   * Whether the search should be saved. If undefined, the saved status is not
+   * changed.
    */
-  saved: boolean;
+  saved?: boolean;
   /** How much to increment the used count by. */
   incrementUsed: number;
 }
@@ -143,7 +144,9 @@ export async function updateSearches(
       existingSearches.find((s) => s.query === query) ??
       newSearch(platformMembershipId, destinyVersion, type, query);
     search.usageCount += incrementUsed;
-    search.saved = saved;
+    if (saved !== undefined) {
+      search.saved = saved;
+    }
     search.lastUsage = BigInt(Date.now());
     return search;
   });
