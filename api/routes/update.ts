@@ -125,6 +125,8 @@ export const updateHandler = asyncHandler(async (req, res) => {
     migrationState.state !== desiredMigrationState;
 
   const results: ProfileUpdateResult[] = validateUpdates(req, updates, platformMembershipId, appId);
+  // Only attempt updates that pass validation
+  const updatesToApply = updates.filter((_, index) => results[index].status === 'Success');
 
   const importToStately = async () => {
     // Export from Postgres
@@ -161,18 +163,24 @@ export const updateHandler = asyncHandler(async (req, res) => {
         // For now let's leave the old data in Postgres as a backup
         await doMigration(bungieMembershipId, importToStately);
         await statelyUpdate(
-          updates,
+          updatesToApply,
           bungieMembershipId,
           platformMembershipId ?? profileIds[0],
           destinyVersion,
         );
       } else {
-        await pgUpdate(updates, bungieMembershipId, platformMembershipId, destinyVersion, appId);
+        await pgUpdate(
+          updatesToApply,
+          bungieMembershipId,
+          platformMembershipId,
+          destinyVersion,
+          appId,
+        );
       }
       break;
     case MigrationState.Stately:
       await statelyUpdate(
-        updates,
+        updatesToApply,
         bungieMembershipId,
         platformMembershipId ?? profileIds[0],
         destinyVersion,
