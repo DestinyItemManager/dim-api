@@ -125,6 +125,7 @@ export interface UpdateSearch {
   saved?: boolean;
   /** How much to increment the used count by. */
   incrementUsed: number;
+  deleted: boolean;
 }
 
 /**

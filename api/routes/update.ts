@@ -1,5 +1,5 @@
 import { captureMessage } from '@sentry/node';
-import { chunk, groupBy, sortBy } from 'es-toolkit';
+import { chunk, groupBy, partition, sortBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
@@ -286,8 +286,9 @@ async function statelyUpdate(
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
 ) {
-  // We want to group save search and search updates together
-  const actionKey = (u: ProfileUpdate) => (u.action === 'save_search' ? 'search' : u.action);
+  // We want to group save/delete search and search updates together
+  const actionKey = (u: ProfileUpdate) =>
+    u.action === 'save_search' || u.action === 'delete_search' ? 'search' : u.action;
 
   const sortedUpdates = sortBy(updates, [actionKey]).flatMap((u): ProfileUpdate[] => {
     // Separate out tag_cleanup updates into individual updates
@@ -382,20 +383,22 @@ async function statelyUpdate(
           // saved searches and used searches are collectively "searches"
           case 'search': {
             const searchUpdates = consolidateSearchUpdates(
-              group as (UsedSearchUpdate | SavedSearchUpdate)[],
+              group as (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],
             );
-            await updateSearches(txn, platformMembershipId!, destinyVersion, searchUpdates);
+            const [deletes, updates] = partition(searchUpdates, (u) => u.deleted);
+            if (deletes.length) {
+              await deleteSearchInStately(
+                txn,
+                platformMembershipId!,
+                destinyVersion,
+                deletes.map((u) => u.query),
+              );
+            }
+            if (updates.length) {
+              await updateSearches(txn, platformMembershipId!, destinyVersion, updates);
+            }
             break;
           }
-
-          case 'delete_search':
-            await deleteSearchInStately(
-              txn,
-              platformMembershipId!,
-              destinyVersion,
-              (group as DeleteSearchUpdate[]).map((u) => u.payload.query),
-            );
-            break;
         }
       }
     });
@@ -815,18 +818,26 @@ async function updateItemHashTag(
   metrics.timing('update.updateItemHashTag', start);
 }
 
-function consolidateSearchUpdates(updates: (UsedSearchUpdate | SavedSearchUpdate)[]) {
+function consolidateSearchUpdates(
+  updates: (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],
+) {
   const updatesByQuery = groupBy(updates, (u) => u.payload.query);
   return Object.values(updatesByQuery).map((group) => {
     const u: UpdateSearch = {
       query: group[0].payload.query,
       type: group[0].payload.type ?? SearchType.Item,
       incrementUsed: 0,
+      deleted: false,
     };
     for (const update of group) {
       if (update.action === 'save_search') {
+        u.deleted = false;
         u.saved = update.payload.saved;
+      } else if (update.action === 'delete_search') {
+        u.deleted = true;
+        u.incrementUsed = 0;
       } else {
+        u.deleted = false;
         u.incrementUsed++;
       }
     }
