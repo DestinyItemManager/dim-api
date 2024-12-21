@@ -232,7 +232,7 @@ function validateUpdates(
         break;
 
       case 'loadout':
-        result = validateUpdateLoadout(update.payload, appId);
+        result = validateUpdateLoadout(update.payload);
         break;
 
       case 'tag':
@@ -514,11 +514,11 @@ async function updateLoadout(
   metrics.timing('update.loadout', start);
 }
 
-function validateUpdateLoadout(loadout: Loadout, appId: string): ProfileUpdateResult {
-  return validateLoadout('update', loadout, appId) ?? { status: 'Success' };
+function validateUpdateLoadout(loadout: Loadout): ProfileUpdateResult {
+  return validateLoadout('update', loadout) ?? { status: 'Success' };
 }
 
-export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: string) {
+export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   if (!loadout.name) {
     metrics.increment(`${metricPrefix}.validation.loadoutNameMissing.count`);
     return {

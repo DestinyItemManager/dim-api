@@ -1,4 +1,4 @@
-import { keyPath, StatelyError } from '@stately-cloud/client';
+import { keyPath, StatelyError, WithPutOptions } from '@stately-cloud/client';
 import { Loadout } from '../shapes/loadouts.js';
 import { client } from './client.js';
 import { LoadoutShare as StatelyLoadoutShare } from './generated/index.js';
@@ -54,6 +54,28 @@ export async function addLoadoutShare(
       throw new LoadoutShareCollision();
     }
   }
+}
+
+/**
+ * Put loadout shares - this is meant for migrations.
+ */
+export async function addLoadoutSharesForMigration(
+  shares: {
+    platformMembershipId: string;
+    shareId: string;
+    loadout: Loadout;
+  }[],
+): Promise<void> {
+  const statelyShares = shares.map(
+    ({ platformMembershipId, shareId, loadout }): WithPutOptions<StatelyLoadoutShare> => ({
+      item: convertLoadoutShareToStately(loadout, platformMembershipId, shareId),
+      // Preserve the original timestamps
+      overwriteMetadataTimestamps: true,
+    }),
+  );
+
+  // We overwrite here - shares are immutable, so this is fine.
+  await client.putBatch(...statelyShares);
 }
 
 /**
