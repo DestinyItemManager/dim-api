@@ -231,16 +231,22 @@ export async function statelyImport(
   triumphs: ExportResponse['triumphs'],
   searches: ExportResponse['searches'],
   itemHashTags: ItemHashTag[],
+  deleteExisting = true,
 ): Promise<number> {
   // TODO: what we should do, is map all these to items, and then we can just do
   // batch puts, 25 at a time.
 
   let numTriumphs = 0;
-  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+  if (deleteExisting) {
+    await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+  }
 
-  const items: AnyItem[] = [
-    convertToStatelyItem({ ...defaultSettings, ...settings }, bungieMembershipId),
-  ];
+  const settingsItem = convertToStatelyItem(
+    { ...defaultSettings, ...settings },
+    bungieMembershipId,
+  );
+
+  const items: AnyItem[] = [];
   items.push(...importLoadouts(loadouts));
   items.push(...importTags(itemAnnotations));
   for (const platformMembershipId of platformMembershipIds) {
@@ -262,9 +268,17 @@ export async function statelyImport(
     items.push(...importSearches(platformMembershipId, searches));
   }
 
+  // Put the settings in first since it's in a different group
+  await client.put({
+    item: settingsItem,
+    mustNotExist: true,
+  });
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
-    await client.putBatch(...batch);
+    // We shouldn't have any existing items...
+    await client.putBatch(
+      ...batch.map((item) => ({ item, mustNotExist: true, overwriteMetadataTimestamps: true })),
+    );
     await delay(100); // give it some time to flush
   }
 
