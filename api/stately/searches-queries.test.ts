@@ -26,6 +26,7 @@ async function updateUsedSearch(
         type,
         saved: false,
         incrementUsed: 1,
+        deleted: false,
       },
     ]);
   });
@@ -45,6 +46,7 @@ async function saveSearch(
         type,
         saved,
         incrementUsed: 0,
+        deleted: false,
       },
     ]);
   });

@@ -38,10 +38,22 @@ describe('deleteAllDataForUser', () => {
       });
       await updateLoadout(txn, platformMembershipId, 2, [loadout]);
       await updateSearches(txn, platformMembershipId, 1, [
-        { query: 'is:handcannon', type: SearchType.Item, incrementUsed: 1, saved: false },
+        {
+          query: 'is:handcannon',
+          type: SearchType.Item,
+          incrementUsed: 1,
+          saved: false,
+          deleted: false,
+        },
       ]);
       await updateSearches(txn, platformMembershipId, 2, [
-        { query: 'tag:junk', type: SearchType.Item, incrementUsed: 1, saved: false },
+        {
+          query: 'tag:junk',
+          type: SearchType.Item,
+          incrementUsed: 1,
+          saved: false,
+          deleted: false,
+        },
       ]);
       await trackUntrackTriumphs(txn, platformMembershipId, [
         { recordHash: 3851137658, tracked: true },
@@ -92,10 +104,22 @@ describe('exportDataForUser', () => {
       });
       await updateLoadout(txn, platformMembershipId, 2, [loadout]);
       await updateSearches(txn, platformMembershipId, 1, [
-        { query: 'is:handcannon', type: SearchType.Item, incrementUsed: 1, saved: false },
+        {
+          query: 'is:handcannon',
+          type: SearchType.Item,
+          incrementUsed: 1,
+          saved: false,
+          deleted: false,
+        },
       ]);
       await updateSearches(txn, platformMembershipId, 2, [
-        { query: 'tag:junk', type: SearchType.Item, incrementUsed: 1, saved: false },
+        {
+          query: 'tag:junk',
+          type: SearchType.Item,
+          incrementUsed: 1,
+          saved: false,
+          deleted: false,
+        },
       ]);
       await trackUntrackTriumphs(txn, platformMembershipId, [
         { recordHash: 3851137658, tracked: true },
