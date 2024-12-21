@@ -11,7 +11,6 @@ import { closeDbPool } from './db/index.js';
 import { app as dimGgApp } from './dim-gg/server.js';
 import { metrics } from './metrics/index.js';
 import { app as dimApiApp } from './server.js';
-import { startMigrator } from './stately/migrator/index.js';
 
 const port = 3000;
 
@@ -150,5 +149,3 @@ refreshApps()
     console.log('Unable to load apps', e);
     throw e;
   });
-
-startMigrator();
