@@ -260,12 +260,13 @@ function validateUpdates(
         };
     }
     if (result.status !== 'Success') {
-      captureMessage(`update ${update.action} failed validation`, {
+      captureMessage(`update ${update.action} failed validation: ${result.message}`, {
         extra: {
           update,
           result,
           platformMembershipId,
           appId,
+          dimVersion: req.headers['x-dim-version']?.[0],
         },
       });
       console.log('Stately failed update', update.action, result, appId);
@@ -572,12 +573,6 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout, appId: s
   }
   if ([...loadout.equipped, ...loadout.unequipped].some((i) => i.id && !isValidItemId(i.id))) {
     metrics.increment(`${metricPrefix}.validation.itemIdFormat.count`);
-    captureMessage('item ID is not in the right format', {
-      extra: {
-        loadout,
-        appId,
-      },
-    });
     return {
       status: 'InvalidArgument',
       message: 'Item ID is invalid',
