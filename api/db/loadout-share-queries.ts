@@ -65,6 +65,17 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 }
 
 /**
+ * Delete a loadout share from Postgres (only really used in migration).
+ */
+export async function deleteLoadoutShare(client: ClientBase, shareId: string): Promise<void> {
+  await client.query<LoadoutRow>({
+    name: 'delete_loadout_share',
+    text: 'DELETE FROM loadout_shares WHERE id = $1',
+    values: [shareId],
+  });
+}
+
+/**
  * Touch the last_accessed_at and visits fields to keep track of access.
  */
 export async function recordAccess(client: ClientBase, shareId: string): Promise<QueryResult> {
@@ -81,4 +92,40 @@ export async function recordAccess(client: ClientBase, shareId: string): Promise
   }
 
   return response;
+}
+
+/**
+ * Get a random chunk of loadout shares.
+ */
+export async function getLoadoutShares(
+  client: ClientBase,
+  limit: number,
+): Promise<
+  {
+    platformMembershipId: string;
+    shareId: string;
+    loadout: Loadout;
+  }[]
+> {
+  type LoadoutShareRow = LoadoutRow & { id: string; platform_membership_id: string };
+  let results = await client.query<LoadoutShareRow>({
+    name: 'get_loadout_shares',
+    text: 'SELECT * FROM loadout_shares OFFSET floor(random() * 1000) + 1 LIMIT $1',
+    values: [limit],
+  });
+
+  if (results.rowCount === 0) {
+    // OK take off the random offset
+    results = await client.query<LoadoutShareRow>({
+      name: 'get_loadout_shares_not_random',
+      text: 'SELECT * FROM loadout_shares LIMIT $1',
+      values: [limit],
+    });
+  }
+
+  return results.rows.map((r) => ({
+    platformMembershipId: r.platform_membership_id,
+    shareId: r.id,
+    loadout: convertLoadout(r),
+  }));
 }

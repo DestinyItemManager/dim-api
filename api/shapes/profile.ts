@@ -13,6 +13,10 @@ export interface ProfileResponse {
   /** Hashes of tracked triumphs */
   triumphs?: number[];
   searches?: Search[];
+
+  syncTokens?: {
+    [key: string]: string;
+  };
 }
 
 /**
