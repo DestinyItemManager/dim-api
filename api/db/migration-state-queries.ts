@@ -49,7 +49,7 @@ export async function getMigrationState(
   } else {
     return {
       bungieMembershipId,
-      state: MigrationState.Postgres,
+      state: MigrationState.Stately,
       lastStateChangeAt: 0,
       attemptCount: 0,
     };
