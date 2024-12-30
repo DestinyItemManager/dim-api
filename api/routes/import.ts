@@ -1,25 +1,12 @@
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
-import { readTransaction, transaction } from '../db/index.js';
-import { updateItemAnnotation } from '../db/item-annotations-queries.js';
-import { updateItemHashTag } from '../db/item-hash-tags-queries.js';
-import { updateLoadout } from '../db/loadouts-queries.js';
-import {
-  doMigration,
-  getDesiredMigrationState,
-  getMigrationState,
-  MigrationState,
-} from '../db/migration-state-queries.js';
-import { importSearch } from '../db/searches-queries.js';
-import { replaceSettings } from '../db/settings-queries.js';
-import { trackTriumph } from '../db/triumphs-queries.js';
-import { ApiApp } from '../shapes/app.js';
+import { readTransaction } from '../db/index.js';
+import { doMigration, getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
 import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
-import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
@@ -33,11 +20,9 @@ import { convertToStatelyItem } from '../stately/settings-queries.js';
 import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest, delay, subtractObject } from '../utils.js';
-import { deleteAllData } from './delete-all-data.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
-  const { id: appId } = req.dimApp as ApiApp;
 
   // Support only new API exports
   const importData = req.body as ExportResponse;
@@ -60,12 +45,6 @@ export const importHandler = asyncHandler(async (req, res) => {
     getMigrationState(client, bungieMembershipId),
   );
 
-  // this is a great time to do the migration
-  const desiredMigrationState = await getDesiredMigrationState(migrationState);
-  const shouldMigrateToStately =
-    desiredMigrationState === MigrationState.Stately &&
-    migrationState.state !== desiredMigrationState;
-
   let numTriumphs = 0;
   const importToStately = async () => {
     numTriumphs = await statelyImport(
@@ -82,22 +61,7 @@ export const importHandler = asyncHandler(async (req, res) => {
 
   switch (migrationState.state) {
     case MigrationState.Postgres:
-      if (shouldMigrateToStately) {
-        await doMigration(bungieMembershipId, importToStately, async (client) =>
-          deleteAllData(client, bungieMembershipId),
-        );
-      } else {
-        numTriumphs = await pgImport(
-          bungieMembershipId,
-          appId,
-          settings,
-          loadouts,
-          itemAnnotations,
-          triumphs,
-          searches,
-          itemHashTags,
-        );
-      }
+      await doMigration(bungieMembershipId, importToStately);
       break;
     case MigrationState.Stately:
       await importToStately();
@@ -136,90 +100,6 @@ export function extractImportData(importData: ExportResponse) {
     searches,
     itemHashTags,
   };
-}
-
-async function pgImport(
-  bungieMembershipId: number,
-  appId: string,
-  settings: Partial<Settings>,
-  loadouts: PlatformLoadout[],
-  itemAnnotations: PlatformItemAnnotation[],
-  triumphs: ExportResponse['triumphs'],
-  searches: ExportResponse['searches'],
-  itemHashTags: ItemHashTag[],
-): Promise<number> {
-  let numTriumphs = 0;
-  await transaction(async (client) => {
-    await deleteAllData(client, bungieMembershipId);
-
-    // TODO: pass a list of keys that are being set to default?
-    await replaceSettings(client, appId, bungieMembershipId, settings);
-
-    // TODO: query first so we can delete after?
-    for (const loadout of loadouts) {
-      // For now, ignore ancient loadouts
-      if (!loadout.platformMembershipId || !loadout.destinyVersion) {
-        continue;
-      }
-      await updateLoadout(
-        client,
-        appId,
-        bungieMembershipId,
-        loadout.platformMembershipId,
-        loadout.destinyVersion,
-        loadout,
-      );
-    }
-
-    // TODO: query first so we can delete after?
-    for (const annotation of itemAnnotations) {
-      await updateItemAnnotation(
-        client,
-        appId,
-        bungieMembershipId,
-        annotation.platformMembershipId,
-        annotation.destinyVersion,
-        annotation,
-      );
-    }
-
-    for (const tag of itemHashTags) {
-      await updateItemHashTag(client, appId, bungieMembershipId, tag);
-    }
-
-    if (Array.isArray(triumphs)) {
-      for (const triumphData of triumphs) {
-        if (Array.isArray(triumphData?.triumphs)) {
-          for (const triumph of triumphData.triumphs) {
-            trackTriumph(
-              client,
-              appId,
-              bungieMembershipId,
-              triumphData.platformMembershipId,
-              triumph,
-            );
-            numTriumphs++;
-          }
-        }
-      }
-    }
-
-    for (const search of searches) {
-      importSearch(
-        client,
-        appId,
-        bungieMembershipId,
-        search.destinyVersion,
-        search.search.query,
-        search.search.saved,
-        search.search.lastUsage,
-        search.search.usageCount,
-        search.search.type ?? SearchType.Item,
-      );
-    }
-  });
-
-  return numTriumphs;
 }
 
 export async function statelyImport(
