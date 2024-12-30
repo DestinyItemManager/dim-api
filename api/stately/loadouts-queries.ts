@@ -273,8 +273,8 @@ export function convertLoadoutCommonFieldsToStately(
     unequipped: (loadout.unequipped || []).map(convertLoadoutItemToStately),
     notes: loadout.notes,
     parameters: convertLoadoutParametersToStately(loadout.parameters),
-    createdAt: BigInt(loadout.createdAt ?? 0n),
-    lastUpdatedAt: BigInt(loadout.lastUpdatedAt ?? 0n),
+    createdAt: BigInt(loadout.createdAt ? new Date(loadout.createdAt).getTime() : 0n),
+    lastUpdatedAt: BigInt(loadout.lastUpdatedAt ? new Date(loadout.lastUpdatedAt).getTime() : 0n),
   };
 }
 

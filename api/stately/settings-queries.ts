@@ -214,12 +214,12 @@ export function convertToStatelyItem(
     });
   });
 
-  const customTotalStatsList = Object.entries(customTotalStatsByClass).map(
-    ([classType, customStats]) => ({
+  const customTotalStatsList = Object.entries(customTotalStatsByClass)
+    .map(([classType, customStats]) => ({
       classType: Number(classType),
       customStats,
-    }),
-  );
+    }))
+    .filter((c) => c.customStats.length > 0);
 
   return client.create('Settings', {
     ...rest,
