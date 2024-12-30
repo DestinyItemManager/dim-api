@@ -18,7 +18,9 @@ while (true) {
             await migrateUser(bungieMembershipId);
             console.log(`Migrated user ${bungieMembershipId}`);
           } catch (e) {
-            console.error(`Error migrating user ${bungieMembershipId}: ${e}`);
+            if (e instanceof Error) {
+              console.error(`Error migrating user ${bungieMembershipId}: ${e}`);
+            }
           }
         }),
       );
