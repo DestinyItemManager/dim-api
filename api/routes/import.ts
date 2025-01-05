@@ -17,6 +17,7 @@ import { importHashTags } from '../stately/item-hash-tags-queries.js';
 import { importLoadouts } from '../stately/loadouts-queries.js';
 import { importSearches } from '../stately/searches-queries.js';
 import { convertToStatelyItem } from '../stately/settings-queries.js';
+import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest, delay, subtractObject } from '../utils.js';
 
