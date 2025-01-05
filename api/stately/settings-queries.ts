@@ -178,6 +178,8 @@ export function convertToStatelyItem(
     customStats,
     vaultWeaponGroupingStyle,
     itemPopupTab,
+    itemSize,
+    charCol,
     ...rest
   } = settings;
 
@@ -227,6 +229,8 @@ export function convertToStatelyItem(
     wishListSources: wishListSource.split('|'),
     characterOrder: CharacterOrder[`CharacterOrder_${characterOrder}`],
     collapsedSections: collapsedSectionsList,
+    itemSize: Math.min(Math.max(0, itemSize), 66),
+    charCol: Math.min(Math.max(2, charCol), 5),
     infusionDirection:
       infusionDirection === InfuseDirection.FUEL
         ? StatelyInfuseDirection.InfuseDirection_Fuel

@@ -30,7 +30,7 @@ interface MigrationStateRow {
 export async function getUsersToMigrate(client: ClientBase): Promise<number[]> {
   const results = await client.query<MigrationStateRow>({
     name: 'get_users_to_migrate',
-    text: 'select distinct(s.membership_id) as membership_id from loadouts as s left join migration_state as m on s.membership_id = m.membership_id where m.membership_id is null limit 1000',
+    text: 'select membership_id from migration_state where state != 3 limit 1000',
   });
   return results.rows.map((row) => row.membership_id);
 }
@@ -214,7 +214,7 @@ export async function doMigration(
     });
     metrics.increment('migration.finish.count');
   } catch (e) {
-    console.error('Stately migration failed', e);
+    console.error(`Stately migration failed for ${bungieMembershipId}`, e);
     await transaction(async (client) => {
       await abortMigrationToStately(
         client,

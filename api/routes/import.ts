@@ -1,3 +1,4 @@
+import { StatelyError } from '@stately-cloud/client';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db/index.js';
@@ -17,7 +18,6 @@ import { importHashTags } from '../stately/item-hash-tags-queries.js';
 import { importLoadouts } from '../stately/loadouts-queries.js';
 import { importSearches } from '../stately/searches-queries.js';
 import { convertToStatelyItem } from '../stately/settings-queries.js';
-import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest, delay, subtractObject } from '../utils.js';
 
@@ -151,7 +151,6 @@ export async function statelyImport(
   // Put the settings in first since it's in a different group
   await client.put({
     item: settingsItem,
-    mustNotExist: true,
   });
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
