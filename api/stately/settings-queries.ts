@@ -178,6 +178,8 @@ export function convertToStatelyItem(
     customStats,
     vaultWeaponGroupingStyle,
     itemPopupTab,
+    itemSize,
+    charCol,
     ...rest
   } = settings;
 
@@ -214,12 +216,12 @@ export function convertToStatelyItem(
     });
   });
 
-  const customTotalStatsList = Object.entries(customTotalStatsByClass).map(
-    ([classType, customStats]) => ({
+  const customTotalStatsList = Object.entries(customTotalStatsByClass)
+    .map(([classType, customStats]) => ({
       classType: Number(classType),
       customStats,
-    }),
-  );
+    }))
+    .filter((c) => c.customStats.length > 0);
 
   return client.create('Settings', {
     ...rest,
@@ -227,6 +229,8 @@ export function convertToStatelyItem(
     wishListSources: wishListSource.split('|'),
     characterOrder: CharacterOrder[`CharacterOrder_${characterOrder}`],
     collapsedSections: collapsedSectionsList,
+    itemSize: Math.min(Math.max(0, itemSize), 66),
+    charCol: Math.min(Math.max(2, charCol), 5),
     infusionDirection:
       infusionDirection === InfuseDirection.FUEL
         ? StatelyInfuseDirection.InfuseDirection_Fuel

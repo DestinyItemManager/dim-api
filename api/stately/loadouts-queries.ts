@@ -264,18 +264,22 @@ export function convertLoadoutCommonFieldsToStately(
   MessageInitShape<typeof LoadoutSchema> | MessageInitShape<typeof LoadoutShareSchema>,
   'id' | '$typeName'
 > {
-  return {
+  const out = {
     destinyVersion,
     profileId: BigInt(platformMembershipId),
-    name: loadout.name,
+    name: loadout.name || 'Unnamed',
     classType: loadout.classType as number,
     equipped: (loadout.equipped || []).map(convertLoadoutItemToStately),
     unequipped: (loadout.unequipped || []).map(convertLoadoutItemToStately),
     notes: loadout.notes,
     parameters: convertLoadoutParametersToStately(loadout.parameters),
-    createdAt: BigInt(loadout.createdAt ?? 0n),
-    lastUpdatedAt: BigInt(loadout.lastUpdatedAt ?? 0n),
+    createdAt: BigInt(loadout.createdAt ? new Date(loadout.createdAt).getTime() : 0n),
+    lastUpdatedAt: BigInt(loadout.lastUpdatedAt ? new Date(loadout.lastUpdatedAt).getTime() : 0n),
   };
+  if (out.lastUpdatedAt < out.createdAt) {
+    out.lastUpdatedAt = out.createdAt;
+  }
+  return out;
 }
 
 function convertLoadoutItemToStately(item: LoadoutItem): StatelyLoadoutItem {
@@ -316,7 +320,7 @@ export function convertLoadoutParametersToStately(
       modsByBucket: modsByBucket
         ? Object.entries(modsByBucket).map(([bucketHash, modHashes]) => ({
             bucketHash: Number(bucketHash),
-            modHashes,
+            modHashes: modHashes.filter((h) => Number.isInteger(h)),
           }))
         : undefined,
     };
@@ -328,8 +332,8 @@ export function statConstraintsToStately(statConstraints: StatConstraint[] | und
   return statConstraints && statConstraints.length > 0
     ? statConstraints.map((c) => ({
         statHash: c.statHash,
-        minTier: Math.max(0, c.minTier ?? 0),
-        maxTier: Math.min(c.maxTier ?? 10, 10),
+        minTier: Math.max(0, Math.floor(c.minTier ?? 0)),
+        maxTier: Math.min(Math.ceil(c.maxTier ?? 10), 10),
       }))
     : [];
 }

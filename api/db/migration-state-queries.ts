@@ -27,6 +27,14 @@ interface MigrationStateRow {
   last_error: string | null;
 }
 
+export async function getUsersToMigrate(client: ClientBase): Promise<number[]> {
+  const results = await client.query<MigrationStateRow>({
+    name: 'get_users_to_migrate',
+    text: 'select membership_id from migration_state where state != 3 limit 1000',
+  });
+  return results.rows.map((row) => row.membership_id);
+}
+
 export async function getMigrationState(
   client: ClientBase,
   bungieMembershipId: number,
@@ -41,7 +49,7 @@ export async function getMigrationState(
   } else {
     return {
       bungieMembershipId,
-      state: MigrationState.Postgres,
+      state: MigrationState.Stately,
       lastStateChangeAt: 0,
       attemptCount: 0,
     };
@@ -206,7 +214,7 @@ export async function doMigration(
     });
     metrics.increment('migration.finish.count');
   } catch (e) {
-    console.error('Stately migration failed', e);
+    console.error(`Stately migration failed for ${bungieMembershipId}`, e);
     await transaction(async (client) => {
       await abortMigrationToStately(
         client,

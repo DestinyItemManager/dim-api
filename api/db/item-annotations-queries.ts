@@ -46,7 +46,7 @@ export async function getAllItemAnnotationsForUser(
     ItemAnnotationRow & { platform_membership_id: string; destiny_version: DestinyVersion }
   >({
     name: 'get_all_item_annotations',
-    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1',
+    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE inventory_item_id != 0 and membership_id = $1',
     values: [bungieMembershipId],
   });
   return results.rows.map((row) => ({
