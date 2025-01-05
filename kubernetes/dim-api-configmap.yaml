@@ -5,10 +5,5 @@ metadata:
   labels:
     app: dim-api
 data:
-  PGHOST: placeholder
-  PGPORT: placeholder
-  PGDATABASE: placeholder
-  PGUSER: placeholder
-  PGSSLMODE: require
   SENTRY_DSN: placeholder
-  SENTRY_STORE_ID: placeholder
+  STATELY_STORE_ID: placeholder
