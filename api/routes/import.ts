@@ -1,4 +1,3 @@
-import { StatelyError } from '@stately-cloud/client';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db/index.js';
