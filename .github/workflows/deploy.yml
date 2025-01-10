@@ -50,31 +50,6 @@ jobs:
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{secrets.K8S_CLUSTER}}
 
-      - name: Add IP address to trusted source (managed database)
-        uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
-        with:
-          action: 'add'
-          database_id: ${{ secrets.DATABASE_ID }}
-          digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-
-      - name: Run DB migrations
-        run: cd api && npx db-migrate up -e prod
-        env:
-          DATABASE_USER: ${{ secrets.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-
-      - name: Remove IP address to trusted source (managed database)
-        if: always()
-        continue-on-error: true
-        uses: GarreauArthur/manage-digital-ocean-managed-database-trusted-sources-gh-action@main
-        with:
-          action: 'remove'
-          database_id: ${{ secrets.DATABASE_ID }}
-          digitalocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-
       - name: Build and deploy
         run: pnpm run deploy
 
