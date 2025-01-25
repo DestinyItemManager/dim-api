@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 # for node-gyp to install cloud profiler
 RUN apk add python3 g++ make py-setuptools
