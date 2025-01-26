@@ -1,6 +1,6 @@
 import babel from '@rollup/plugin-babel';
 import resolve from '@rollup/plugin-node-resolve';
-import pkg from './dim-api-types/package.json' assert { type: 'json' };
+import pkg from './dim-api-types/package.json' with { type: 'json' };
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 

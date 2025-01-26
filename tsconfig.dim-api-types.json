@@ -6,7 +6,7 @@
     "strictNullChecks": true,
     "module": "CommonJS",
     "target": "es5",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
