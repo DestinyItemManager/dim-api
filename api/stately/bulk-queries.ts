@@ -12,7 +12,7 @@ import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-qu
 import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
 import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
 import { deleteSettings, getSettings } from './settings-queries.js';
-import { batches } from './stately-utils.js';
+import { batches, parseKeyPath } from './stately-utils.js';
 import { keyFor as triumphKeyFor } from './triumphs-queries.js';
 
 /**
@@ -207,6 +207,72 @@ export async function getProfile(
       (response.loadouts ??= []).push(convertLoadoutFromStately(item));
     } else if (client.isType(item, 'Search')) {
       (response.searches ??= []).push(convertSearchFromStately(item));
+    }
+  }
+
+  return { profile: response, token: iter.token! };
+}
+
+export async function syncProfile(
+  tokenData: Buffer,
+): Promise<{ profile: ProfileResponse; token: ListToken }> {
+  const response: ProfileResponse = {
+    sync: true,
+  };
+
+  // Now get all the data under the profile in one listing.
+  const iter = client.syncList(tokenData);
+  for await (const change of iter) {
+    switch (change.type) {
+      case 'reset': {
+        response.sync = false;
+        break;
+      }
+      case 'changed': {
+        const item = change.item;
+        if (client.isType(item, 'Triumph')) {
+          (response.triumphs ??= []).push(item.recordHash);
+        } else if (client.isType(item, 'ItemAnnotation')) {
+          (response.tags ??= []).push(convertItemAnnotation(item));
+        } else if (client.isType(item, 'ItemHashTag')) {
+          (response.itemHashTags ??= []).push(convertItemHashTag(item));
+        } else if (client.isType(item, 'Loadout')) {
+          (response.loadouts ??= []).push(convertLoadoutFromStately(item));
+        } else if (client.isType(item, 'Search')) {
+          (response.searches ??= []).push(convertSearchFromStately(item));
+        }
+        break;
+      }
+      case 'deleted': {
+        const keyPath = parseKeyPath(change.keyPath);
+        if (keyPath[0].ns === 'p') {
+          const lastPart = keyPath.at(-1)!;
+          const idStr = lastPart.id;
+          const type = lastPart.ns;
+          switch (type) {
+            case 'triumph': {
+              (response.deletedTriumphs ??= []).push(Number(idStr));
+              break;
+            }
+            case 'ia': {
+              (response.deletedTagsIds ??= []).push(idStr);
+              break;
+            }
+            case 'ia-hash': {
+              (response.deletedItemHashTagHashes ??= []).push(Number(idStr));
+              break;
+            }
+            case 'loadout': {
+              (response.deletedLoadoutIds ??= []).push(idStr);
+              break;
+            }
+            case 'search': {
+              (response.deletedSearchHashes ??= []).push(idStr);
+              break;
+            }
+          }
+        }
+      }
     }
   }
 

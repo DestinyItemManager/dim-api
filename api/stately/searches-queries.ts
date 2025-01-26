@@ -6,7 +6,7 @@ import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { client } from './client.js';
 import { Search as StatelySearch, SearchType as StatelySearchType } from './generated/index.js';
-import { batches, Transaction } from './stately-utils.js';
+import { batches, parseKeyPath, Transaction } from './stately-utils.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -60,7 +60,7 @@ export function keyFor(
 export async function getSearchesForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<{ searches: Search[]; token: ListToken }> {
+): Promise<{ searches: Search[]; token: ListToken; deletedSearchHashes?: string[] }> {
   const results: Search[] = [];
   const iter = client.beginList(
     keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/search`,
@@ -84,6 +84,40 @@ export async function getSearchesForProfile(
       [(s) => -s.lastUsage, (s) => s.usageCount],
     ),
     token: iter.token!,
+  };
+}
+
+export async function syncSearches(
+  tokenData: Buffer,
+): Promise<{ searches: Search[]; token: ListToken; deletedSearchHashes?: string[] }> {
+  const results: Search[] = [];
+  const deletedSearchHashes: string[] = [];
+  const iter = client.syncList(tokenData);
+
+  for await (const change of iter) {
+    switch (change.type) {
+      case 'reset': {
+        throw new Error('token reset');
+      }
+      case 'changed': {
+        const item = change.item;
+        if (client.isType(item, 'Search')) {
+          results.push(convertSearchFromStately(item));
+        }
+        break;
+      }
+      case 'deleted': {
+        const keyPath = parseKeyPath(change.keyPath);
+        const searchHash = keyPath.at(-1)!.id;
+        deletedSearchHashes.push(searchHash);
+      }
+    }
+  }
+
+  return {
+    searches: results,
+    token: iter.token!,
+    deletedSearchHashes,
   };
 }
 

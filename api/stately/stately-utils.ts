@@ -142,3 +142,10 @@ export function* batches<T>(input: T[]): Generator<T[]> {
     yield input.slice(i * STATELY_MAX_BATCH_SIZE, (i + 1) * STATELY_MAX_BATCH_SIZE);
   }
 }
+
+export function parseKeyPath(keyPath: string): { ns: string; id: string }[] {
+  return keyPath.split('/').map((p) => {
+    const [ns, id] = p.split('-');
+    return { ns, id };
+  });
+}

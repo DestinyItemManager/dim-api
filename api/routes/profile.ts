@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { ListToken } from '@stately-cloud/client';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
@@ -6,13 +7,28 @@ import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
 import { UserInfo } from '../shapes/user.js';
-import { getProfile } from '../stately/bulk-queries.js';
-import { getItemAnnotationsForProfile as getItemAnnotationsForProfileStately } from '../stately/item-annotations-queries.js';
-import { getItemHashTagsForProfile as getItemHashTagsForProfileStately } from '../stately/item-hash-tags-queries.js';
-import { getLoadoutsForProfile as getLoadoutsForProfileStately } from '../stately/loadouts-queries.js';
-import { getSearchesForProfile as getSearchesForProfileStately } from '../stately/searches-queries.js';
-import { querySettings } from '../stately/settings-queries.js';
-import { getTrackedTriumphsForProfile as getTrackedTriumphsForProfileStately } from '../stately/triumphs-queries.js';
+import { getProfile, syncProfile } from '../stately/bulk-queries.js';
+import {
+  getItemAnnotationsForProfile as getItemAnnotationsForProfileStately,
+  syncItemAnnotations,
+} from '../stately/item-annotations-queries.js';
+import {
+  getItemHashTagsForProfile as getItemHashTagsForProfileStately,
+  syncItemHashTags,
+} from '../stately/item-hash-tags-queries.js';
+import {
+  getLoadoutsForProfile as getLoadoutsForProfileStately,
+  syncLoadouts,
+} from '../stately/loadouts-queries.js';
+import {
+  getSearchesForProfile as getSearchesForProfileStately,
+  syncSearches,
+} from '../stately/searches-queries.js';
+import { querySettings, syncSettings } from '../stately/settings-queries.js';
+import {
+  getTrackedTriumphsForProfile as getTrackedTriumphsForProfileStately,
+  syncTrackedTriumphs,
+} from '../stately/triumphs-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
 type ProfileComponent = 'settings' | 'loadouts' | 'tags' | 'hashtags' | 'triumphs' | 'searches';
@@ -74,13 +90,31 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const response = await statelyProfile(
-    res,
-    components,
-    bungieMembershipId,
-    platformMembershipId,
-    destinyVersion,
-  );
+  const syncTokens = extractSyncToken(req.query.sync?.toString());
+
+  let response: ProfileResponse | undefined;
+  try {
+    response = await statelyProfile(
+      res,
+      components,
+      bungieMembershipId,
+      platformMembershipId,
+      destinyVersion,
+      syncTokens,
+    );
+  } catch (e) {
+    Sentry.captureException(e, { extra: { syncTokens, components, platformMembershipId } });
+    if (syncTokens) {
+      // Start over without sync tokens
+      response = await statelyProfile(
+        res,
+        components,
+        bungieMembershipId,
+        platformMembershipId,
+        destinyVersion,
+      );
+    }
+  }
 
   if (!response) {
     return; // we've already responded
@@ -92,7 +126,23 @@ export const profileHandler = asyncHandler(async (req, res) => {
   res.send(response);
 });
 
-// TODO: Probably could enable allowStale, since profiles are cached anyway
+function extractSyncToken(syncTokenParam: string | undefined) {
+  if (syncTokenParam) {
+    try {
+      const tokenMap = JSON.parse(syncTokenParam) as { [component: string]: string };
+      return Object.entries(tokenMap).reduce<{ [component: string]: Buffer }>(
+        (acc, [component, token]) => {
+          acc[component] = Buffer.from(token, 'base64');
+          return acc;
+        },
+        {},
+      );
+    } catch (e) {
+      Sentry.captureException(e, { extra: { syncTokenParam } });
+    }
+  }
+}
+
 // TODO: It'd be nice to pass a signal in so we can abort all the parallel fetches
 async function statelyProfile(
   res: express.Response,
@@ -100,13 +150,25 @@ async function statelyProfile(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
+  incomingSyncTokens?: { [component: string]: Buffer },
 ) {
-  const response: ProfileResponse = {};
+  const response: ProfileResponse = {
+    sync: Boolean(incomingSyncTokens),
+  };
+  const timerPrefix = response.sync ? 'profileSync' : 'profileStately';
+  const counterPrefix = response.sync ? 'sync' : 'stately';
   const syncTokens: { [component: string]: string } = {};
   const addSyncToken = (name: string, token: ListToken) => {
     if (token.canSync) {
       syncTokens[name] = Buffer.from(token.tokenData).toString('base64');
     }
+  };
+  const getSyncToken = (name: string) => {
+    const tokenData = incomingSyncTokens?.settings;
+    if (incomingSyncTokens && !tokenData) {
+      throw new Error(`Missing sync token: ${name}`);
+    }
+    return tokenData;
   };
 
   // We'll accumulate promises and await them all at the end
@@ -116,11 +178,13 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { settings: storedSettings, token: settingsToken } =
-          await querySettings(bungieMembershipId);
+        const tokenData = getSyncToken('settings');
+        const { settings: storedSettings, token: settingsToken } = tokenData
+          ? await syncSettings(tokenData)
+          : await querySettings(bungieMembershipId);
         response.settings = storedSettings;
         addSyncToken('settings', settingsToken);
-        metrics.timing('profileStately.settings', start);
+        metrics.timing(`${timerPrefix}.settings`, start);
       })(),
     );
   }
@@ -133,17 +197,20 @@ async function statelyProfile(
     )
   ) {
     const start = new Date();
-    const { profile: profileResponse, token: profileToken } = await getProfile(
-      platformMembershipId,
-      destinyVersion,
-    );
-    metrics.timing('profileStately.allComponents', start);
+    const tokenData = getSyncToken('profile');
+    const { profile: profileResponse, token: profileToken } = tokenData
+      ? await syncProfile(tokenData)
+      : await getProfile(platformMembershipId, destinyVersion);
+    metrics.timing(`${timerPrefix}.allComponents`, start);
     await Promise.all(promises); // wait for settings
-    metrics.timing('profile.loadouts.numReturned', profileResponse.loadouts?.length ?? 0);
-    metrics.timing('profile.tags.numReturned', profileResponse.tags?.length ?? 0);
-    metrics.timing('profile.hashtags.numReturned', profileResponse.itemHashTags?.length ?? 0);
-    metrics.timing('profile.triumphs.numReturned', profileResponse.triumphs?.length ?? 0);
-    metrics.timing('profile.searches.numReturned', profileResponse.searches?.length ?? 0);
+    metrics.timing(`${counterPrefix}.loadouts.numReturned`, profileResponse.loadouts?.length ?? 0);
+    metrics.timing(`${counterPrefix}.tags.numReturned`, profileResponse.tags?.length ?? 0);
+    metrics.timing(
+      `${counterPrefix}.hashtags.numReturned`,
+      profileResponse.itemHashTags?.length ?? 0,
+    );
+    metrics.timing(`${counterPrefix}.triumphs.numReturned`, profileResponse.triumphs?.length ?? 0);
+    metrics.timing(`${counterPrefix}.searches.numReturned`, profileResponse.searches?.length ?? 0);
     addSyncToken('profile', profileToken);
     response.syncToken = serializeSyncToken(syncTokens);
     return { ...response, ...profileResponse };
@@ -157,14 +224,15 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { loadouts, token } = await getLoadoutsForProfileStately(
-          platformMembershipId,
-          destinyVersion,
-        );
+        const tokenData = getSyncToken('loadouts');
+        const { loadouts, token, deletedLoadoutIds } = tokenData
+          ? await syncLoadouts(tokenData)
+          : await getLoadoutsForProfileStately(platformMembershipId, destinyVersion);
         response.loadouts = loadouts;
+        response.deletedLoadoutIds = deletedLoadoutIds;
         addSyncToken('loadouts', token);
-        metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
-        metrics.timing('profileStately.loadouts', start);
+        metrics.timing(`${counterPrefix}.loadouts.numReturned`, response.loadouts.length);
+        metrics.timing(`${timerPrefix}.loadouts`, start);
       })(),
     );
   }
@@ -177,14 +245,15 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { tags, token } = await getItemAnnotationsForProfileStately(
-          platformMembershipId,
-          destinyVersion,
-        );
+        const tokenData = getSyncToken('tags');
+        const { tags, token, deletedTagsIds } = tokenData
+          ? await syncItemAnnotations(tokenData)
+          : await getItemAnnotationsForProfileStately(platformMembershipId, destinyVersion);
         response.tags = tags;
+        response.deletedTagsIds = deletedTagsIds;
         addSyncToken('tags', token);
-        metrics.timing('profile.tags.numReturned', response.tags.length);
-        metrics.timing('profileStately.tags', start);
+        metrics.timing(`${counterPrefix}.tags.numReturned`, response.tags.length);
+        metrics.timing(`${timerPrefix}.tags`, start);
       })(),
     );
   }
@@ -197,11 +266,15 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { hashTags, token } = await getItemHashTagsForProfileStately(platformMembershipId);
+        const tokenData = getSyncToken('hashtags');
+        const { hashTags, token, deletedItemHashTagHashes } = tokenData
+          ? await syncItemHashTags(tokenData)
+          : await getItemHashTagsForProfileStately(platformMembershipId);
         response.itemHashTags = hashTags;
+        response.deletedItemHashTagHashes = deletedItemHashTagHashes;
         addSyncToken('hashtags', token);
-        metrics.timing('profile.hashtags.numReturned', response.itemHashTags.length);
-        metrics.timing('profileStately.hashtags', start);
+        metrics.timing(`${counterPrefix}.hashtags.numReturned`, response.itemHashTags.length);
+        metrics.timing(`${timerPrefix}.hashtags`, start);
       })(),
     );
   }
@@ -214,11 +287,15 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { triumphs, token } = await getTrackedTriumphsForProfileStately(platformMembershipId);
+        const tokenData = getSyncToken('triumphs');
+        const { triumphs, token, deletedTriumphs } = tokenData
+          ? await syncTrackedTriumphs(tokenData)
+          : await getTrackedTriumphsForProfileStately(platformMembershipId);
         response.triumphs = triumphs;
+        response.deletedTriumphs = deletedTriumphs;
         addSyncToken('triumphs', token);
-        metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
-        metrics.timing('profileStately.triumphs', start);
+        metrics.timing(`${counterPrefix}.triumphs.numReturned`, response.triumphs.length);
+        metrics.timing(`${timerPrefix}.triumphs`, start);
       })(),
     );
   }
@@ -231,14 +308,15 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const { searches, token } = await getSearchesForProfileStately(
-          platformMembershipId,
-          destinyVersion,
-        );
+        const tokenData = getSyncToken('searches');
+        const { searches, token, deletedSearchHashes } = tokenData
+          ? await syncSearches(tokenData)
+          : await getSearchesForProfileStately(platformMembershipId, destinyVersion);
         response.searches = searches;
+        response.deletedSearchHashes = deletedSearchHashes;
         addSyncToken('searches', token);
-        metrics.timing('profile.searches.numReturned', response.searches.length);
-        metrics.timing('profileStately.searches', start);
+        metrics.timing(`${counterPrefix}.searches.numReturned`, response.searches.length);
+        metrics.timing(`${timerPrefix}.searches`, start);
       })(),
     );
   }
