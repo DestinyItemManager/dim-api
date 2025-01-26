@@ -69,7 +69,9 @@ export async function querySettings(
  * Get new settings for a particular account, if they've changed since the
  * token. Returns a new token.
  */
-export async function syncSettings(token: ListToken): Promise<[Settings | undefined, ListToken]> {
+export async function syncSettings(
+  token: Buffer,
+): Promise<{ settings: Settings | undefined; token: ListToken }> {
   const sync = client.syncList(token);
   let settings: Settings | undefined;
   for await (const change of sync) {
@@ -93,7 +95,7 @@ export async function syncSettings(token: ListToken): Promise<[Settings | undefi
       }
     }
   }
-  return [settings, sync.token!];
+  return { settings, token: sync.token! };
 }
 
 /**

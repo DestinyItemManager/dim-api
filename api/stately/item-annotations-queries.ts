@@ -7,7 +7,13 @@ import {
   ItemAnnotation as StatelyItemAnnotation,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { batches, clearValue, enumToStringUnion, Transaction } from './stately-utils.js';
+import {
+  batches,
+  clearValue,
+  enumToStringUnion,
+  parseKeyPath,
+  Transaction,
+} from './stately-utils.js';
 
 export function keyFor(
   platformMembershipId: string | bigint,
@@ -20,11 +26,10 @@ export function keyFor(
 /**
  * Get all of the item annotations for a particular platform_membership_id and destiny_version.
  */
-// TODO: We probably will get these in a big query across all types more often than one type at a time
 export async function getItemAnnotationsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<{ tags: ItemAnnotation[]; token: ListToken }> {
+): Promise<{ tags: ItemAnnotation[]; token: ListToken; deletedTagsIds?: string[] }> {
   const results: ItemAnnotation[] = [];
   const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/ia`);
   for await (const item of iter) {
@@ -33,6 +38,34 @@ export async function getItemAnnotationsForProfile(
     }
   }
   return { tags: results, token: iter.token! };
+}
+
+export async function syncItemAnnotations(
+  tokenData: Buffer,
+): Promise<{ tags: ItemAnnotation[]; token: ListToken; deletedTagsIds?: string[] }> {
+  const results: ItemAnnotation[] = [];
+  const deletedTagsIds: string[] = [];
+  const iter = client.syncList(tokenData);
+  for await (const change of iter) {
+    switch (change.type) {
+      case 'reset': {
+        throw new Error('token reset');
+      }
+      case 'changed': {
+        const item = change.item;
+        if (client.isType(item, 'ItemAnnotation')) {
+          results.push(convertItemAnnotation(item));
+        }
+        break;
+      }
+      case 'deleted': {
+        const keyPath = parseKeyPath(change.keyPath);
+        const itemId = keyPath.at(-1)!.id;
+        deletedTagsIds.push(itemId);
+      }
+    }
+  }
+  return { tags: results, token: iter.token!, deletedTagsIds };
 }
 
 /**

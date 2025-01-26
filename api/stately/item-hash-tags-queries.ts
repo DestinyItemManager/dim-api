@@ -5,7 +5,13 @@ import {
   ItemHashTag as StatelyItemHashTag,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import { batches, clearValue, enumToStringUnion, Transaction } from './stately-utils.js';
+import {
+  batches,
+  clearValue,
+  enumToStringUnion,
+  parseKeyPath,
+  Transaction,
+} from './stately-utils.js';
 
 export function keyFor(platformMembershipId: string | bigint, itemHash: number) {
   // HashTags are D2-only
@@ -15,10 +21,9 @@ export function keyFor(platformMembershipId: string | bigint, itemHash: number) 
 /**
  * Get all of the hash tags for a particular platform_membership_id and destiny_version.
  */
-// TODO: We probably will get these in a big query across all types more often than one type at a time
 export async function getItemHashTagsForProfile(
   platformMembershipId: string,
-): Promise<{ hashTags: ItemHashTag[]; token: ListToken }> {
+): Promise<{ hashTags: ItemHashTag[]; token: ListToken; deletedItemHashTagHashes?: number[] }> {
   const results: ItemHashTag[] = [];
   const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-2/iht`);
   for await (const item of iter) {
@@ -27,6 +32,35 @@ export async function getItemHashTagsForProfile(
     }
   }
   return { hashTags: results, token: iter.token! };
+}
+
+export async function syncItemHashTags(
+  tokenData: Buffer,
+): Promise<{ hashTags: ItemHashTag[]; token: ListToken; deletedItemHashTagHashes?: number[] }> {
+  const results: ItemHashTag[] = [];
+  const deletedItemHashTagHashes: number[] = [];
+  const iter = client.syncList(tokenData);
+  for await (const change of iter) {
+    switch (change.type) {
+      case 'reset': {
+        throw new Error('token reset');
+      }
+      case 'changed': {
+        const item = change.item;
+        if (client.isType(item, 'ItemHashTag')) {
+          results.push(convertItemHashTag(item));
+        }
+        break;
+      }
+      case 'deleted': {
+        const keyPath = parseKeyPath(change.keyPath);
+        const itemHash = Number(keyPath.at(-1)!.id);
+        deletedItemHashTagHashes.push(itemHash);
+        break;
+      }
+    }
+  }
+  return { hashTags: results, token: iter.token!, deletedItemHashTagHashes };
 }
 
 export function convertItemHashTag(item: StatelyItemHashTag): ItemHashTag {

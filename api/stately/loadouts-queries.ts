@@ -22,7 +22,14 @@ import {
   LoadoutShare as StatelyLoadoutShare,
   StatConstraint as StatelyStatConstraint,
 } from './generated/index.js';
-import { batches, listToMap, stripDefaults, stripTypeName, Transaction } from './stately-utils.js';
+import {
+  batches,
+  listToMap,
+  parseKeyPath,
+  stripDefaults,
+  stripTypeName,
+  Transaction,
+} from './stately-utils.js';
 
 export function keyFor(
   platformMembershipId: string | bigint,
@@ -38,11 +45,10 @@ export function keyFor(
 /**
  * Get all of the loadouts for a particular platform_membership_id and destiny_version.
  */
-// TODO: We probably will get these in a big query across all types more often than one type at a time
 export async function getLoadoutsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<{ loadouts: Loadout[]; token: ListToken }> {
+): Promise<{ loadouts: Loadout[]; token: ListToken; deletedLoadoutIds?: string[] }> {
   const results: Loadout[] = [];
   const iter = client.beginList(
     keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/loadout`,
@@ -53,6 +59,34 @@ export async function getLoadoutsForProfile(
     }
   }
   return { loadouts: results, token: iter.token! };
+}
+
+export async function syncLoadouts(
+  tokenData: Buffer,
+): Promise<{ loadouts: Loadout[]; token: ListToken; deletedLoadoutIds?: string[] }> {
+  const results: Loadout[] = [];
+  const deletedLoadoutIds: string[] = [];
+  const iter = client.syncList(tokenData);
+  for await (const change of iter) {
+    switch (change.type) {
+      case 'reset': {
+        throw new Error('token reset');
+      }
+      case 'changed': {
+        const item = change.item;
+        if (client.isType(item, 'Loadout')) {
+          results.push(convertLoadoutFromStately(item));
+        }
+        break;
+      }
+      case 'deleted': {
+        const keyPath = parseKeyPath(change.keyPath);
+        const loadoutId = keyPath.at(-1)!.id;
+        deletedLoadoutIds.push(loadoutId);
+      }
+    }
+  }
+  return { loadouts: results, token: iter.token!, deletedLoadoutIds };
 }
 
 /**
