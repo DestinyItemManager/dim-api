@@ -2,18 +2,13 @@ import { keyPath, ListToken } from '@stately-cloud/client';
 import { partition } from 'es-toolkit';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, TagValue } from '../shapes/item-annotations.js';
+import { getProfile } from './bulk-queries.js';
 import { client } from './client.js';
 import {
   ItemAnnotation as StatelyItemAnnotation,
   TagValue as StatelyTagValue,
 } from './generated/index.js';
-import {
-  batches,
-  clearValue,
-  enumToStringUnion,
-  parseKeyPath,
-  Transaction,
-} from './stately-utils.js';
+import { batches, clearValue, enumToStringUnion, Transaction } from './stately-utils.js';
 
 export function keyFor(
   platformMembershipId: string | bigint,
@@ -30,42 +25,8 @@ export async function getItemAnnotationsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
 ): Promise<{ tags: ItemAnnotation[]; token: ListToken; deletedTagsIds?: string[] }> {
-  const results: ItemAnnotation[] = [];
-  const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/ia`);
-  for await (const item of iter) {
-    if (client.isType(item, 'ItemAnnotation')) {
-      results.push(convertItemAnnotation(item));
-    }
-  }
-  return { tags: results, token: iter.token! };
-}
-
-export async function syncItemAnnotations(
-  tokenData: Buffer,
-): Promise<{ tags: ItemAnnotation[]; token: ListToken; deletedTagsIds?: string[] }> {
-  const results: ItemAnnotation[] = [];
-  const deletedTagsIds: string[] = [];
-  const iter = client.syncList(tokenData);
-  for await (const change of iter) {
-    switch (change.type) {
-      case 'reset': {
-        throw new Error('token reset');
-      }
-      case 'changed': {
-        const item = change.item;
-        if (client.isType(item, 'ItemAnnotation')) {
-          results.push(convertItemAnnotation(item));
-        }
-        break;
-      }
-      case 'deleted': {
-        const keyPath = parseKeyPath(change.keyPath);
-        const itemId = keyPath.at(-1)!.id;
-        deletedTagsIds.push(itemId);
-      }
-    }
-  }
-  return { tags: results, token: iter.token!, deletedTagsIds };
+  const { profile, token } = await getProfile(platformMembershipId, destinyVersion, '/ia');
+  return { tags: profile.tags ?? [], token };
 }
 
 /**

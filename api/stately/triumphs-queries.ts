@@ -1,7 +1,8 @@
 import { keyPath, ListToken } from '@stately-cloud/client';
 import { partition } from 'es-toolkit';
+import { getProfile } from './bulk-queries.js';
 import { client } from './client.js';
-import { batches, parseKeyPath, Transaction } from './stately-utils.js';
+import { batches, Transaction } from './stately-utils.js';
 
 export function keyFor(platformMembershipId: string | bigint, triumphHash: number) {
   return keyPath`/p-${BigInt(platformMembershipId)}/d-2/triumph-${triumphHash}`;
@@ -12,44 +13,9 @@ export function keyFor(platformMembershipId: string | bigint, triumphHash: numbe
  */
 export async function getTrackedTriumphsForProfile(
   platformMembershipId: string,
-): Promise<{ triumphs: number[]; token: ListToken; deletedTriumphs?: number[] }> {
-  const results: number[] = [];
-  const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-2/triumph`);
-  for await (const item of iter) {
-    if (client.isType(item, 'Triumph')) {
-      results.push(item.recordHash);
-    }
-  }
-  return { triumphs: results, token: iter.token! };
-}
-
-export async function syncTrackedTriumphs(
-  tokenData: Buffer,
-): Promise<{ triumphs: number[]; token: ListToken; deletedTriumphs?: number[] }> {
-  const results: number[] = [];
-  const deletedTriumphs: number[] = [];
-  const iter = client.syncList(tokenData);
-  for await (const change of iter) {
-    switch (change.type) {
-      case 'reset': {
-        throw new Error('token reset');
-      }
-      case 'changed': {
-        const item = change.item;
-        if (client.isType(item, 'Triumph')) {
-          results.push(item.recordHash);
-        }
-        break;
-      }
-      case 'deleted': {
-        const keyPath = parseKeyPath(change.keyPath);
-        const triumphHash = Number(keyPath.at(-1)!.id);
-        deletedTriumphs.push(triumphHash);
-        break;
-      }
-    }
-  }
-  return { triumphs: results, token: iter.token!, deletedTriumphs };
+): Promise<{ triumphs: number[]; token: ListToken }> {
+  const { profile, token } = await getProfile(platformMembershipId, 2, '/triumph');
+  return { triumphs: profile.triumphs ?? [], token };
 }
 
 export async function trackUntrackTriumphs(

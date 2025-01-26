@@ -1,12 +1,12 @@
 import { keyPath, ListToken } from '@stately-cloud/client';
-import { sortBy, uniqBy } from 'es-toolkit';
 import crypto from 'node:crypto';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
+import { getProfile } from './bulk-queries.js';
 import { client } from './client.js';
 import { Search as StatelySearch, SearchType as StatelySearchType } from './generated/index.js';
-import { batches, parseKeyPath, Transaction } from './stately-utils.js';
+import { batches, Transaction } from './stately-utils.js';
 
 /*
  * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
@@ -32,6 +32,10 @@ const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentcha
     type: SearchType.Item,
   }),
 );
+
+export function cannedSearches(destinyVersion: DestinyVersion) {
+  return destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1;
+}
 
 function queryHash(query: string) {
   return crypto.createHash('md5').update(query).digest();
@@ -60,65 +64,9 @@ export function keyFor(
 export async function getSearchesForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<{ searches: Search[]; token: ListToken; deletedSearchHashes?: string[] }> {
-  const results: Search[] = [];
-  const iter = client.beginList(
-    keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/search`,
-    // TODO: This isn't actually the same as the PG version, which grabbed the
-    // 500 *most recent* searches. We can do that with a groupLocalIndex, once
-    // we expose that in the client.
-    { limit: 500 },
-  );
-
-  for await (const item of iter) {
-    if (client.isType(item, 'Search')) {
-      results.push(convertSearchFromStately(item));
-    }
-  }
-
-  results.push(...(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1));
-
-  return {
-    searches: sortBy(
-      uniqBy(results, (s) => s.query),
-      [(s) => -s.lastUsage, (s) => s.usageCount],
-    ),
-    token: iter.token!,
-  };
-}
-
-export async function syncSearches(
-  tokenData: Buffer,
-): Promise<{ searches: Search[]; token: ListToken; deletedSearchHashes?: string[] }> {
-  const results: Search[] = [];
-  const deletedSearchHashes: string[] = [];
-  const iter = client.syncList(tokenData);
-
-  for await (const change of iter) {
-    switch (change.type) {
-      case 'reset': {
-        throw new Error('token reset');
-      }
-      case 'changed': {
-        const item = change.item;
-        if (client.isType(item, 'Search')) {
-          results.push(convertSearchFromStately(item));
-        }
-        break;
-      }
-      case 'deleted': {
-        const keyPath = parseKeyPath(change.keyPath);
-        const searchHash = keyPath.at(-1)!.id;
-        deletedSearchHashes.push(searchHash);
-      }
-    }
-  }
-
-  return {
-    searches: results,
-    token: iter.token!,
-    deletedSearchHashes,
-  };
+): Promise<{ searches: Search[]; token: ListToken }> {
+  const { profile, token } = await getProfile(platformMembershipId, destinyVersion, '/search');
+  return { searches: profile.searches ?? [], token };
 }
 
 export function convertSearchFromStately(item: StatelySearch): Search {
