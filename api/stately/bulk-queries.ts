@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -189,7 +189,7 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
 export async function getProfile(
   platformMembershipId: string | bigint,
   destinyVersion: DestinyVersion,
-): Promise<ProfileResponse> {
+): Promise<{ profile: ProfileResponse; token: ListToken }> {
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}`;
 
   const response: ProfileResponse = {};
@@ -210,5 +210,5 @@ export async function getProfile(
     }
   }
 
-  return response;
+  return { profile: response, token: iter.token! };
 }

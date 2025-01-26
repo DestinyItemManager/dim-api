@@ -55,7 +55,7 @@ async function saveSearch(
 it('can record a used search where none was recorded before', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
     (s) => s.usageCount > 0,
   );
   expect(searches[0].query).toBe('tag:junk');
@@ -67,7 +67,7 @@ it('can track search multiple times', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
     (s) => s.usageCount > 0,
   );
   expect(searches[0].query).toBe('tag:junk');
@@ -79,7 +79,7 @@ it('can mark a search as favorite', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item);
   await saveSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item, true);
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
     (s) => s.usageCount > 0,
   );
   expect(searches[0].query).toBe('tag:junk');
@@ -88,7 +88,7 @@ it('can mark a search as favorite', async () => {
 
   await saveSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item, false);
 
-  const searches2 = await getSearchesForProfile(platformMembershipId, 2);
+  const searches2 = (await getSearchesForProfile(platformMembershipId, 2)).searches;
   expect(searches2[0].query).toBe('tag:junk');
   expect(searches2[0].saved).toBe(false);
   // Save/unsave doesn't modify usage count
@@ -98,7 +98,7 @@ it('can mark a search as favorite', async () => {
 it('can mark a search as favorite even when it hasnt been used', async () => {
   await saveSearch(platformMembershipId, 2, 'tag:junk', SearchType.Item, true);
 
-  const searches = await getSearchesForProfile(platformMembershipId, 2);
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches;
   expect(searches[0].query).toBe('tag:junk');
   expect(searches[0].saved).toBe(true);
   expect(searches[0].usageCount).toBe(0);
@@ -115,12 +115,12 @@ it('can get all searches across profiles', async () => {
 });
 
 it('can increment usage for one of the built-in searches', async () => {
-  const searches = await getSearchesForProfile(platformMembershipId, 2);
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches;
   const query = searches[searches.length - 1].query;
 
   await updateUsedSearch(platformMembershipId, 2, query, SearchType.Item);
 
-  const searches2 = await getSearchesForProfile(platformMembershipId, 2);
+  const searches2 = (await getSearchesForProfile(platformMembershipId, 2)).searches;
   const search = searches2.find((s) => s.query === query);
   expect(search?.usageCount).toBe(1);
   expect(searches2.length).toBe(searches.length);
@@ -132,7 +132,7 @@ it('can delete a search', async () => {
     await deleteSearch(txn, platformMembershipId, 2, ['tag:junk']);
   });
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
     (s) => s.usageCount > 0,
   );
   expect(searches.length).toBe(0);
@@ -141,7 +141,7 @@ it('can delete a search', async () => {
 it('can record searches for loadouts', async () => {
   await updateUsedSearch(platformMembershipId, 2, 'subclass:void', SearchType.Loadout);
 
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).filter(
+  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
     (s) => s.usageCount > 0,
   );
   expect(searches[0].query).toBe('subclass:void');

@@ -46,6 +46,26 @@ export async function getSettings(bungieMembershipId: number): Promise<Settings>
 }
 
 /**
+ * Get settings for a particular account in a syncable way.
+ */
+export async function querySettings(
+  bungieMembershipId: number,
+): Promise<{ settings: Settings; token: ListToken }> {
+  const iter = client.beginList(keyFor(bungieMembershipId));
+  let settingsItem: StatelySettings | undefined;
+  for await (const item of iter) {
+    if (client.isType(item, 'Settings')) {
+      settingsItem = item;
+    }
+  }
+  const token = iter.token!;
+  return {
+    settings: settingsItem ? convertToDimSettings(settingsItem) : defaultSettings,
+    token,
+  };
+}
+
+/**
  * Get new settings for a particular account, if they've changed since the
  * token. Returns a new token.
  */

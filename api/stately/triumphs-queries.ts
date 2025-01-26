@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { partition } from 'es-toolkit';
 import { client } from './client.js';
 import { batches, Transaction } from './stately-utils.js';
@@ -12,7 +12,7 @@ export function keyFor(platformMembershipId: string | bigint, triumphHash: numbe
  */
 export async function getTrackedTriumphsForProfile(
   platformMembershipId: string,
-): Promise<number[]> {
+): Promise<{ triumphs: number[]; token: ListToken }> {
   const results: number[] = [];
   const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-2/triumph`);
   for await (const item of iter) {
@@ -20,7 +20,7 @@ export async function getTrackedTriumphsForProfile(
       results.push(item.recordHash);
     }
   }
-  return results;
+  return { triumphs: results, token: iter.token! };
 }
 
 export async function trackUntrackTriumphs(
@@ -64,7 +64,7 @@ export function importTriumphs(platformMembershipId: string, recordHashes: numbe
  * Delete all item annotations for a user (on all platforms).
  */
 export async function deleteAllTrackedTriumphs(platformMembershipId: string): Promise<void> {
-  const triumphs = await getTrackedTriumphsForProfile(platformMembershipId);
+  const triumphs = (await getTrackedTriumphsForProfile(platformMembershipId)).triumphs;
   if (!triumphs.length) {
     return;
   }

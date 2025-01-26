@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { ItemHashTag, TagValue } from '../shapes/item-annotations.js';
 import { client } from './client.js';
 import {
@@ -18,7 +18,7 @@ export function keyFor(platformMembershipId: string | bigint, itemHash: number) 
 // TODO: We probably will get these in a big query across all types more often than one type at a time
 export async function getItemHashTagsForProfile(
   platformMembershipId: string,
-): Promise<ItemHashTag[]> {
+): Promise<{ hashTags: ItemHashTag[]; token: ListToken }> {
   const results: ItemHashTag[] = [];
   const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-2/iht`);
   for await (const item of iter) {
@@ -26,7 +26,7 @@ export async function getItemHashTagsForProfile(
       results.push(convertItemHashTag(item));
     }
   }
-  return results;
+  return { hashTags: results, token: iter.token! };
 }
 
 export function convertItemHashTag(item: StatelyItemHashTag): ItemHashTag {
@@ -113,7 +113,7 @@ export async function deleteItemHashTag(
  */
 export async function deleteAllItemHashTags(platformMembershipId: string): Promise<void> {
   // TODO: this is inefficient, for delete-my-data we'll nuke all the items in the group at once
-  const allHashTags = await getItemHashTagsForProfile(platformMembershipId);
+  const allHashTags = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   if (!allHashTags.length) {
     return;
   }

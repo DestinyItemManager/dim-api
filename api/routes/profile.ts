@@ -1,3 +1,4 @@
+import { ListToken } from '@stately-cloud/client';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import { metrics } from '../metrics/index.js';
@@ -10,7 +11,7 @@ import { getItemAnnotationsForProfile as getItemAnnotationsForProfileStately } f
 import { getItemHashTagsForProfile as getItemHashTagsForProfileStately } from '../stately/item-hash-tags-queries.js';
 import { getLoadoutsForProfile as getLoadoutsForProfileStately } from '../stately/loadouts-queries.js';
 import { getSearchesForProfile as getSearchesForProfileStately } from '../stately/searches-queries.js';
-import { getSettings as getSettingsStately } from '../stately/settings-queries.js';
+import { querySettings } from '../stately/settings-queries.js';
 import { getTrackedTriumphsForProfile as getTrackedTriumphsForProfileStately } from '../stately/triumphs-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
@@ -101,6 +102,12 @@ async function statelyProfile(
   destinyVersion: DestinyVersion,
 ) {
   const response: ProfileResponse = {};
+  const syncTokens: { [component: string]: string } = {};
+  const addSyncToken = (name: string, token: ListToken) => {
+    if (token.canSync) {
+      syncTokens[name] = Buffer.from(token.tokenData).toString('base64');
+    }
+  };
 
   // We'll accumulate promises and await them all at the end
   const promises: Promise<void>[] = [];
@@ -109,8 +116,10 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        const storedSettings = await getSettingsStately(bungieMembershipId);
+        const { settings: storedSettings, token: settingsToken } =
+          await querySettings(bungieMembershipId);
         response.settings = storedSettings;
+        addSyncToken('settings', settingsToken);
         metrics.timing('profileStately.settings', start);
       })(),
     );
@@ -124,7 +133,10 @@ async function statelyProfile(
     )
   ) {
     const start = new Date();
-    const profileResponse = await getProfile(platformMembershipId, destinyVersion);
+    const { profile: profileResponse, token: profileToken } = await getProfile(
+      platformMembershipId,
+      destinyVersion,
+    );
     metrics.timing('profileStately.allComponents', start);
     await Promise.all(promises); // wait for settings
     metrics.timing('profile.loadouts.numReturned', profileResponse.loadouts?.length ?? 0);
@@ -132,6 +144,8 @@ async function statelyProfile(
     metrics.timing('profile.hashtags.numReturned', profileResponse.itemHashTags?.length ?? 0);
     metrics.timing('profile.triumphs.numReturned', profileResponse.triumphs?.length ?? 0);
     metrics.timing('profile.searches.numReturned', profileResponse.searches?.length ?? 0);
+    addSyncToken('profile', profileToken);
+    response.syncToken = serializeSyncToken(syncTokens);
     return { ...response, ...profileResponse };
   }
 
@@ -143,10 +157,12 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        response.loadouts = await getLoadoutsForProfileStately(
+        const { loadouts, token } = await getLoadoutsForProfileStately(
           platformMembershipId,
           destinyVersion,
         );
+        response.loadouts = loadouts;
+        addSyncToken('loadouts', token);
         metrics.timing('profile.loadouts.numReturned', response.loadouts.length);
         metrics.timing('profileStately.loadouts', start);
       })(),
@@ -161,10 +177,12 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        response.tags = await getItemAnnotationsForProfileStately(
+        const { tags, token } = await getItemAnnotationsForProfileStately(
           platformMembershipId,
           destinyVersion,
         );
+        response.tags = tags;
+        addSyncToken('tags', token);
         metrics.timing('profile.tags.numReturned', response.tags.length);
         metrics.timing('profileStately.tags', start);
       })(),
@@ -179,7 +197,9 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        response.itemHashTags = await getItemHashTagsForProfileStately(platformMembershipId);
+        const { hashTags, token } = await getItemHashTagsForProfileStately(platformMembershipId);
+        response.itemHashTags = hashTags;
+        addSyncToken('hashtags', token);
         metrics.timing('profile.hashtags.numReturned', response.itemHashTags.length);
         metrics.timing('profileStately.hashtags', start);
       })(),
@@ -194,7 +214,9 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        response.triumphs = await getTrackedTriumphsForProfileStately(platformMembershipId);
+        const { triumphs, token } = await getTrackedTriumphsForProfileStately(platformMembershipId);
+        response.triumphs = triumphs;
+        addSyncToken('triumphs', token);
         metrics.timing('profile.triumphs.numReturned', response.triumphs.length);
         metrics.timing('profileStately.triumphs', start);
       })(),
@@ -209,10 +231,12 @@ async function statelyProfile(
     promises.push(
       (async () => {
         const start = new Date();
-        response.searches = await getSearchesForProfileStately(
+        const { searches, token } = await getSearchesForProfileStately(
           platformMembershipId,
           destinyVersion,
         );
+        response.searches = searches;
+        addSyncToken('searches', token);
         metrics.timing('profile.searches.numReturned', response.searches.length);
         metrics.timing('profileStately.searches', start);
       })(),
@@ -220,5 +244,10 @@ async function statelyProfile(
   }
 
   await Promise.all(promises);
+  response.syncToken = serializeSyncToken(syncTokens);
   return response;
+}
+
+function serializeSyncToken(syncTokens: { [component: string]: string }) {
+  return JSON.stringify(syncTokens);
 }

@@ -1,5 +1,5 @@
 import { MessageInitShape } from '@bufbuild/protobuf';
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { DestinyClass } from 'bungie-api-ts/destiny2';
 import { isEmpty } from 'es-toolkit/compat';
 import { DestinyVersion } from '../shapes/general.js';
@@ -42,7 +42,7 @@ export function keyFor(
 export async function getLoadoutsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<Loadout[]> {
+): Promise<{ loadouts: Loadout[]; token: ListToken }> {
   const results: Loadout[] = [];
   const iter = client.beginList(
     keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/loadout`,
@@ -52,7 +52,7 @@ export async function getLoadoutsForProfile(
       results.push(convertLoadoutFromStately(item));
     }
   }
-  return results;
+  return { loadouts: results, token: iter.token! };
 }
 
 /**
@@ -70,10 +70,10 @@ async function getAllLoadoutsForUser(platformMembershipId: string): Promise<
   // export we *will* scrape a whole profile.
   const d1Loadouts = getLoadoutsForProfile(platformMembershipId, 1);
   const d2Loadouts = getLoadoutsForProfile(platformMembershipId, 2);
-  return (await d1Loadouts)
+  return (await d1Loadouts).loadouts
     .map((a) => ({ platformMembershipId, destinyVersion: 1 as DestinyVersion, loadout: a }))
     .concat(
-      (await d2Loadouts).map((a) => ({
+      (await d2Loadouts).loadouts.map((a) => ({
         platformMembershipId,
         destinyVersion: 2 as DestinyVersion,
         loadout: a,

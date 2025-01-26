@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { partition } from 'es-toolkit';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, TagValue } from '../shapes/item-annotations.js';
@@ -24,7 +24,7 @@ export function keyFor(
 export async function getItemAnnotationsForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<ItemAnnotation[]> {
+): Promise<{ tags: ItemAnnotation[]; token: ListToken }> {
   const results: ItemAnnotation[] = [];
   const iter = client.beginList(keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/ia`);
   for await (const item of iter) {
@@ -32,7 +32,7 @@ export async function getItemAnnotationsForProfile(
       results.push(convertItemAnnotation(item));
     }
   }
-  return results;
+  return { tags: results, token: iter.token! };
 }
 
 /**
@@ -52,10 +52,10 @@ async function getAllItemAnnotationsForUser(platformMembershipId: string): Promi
   // this - for export we *will* scrape a whole profile.
   const d1Annotations = getItemAnnotationsForProfile(platformMembershipId, 1);
   const d2Annotations = getItemAnnotationsForProfile(platformMembershipId, 2);
-  return (await d1Annotations)
+  return (await d1Annotations).tags
     .map((a) => ({ platformMembershipId, destinyVersion: 1 as DestinyVersion, annotation: a }))
     .concat(
-      (await d2Annotations).map((a) => ({
+      (await d2Annotations).tags.map((a) => ({
         platformMembershipId,
         destinyVersion: 2 as DestinyVersion,
         annotation: a,

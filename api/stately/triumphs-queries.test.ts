@@ -27,7 +27,7 @@ async function unTrackTriumph(platformMembershipId: string, triumphHash: number)
 it('can track a triumph where none was tracked before', async () => {
   await trackTriumph(platformMembershipId, 3851137658);
 
-  const triumphs = await getTrackedTriumphsForProfile(platformMembershipId);
+  const triumphs = (await getTrackedTriumphsForProfile(platformMembershipId)).triumphs;
   expect(triumphs[0]).toEqual(3851137658);
 });
 
@@ -36,7 +36,7 @@ it('can track a triumph that was already tracked', async () => {
 
   await trackTriumph(platformMembershipId, 3851137658);
 
-  const triumphs = await getTrackedTriumphsForProfile(platformMembershipId);
+  const triumphs = (await getTrackedTriumphsForProfile(platformMembershipId)).triumphs;
   expect(triumphs[0]).toEqual(3851137658);
 });
 
@@ -45,6 +45,6 @@ it('can untrack a triumph', async () => {
 
   await unTrackTriumph(platformMembershipId, 3851137658);
 
-  const triumphs = await getTrackedTriumphsForProfile(platformMembershipId);
+  const triumphs = (await getTrackedTriumphsForProfile(platformMembershipId)).triumphs;
   expect(triumphs.length).toEqual(0);
 });

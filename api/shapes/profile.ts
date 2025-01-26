@@ -14,9 +14,26 @@ export interface ProfileResponse {
   triumphs?: number[];
   searches?: Search[];
 
-  syncTokens?: {
-    [key: string]: string;
-  };
+  /** If the response is a sync, this will include loadout IDs of deleted loadouts. */
+  deletedLoadoutIds?: string[];
+  /** If the response is a sync, this will include MD5 hashes of deleted search queries. */
+  deletedSearchHashes?: string[];
+  /** If the response is a sync, this will include triumph hashes of untracked triumphs. */
+  deletedTriumphs?: number[];
+  /** If the response is a sync, this will include instance IDs of deleted tags. */
+  deletedTagsIds?: string[];
+  /** If the response is a sync, this will include hashes of deleted item hash tags. */
+  deletedItemHashTagHashes?: number[];
+
+  /** Set to true if this response only contains new/changed/deleted items. */
+  sync?: boolean;
+
+  /**
+   * This token allows for syncing the profile after the initial load. If you
+   * provide it as the `sync=` query parameter, the server will return only
+   * changed items made since the last sync.
+   */
+  syncToken?: string;
 }
 
 /**
