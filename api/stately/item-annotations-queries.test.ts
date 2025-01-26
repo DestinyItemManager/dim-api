@@ -21,7 +21,7 @@ it('can insert tags where none exist before', async () => {
     ]);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations[0]).toEqual({
     id: '123456',
     tag: 'favorite',
@@ -45,7 +45,7 @@ it('can update tags where none exist before', async () => {
     ]);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations[0]).toEqual({
     id: '123456',
     tag: 'junk',
@@ -72,7 +72,7 @@ it('can update tags clearing value', async () => {
     ]);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations[0]).toEqual({
     id: '123456',
     notes: 'the best',
@@ -93,7 +93,7 @@ it('can delete tags', async () => {
     await deleteItemAnnotation(txn, platformMembershipId, 2, ['123456']);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations).toEqual([]);
 });
 
@@ -117,7 +117,7 @@ it('can delete tags by setting both values to null/empty', async () => {
     ]);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations).toEqual([]);
 });
 
@@ -135,6 +135,6 @@ it('can clear tags', async () => {
     await deleteItemAnnotation(txn, platformMembershipId, 2, ['123456', '654321']);
   });
 
-  const annotations = await getItemAnnotationsForProfile(platformMembershipId, 2);
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
   expect(annotations).toEqual([]);
 });

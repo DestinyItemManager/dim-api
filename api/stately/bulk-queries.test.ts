@@ -65,17 +65,21 @@ describe('deleteAllDataForUser', () => {
 
     await deleteAllDataForUser(bungieMembershipId, [platformMembershipId]);
 
-    expect(await getItemAnnotationsForProfile(platformMembershipId, 2)).toEqual([]);
-    expect(await getItemAnnotationsForProfile(platformMembershipId, 1)).toEqual([]);
-    expect(await getItemHashTagsForProfile(platformMembershipId)).toEqual([]);
-    expect(await getLoadoutsForProfile(platformMembershipId, 2)).toEqual([]);
+    expect((await getItemAnnotationsForProfile(platformMembershipId, 2)).tags).toEqual([]);
+    expect((await getItemAnnotationsForProfile(platformMembershipId, 1)).tags).toEqual([]);
+    expect((await getItemHashTagsForProfile(platformMembershipId)).hashTags).toEqual([]);
+    expect((await getLoadoutsForProfile(platformMembershipId, 2)).loadouts).toEqual([]);
     expect(
-      (await getSearchesForProfile(platformMembershipId, 1)).filter((s) => s.usageCount > 0),
+      (await getSearchesForProfile(platformMembershipId, 1)).searches.filter(
+        (s) => s.usageCount > 0,
+      ),
     ).toEqual([]);
     expect(
-      (await getSearchesForProfile(platformMembershipId, 2)).filter((s) => s.usageCount > 0),
+      (await getSearchesForProfile(platformMembershipId, 2)).searches.filter(
+        (s) => s.usageCount > 0,
+      ),
     ).toEqual([]);
-    expect(await getTrackedTriumphsForProfile(platformMembershipId)).toEqual([]);
+    expect((await getTrackedTriumphsForProfile(platformMembershipId)).triumphs).toEqual([]);
     expect((await getSettings(bungieMembershipId)).showNewItems).toBe(false);
   });
 });

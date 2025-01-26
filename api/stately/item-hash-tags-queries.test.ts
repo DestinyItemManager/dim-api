@@ -19,7 +19,7 @@ it('can insert item hash tags where none exist before', async () => {
     });
   });
 
-  const annotations = await getItemHashTagsForProfile(platformMembershipId);
+  const annotations = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   expect(annotations[0]).toEqual({
     hash: 2926662838,
     tag: 'favorite',
@@ -42,7 +42,7 @@ it('can update item hash tags where none exist before', async () => {
     });
   });
 
-  const annotations = await getItemHashTagsForProfile(platformMembershipId);
+  const annotations = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   expect(annotations[0]).toEqual({
     hash: 2926662838,
     tag: 'junk',
@@ -64,7 +64,7 @@ it('can update item hash tags clearing value', async () => {
       tag: null,
     });
   });
-  const annotations = await getItemHashTagsForProfile(platformMembershipId);
+  const annotations = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   expect(annotations[0]).toEqual({
     hash: 2926662838,
     notes: 'the best',
@@ -84,7 +84,7 @@ it('can delete item hash tags', async () => {
     await deleteItemHashTag(txn, platformMembershipId, 2926662838);
   });
 
-  const annotations = await getItemHashTagsForProfile(platformMembershipId);
+  const annotations = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   expect(annotations).toEqual([]);
 });
 
@@ -105,6 +105,6 @@ it('can delete item hash tags by setting both values to null/empty', async () =>
     });
   });
 
-  const annotations = await getItemHashTagsForProfile(platformMembershipId);
+  const annotations = (await getItemHashTagsForProfile(platformMembershipId)).hashTags;
   expect(annotations).toEqual([]);
 });

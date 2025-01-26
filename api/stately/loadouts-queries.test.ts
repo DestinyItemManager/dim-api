@@ -100,7 +100,7 @@ it('can record a loadout', async () => {
     await updateLoadout(txn, platformMembershipId, 2, [loadout]);
   });
 
-  const loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
+  const loadouts = (await getLoadoutsForProfile(platformMembershipId, 2)).loadouts;
 
   expect(loadouts.length).toBe(1);
 
@@ -128,7 +128,7 @@ it('can update a loadout', async () => {
     ]);
   });
 
-  const loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
+  const loadouts = (await getLoadoutsForProfile(platformMembershipId, 2)).loadouts;
 
   expect(loadouts.length).toBe(1);
   expect(loadouts[0].name).toEqual('Updated');
@@ -140,12 +140,12 @@ it('can delete a loadout', async () => {
   await client.transaction(async (txn) => {
     await updateLoadout(txn, platformMembershipId, 2, [loadout]);
   });
-  let loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
+  let loadouts = (await getLoadoutsForProfile(platformMembershipId, 2)).loadouts;
   expect(loadouts.length).toBe(1);
 
   await client.transaction(async (txn) => {
     await deleteLoadout(txn, platformMembershipId, 2, [loadout.id]);
   });
-  loadouts = await getLoadoutsForProfile(platformMembershipId, 2);
+  loadouts = (await getLoadoutsForProfile(platformMembershipId, 2)).loadouts;
   expect(loadouts.length).toBe(0);
 });

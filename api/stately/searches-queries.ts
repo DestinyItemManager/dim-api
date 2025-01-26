@@ -1,4 +1,4 @@
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, ListToken } from '@stately-cloud/client';
 import { sortBy, uniqBy } from 'es-toolkit';
 import crypto from 'node:crypto';
 import { ExportResponse } from '../shapes/export.js';
@@ -60,7 +60,7 @@ export function keyFor(
 export async function getSearchesForProfile(
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
-): Promise<Search[]> {
+): Promise<{ searches: Search[]; token: ListToken }> {
   const results: Search[] = [];
   const iter = client.beginList(
     keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}/search`,
@@ -78,10 +78,13 @@ export async function getSearchesForProfile(
 
   results.push(...(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1));
 
-  return sortBy(
-    uniqBy(results, (s) => s.query),
-    [(s) => -s.lastUsage, (s) => s.usageCount],
-  );
+  return {
+    searches: sortBy(
+      uniqBy(results, (s) => s.query),
+      [(s) => -s.lastUsage, (s) => s.usageCount],
+    ),
+    token: iter.token!,
+  };
 }
 
 export function convertSearchFromStately(item: StatelySearch): Search {
@@ -105,10 +108,10 @@ export async function getSearchesForUser(
   // for export we *will* scrape a whole profile.
   const d1Searches = getSearchesForProfile(platformMembershipId, 1);
   const d2Searches = getSearchesForProfile(platformMembershipId, 2);
-  return (await d1Searches)
+  return (await d1Searches).searches
     .map((a) => ({ destinyVersion: 1 as DestinyVersion, search: a }))
     .concat(
-      (await d2Searches).map((a) => ({
+      (await d2Searches).searches.map((a) => ({
         destinyVersion: 2 as DestinyVersion,
         search: a,
       })),
