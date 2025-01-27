@@ -189,8 +189,9 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
 export async function getProfile(
   platformMembershipId: string | bigint,
   destinyVersion: DestinyVersion,
+  suffix?: string,
 ): Promise<{ profile: ProfileResponse; token: ListToken }> {
-  const prefix = keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}`;
+  const prefix = keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}` + suffix;
 
   const response: ProfileResponse = {};
 
@@ -258,7 +259,7 @@ export async function syncProfile(
               (response.deletedTagsIds ??= []).push(idStr);
               break;
             }
-            case 'ia-hash': {
+            case 'iht': {
               (response.deletedItemHashTagHashes ??= []).push(Number(idStr));
               break;
             }

@@ -2,6 +2,7 @@ import { DestinyVersion } from '../shapes/general.js';
 import { SearchType } from '../shapes/search.js';
 import { client } from './client.js';
 import {
+  cannedSearches,
   deleteAllSearches,
   deleteSearch,
   getSearchesForProfile,
@@ -115,15 +116,14 @@ it('can get all searches across profiles', async () => {
 });
 
 it('can increment usage for one of the built-in searches', async () => {
-  const searches = (await getSearchesForProfile(platformMembershipId, 2)).searches;
-  const query = searches[searches.length - 1].query;
+  const query = cannedSearches(2)[0].query;
 
   await updateUsedSearch(platformMembershipId, 2, query, SearchType.Item);
 
   const searches2 = (await getSearchesForProfile(platformMembershipId, 2)).searches;
   const search = searches2.find((s) => s.query === query);
   expect(search?.usageCount).toBe(1);
-  expect(searches2.length).toBe(searches.length);
+  expect(searches2.length).toBe(1);
 });
 
 it('can delete a search', async () => {

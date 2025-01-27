@@ -145,8 +145,62 @@ describe('profile', () => {
     expect(profileResponse.loadouts!.length).toBe(19);
     expect(profileResponse.tags!.length).toBe(592);
     expect(profileResponse.triumphs!.length).toBe(30);
-    expect(profileResponse.searches!.length).toBe(205);
+    expect(profileResponse.searches!.length).toBe(208);
     expect(profileResponse.itemHashTags!.length).toBe(71);
+    expect(profileResponse.syncToken).toBeDefined();
+  });
+
+  it('can sync profile data', async () => {
+    const profileResponse = (await getRequestAuthed(
+      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
+
+    expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+      'sunset',
+      'tag',
+      'primStat',
+      'season',
+      'ammoType',
+      'rarity',
+      'typeName',
+      'name',
+    ]);
+    expect(profileResponse.tags!.length).toBe(592);
+    expect(profileResponse.sync).toBe(false);
+
+    const request: ProfileUpdateRequest = {
+      updates: [
+        {
+          action: 'setting',
+          payload: {
+            showNewItems: true,
+          },
+        },
+        {
+          action: 'tag',
+          payload: {
+            id: '1234',
+            tag: 'favorite',
+          },
+        },
+      ],
+    };
+    await postRequestAuthed('/profile', request).expect(200);
+
+    const profileSyncResponse = (await getRequestAuthed(
+      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileResponse.syncToken!)}`,
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
+
+    expect(profileSyncResponse.syncToken).toBeDefined();
+    expect(profileSyncResponse.syncToken).not.toBe(profileResponse.syncToken);
+    expect(profileSyncResponse.sync).toBe(true);
+    expect(profileSyncResponse.settings?.showNewItems).toBe(true);
+    expect(profileSyncResponse.tags?.length).toBe(1);
+    expect(profileSyncResponse.tags?.[0].id).toBe('1234');
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
