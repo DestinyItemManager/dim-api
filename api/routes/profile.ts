@@ -120,6 +120,8 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
 function extractSyncToken(syncTokenParam: string | undefined) {
   if (syncTokenParam) {
+    // Fix for light.gg incorrectly encoding the sync token
+    syncTokenParam = syncTokenParam.replaceAll(' ', '+');
     if (
       syncTokenParam.includes(' ') ||
       syncTokenParam.includes('\n') ||
