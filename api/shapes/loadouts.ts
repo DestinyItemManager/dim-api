@@ -209,9 +209,9 @@ export const defaultLoadoutParameters: LoadoutParameters = {
   assumeArmorMasterwork: AssumeArmorMasterwork.None,
   autoStatMods: true,
   includeRuntimeStatBenefits: true,
-  clearArmor: true,
-  clearMods: true,
-  clearWeapons: true,
+  clearArmor: false,
+  clearMods: false,
+  clearWeapons: false,
 };
 
 /** A constraint on the values an armor stat can take */

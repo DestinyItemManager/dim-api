@@ -101,9 +101,14 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return; // we've already responded
   }
 
-  // Instruct CF not to cache this for longer than a minute
-  res.set('Cache-Control', 'public, max-age=60');
-  res.set('Expires', new Date(Date.now() + 60 * 1000).toUTCString());
+  if (response.sync) {
+    // There's no point to storing the sync response
+    res.set('Cache-Control', 'no-store');
+  } else {
+    // Instruct CF not to cache this for longer than a minute
+    res.set('Cache-Control', 'public, max-age=60');
+    res.set('Expires', new Date(Date.now() + 60 * 1000).toUTCString());
+  }
   res.send(response);
 });
 
