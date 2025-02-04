@@ -84,7 +84,13 @@ export const profileHandler = asyncHandler(async (req, res) => {
       syncTokens,
     );
   } catch (e) {
-    Sentry.captureException(e, { extra: { syncTokens, components, platformMembershipId } });
+    Sentry.captureException(e, {
+      extra: {
+        syncTokens: req.query.sync,
+        components,
+        platformMembershipId,
+      },
+    });
     if (syncTokens) {
       // Start over without sync tokens
       response = await statelyProfile(
@@ -114,6 +120,16 @@ export const profileHandler = asyncHandler(async (req, res) => {
 
 function extractSyncToken(syncTokenParam: string | undefined) {
   if (syncTokenParam) {
+    if (
+      syncTokenParam.includes(' ') ||
+      syncTokenParam.includes('\n') ||
+      syncTokenParam.includes('%20')
+    ) {
+      Sentry.captureMessage('Incoming sync token contains invalid characters', {
+        extra: { syncToken: syncTokenParam },
+      });
+    }
+
     try {
       const tokenMap = JSON.parse(syncTokenParam) as { [component: string]: string };
       return Object.entries(tokenMap).reduce<{ [component: string]: Buffer }>(
@@ -263,6 +279,15 @@ async function statelyProfile(
   }
 
   response.syncToken = serializeSyncToken(syncTokens);
+  if (
+    response.syncToken?.includes(' ') ||
+    response.syncToken?.includes('\n') ||
+    response.syncToken?.includes('%20')
+  ) {
+    Sentry.captureMessage('Outgoing sync token contains invalid characters', {
+      extra: { syncToken: response.syncToken },
+    });
+  }
   return response;
 }
 
