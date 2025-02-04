@@ -5,7 +5,7 @@ RUN apk add python3 g++ make py-setuptools
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN npm install -g corepack@latest && corepack enable
 
 USER node
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
