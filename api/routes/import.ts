@@ -89,15 +89,12 @@ export async function statelyImport(
   triumphs: ExportResponse['triumphs'],
   searches: ExportResponse['searches'],
   itemHashTags: ItemHashTag[],
-  deleteExisting = true,
 ): Promise<number> {
   // TODO: what we should do, is map all these to items, and then we can just do
   // batch puts, 25 at a time.
 
   let numTriumphs = 0;
-  if (deleteExisting) {
-    await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
-  }
+  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
 
   const settingsItem = convertToStatelyItem(
     { ...defaultSettings, ...settings },

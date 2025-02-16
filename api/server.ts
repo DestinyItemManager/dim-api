@@ -162,7 +162,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     tags: {
       dimApp: dimApp?.id,
       user: user?.bungieMembershipId,
-      dimVersion: `v${dimVersion ?? 'Unknown'}`,
+      dimVersion: `v${dimVersion?.replaceAll('.', '_') ?? 'Unknown'}`,
     },
   });
   // Allow any origin to see the response
