@@ -12,29 +12,12 @@ export const TagValue = enumType('TagValue', {
 // Both ItemAnnotation and ItemHashTag share these fields.
 const sharedFields: Fields = {
   /** The profile ID for a Destiny profile. */
-  profileId: {
-    type: ProfileID,
-    fieldNum: 1,
-  },
-
-  destinyVersion: {
-    type: DestinyVersion,
-    fieldNum: 2,
-  },
-
+  profileId: { type: ProfileID },
+  destinyVersion: { type: DestinyVersion },
   /** Optional tag for the item. */
-  tag: {
-    type: TagValue,
-    fieldNum: 3,
-    required: false,
-  },
-
+  tag: { type: TagValue, required: false },
   /** Optional text notes on the item. */
-  notes: {
-    type: string,
-    fieldNum: 4,
-    required: false,
-  },
+  notes: { type: string, required: false },
 };
 
 /** Any extra info added by the user to individual items - tags, notes, etc. */
@@ -47,7 +30,6 @@ export const ItemAnnotation = itemType('ItemAnnotation', {
     id: {
       type: ItemID,
       // We still need to make sure these don't collide with the IDs in sharedFields.
-      fieldNum: 5,
     },
 
     /**
@@ -58,7 +40,6 @@ export const ItemAnnotation = itemType('ItemAnnotation', {
     craftedDate: {
       type: timestampMilliseconds,
       // We still need to make sure these don't collide with the IDs in sharedFields.
-      fieldNum: 6,
       required: false,
     },
   },
@@ -74,7 +55,6 @@ export const ItemHashTag = itemType('ItemHashTag', {
     /** The inventory item hash for an item */
     hash: {
       type: HashID,
-      fieldNum: 5,
     },
   },
 });

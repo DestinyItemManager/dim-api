@@ -2,8 +2,8 @@
 // @generated from file stately.proto (package stately.generated, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv1";
-import type { Message } from "@bufbuild/protobuf";
+import type { Message } from '@bufbuild/protobuf';
+import type { GenEnum, GenFile, GenMessage } from '@bufbuild/protobuf/codegenv1';
 
 /**
  * Describes the file stately.proto.
@@ -13,28 +13,38 @@ export declare const file_stately: GenFile;
 /**
  * @generated from message stately.generated.ApiApp
  */
-export declare type ApiApp = Message<"stately.generated.ApiApp"> & {
+export declare type ApiApp = Message<'stately.generated.ApiApp'> & {
   /**
+   * A short ID that uniquely identifies the app.
+   *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
+   * Apps must share their Bungie.net API key with us.
+   *
    * @generated from field: string bungieApiKey = 2;
    */
   bungieApiKey: string;
 
   /**
+   * Apps also get a generated API key for accessing DIM APIs that don't involve user data.
+   *
    * @generated from field: string dimApiKey = 3;
    */
   dimApiKey: string;
 
   /**
+   * The origin used to allow CORS for this app. Only requests from this origin are allowed.
+   *
    * @generated from field: string origin = 4;
    */
   origin: string;
 
   /**
+   * This isn't a "real" field but StatelyDB won't allow a group without an ID.
+   *
    * @generated from field: uint64 partition = 5;
    */
   partition: bigint;
@@ -49,13 +59,17 @@ export declare const ApiAppSchema: GenMessage<ApiApp>;
 /**
  * @generated from message stately.generated.ArtifactUnlocks
  */
-export declare type ArtifactUnlocks = Message<"stately.generated.ArtifactUnlocks"> & {
+export declare type ArtifactUnlocks = Message<'stately.generated.ArtifactUnlocks'> & {
   /**
+   * The item hashes of the unlocked artifact perk items.
+   *
    * @generated from field: repeated uint32 unlockedItemHashes = 1;
    */
   unlockedItemHashes: number[];
 
   /**
+   * The season this set of artifact unlocks was chosen from.
+   *
    * @generated from field: uint32 seasonNumber = 2;
    */
   seasonNumber: number;
@@ -70,13 +84,15 @@ export declare const ArtifactUnlocksSchema: GenMessage<ArtifactUnlocks>;
 /**
  * @generated from message stately.generated.CollapsedSection
  */
-export declare type CollapsedSection = Message<"stately.generated.CollapsedSection"> & {
+export declare type CollapsedSection = Message<'stately.generated.CollapsedSection'> & {
   /**
    * @generated from field: string key = 1;
    */
   key: string;
 
   /**
+   * Whether this section is collapsed
+   *
    * @generated from field: bool collapsed = 2;
    */
   collapsed: boolean;
@@ -91,28 +107,38 @@ export declare const CollapsedSectionSchema: GenMessage<CollapsedSection>;
 /**
  * @generated from message stately.generated.CustomStatDef
  */
-export declare type CustomStatDef = Message<"stately.generated.CustomStatDef"> & {
+export declare type CustomStatDef = Message<'stately.generated.CustomStatDef'> & {
   /**
+   * a unique-per-user fake statHash used to look this stat up
+   *
    * @generated from field: uint32 statHash = 1;
    */
   statHash: number;
 
   /**
+   * a unique-per-class name for this stat
+   *
    * @generated from field: string label = 2;
    */
   label: string;
 
   /**
+   * an abbreviated/crunched form of the stat label, for use in search filters
+   *
    * @generated from field: string shortLabel = 3;
    */
   shortLabel: string;
 
   /**
+   * which guardian class this stat should be used for. DestinyClass.Unknown makes a global (all 3 classes) stat
+   *
    * @generated from field: stately.generated.DestinyClass class = 4;
    */
   class: DestinyClass;
 
   /**
+   * info about how to calculate the stat total
+   *
    * @generated from field: repeated stately.generated.CustomStatWeightsEntry weights = 5;
    */
   weights: CustomStatWeightsEntry[];
@@ -125,9 +151,11 @@ export declare type CustomStatDef = Message<"stately.generated.CustomStatDef"> &
 export declare const CustomStatDefSchema: GenMessage<CustomStatDef>;
 
 /**
+ * traditional custom stats use a binary 1 or 0 for all 6 armor stats, but this could support more complex weights
+ *
  * @generated from message stately.generated.CustomStatWeightsEntry
  */
-export declare type CustomStatWeightsEntry = Message<"stately.generated.CustomStatWeightsEntry"> & {
+export declare type CustomStatWeightsEntry = Message<'stately.generated.CustomStatWeightsEntry'> & {
   /**
    * @generated from field: uint32 statHash = 1;
    */
@@ -148,7 +176,7 @@ export declare const CustomStatWeightsEntrySchema: GenMessage<CustomStatWeightsE
 /**
  * @generated from message stately.generated.CustomStatsEntry
  */
-export declare type CustomStatsEntry = Message<"stately.generated.CustomStatsEntry"> & {
+export declare type CustomStatsEntry = Message<'stately.generated.CustomStatsEntry'> & {
   /**
    * @generated from field: stately.generated.DestinyClass classType = 1;
    */
@@ -169,43 +197,57 @@ export declare const CustomStatsEntrySchema: GenMessage<CustomStatsEntry>;
 /**
  * @generated from message stately.generated.GlobalSettings
  */
-export declare type GlobalSettings = Message<"stately.generated.GlobalSettings"> & {
+export declare type GlobalSettings = Message<'stately.generated.GlobalSettings'> & {
   /**
    * @generated from field: string stage = 1;
    */
   stage: string;
 
   /**
+   * Whether the API is enabled or not.
+   *
    * @generated from field: bool dimApiEnabled = 2;
    */
   dimApiEnabled: boolean;
 
   /**
+   * Don't allow refresh more often than this many seconds.
+   *
    * @generated from field: sint64 destinyProfileMinimumRefreshInterval = 3;
    */
   destinyProfileMinimumRefreshInterval: bigint;
 
   /**
+   * Time in seconds to refresh the profile when autoRefresh is true.
+   *
    * @generated from field: sint64 destinyProfileRefreshInterval = 4;
    */
   destinyProfileRefreshInterval: bigint;
 
   /**
+   * Whether to refresh profile automatically.
+   *
    * @generated from field: bool autoRefresh = 5;
    */
   autoRefresh: boolean;
 
   /**
+   * Whether to refresh profile when the page becomes visible after being in the background.
+   *
    * @generated from field: bool refreshProfileOnVisible = 6;
    */
   refreshProfileOnVisible: boolean;
 
   /**
+   * Don't automatically refresh DIM profile info more often than this many seconds.
+   *
    * @generated from field: sint64 dimProfileMinimumRefreshInterval = 7;
    */
   dimProfileMinimumRefreshInterval: bigint;
 
   /**
+   * Display an issue banner, if there is one.
+   *
    * @generated from field: bool showIssueBanner = 8;
    */
   showIssueBanner: boolean;
@@ -223,24 +265,27 @@ export declare type GlobalSettings = Message<"stately.generated.GlobalSettings">
 export declare const GlobalSettingsSchema: GenMessage<GlobalSettings>;
 
 /**
+ * normally found inside DestinyLoadoutComponent, mapped to respective definition tables
+ *
  * @generated from message stately.generated.InGameLoadoutIdentifiers
  */
-export declare type InGameLoadoutIdentifiers = Message<"stately.generated.InGameLoadoutIdentifiers"> & {
-  /**
-   * @generated from field: uint32 colorHash = 1;
-   */
-  colorHash: number;
+export declare type InGameLoadoutIdentifiers =
+  Message<'stately.generated.InGameLoadoutIdentifiers'> & {
+    /**
+     * @generated from field: uint32 colorHash = 1;
+     */
+    colorHash: number;
 
-  /**
-   * @generated from field: uint32 iconHash = 2;
-   */
-  iconHash: number;
+    /**
+     * @generated from field: uint32 iconHash = 2;
+     */
+    iconHash: number;
 
-  /**
-   * @generated from field: uint32 nameHash = 3;
-   */
-  nameHash: number;
-};
+    /**
+     * @generated from field: uint32 nameHash = 3;
+     */
+    nameHash: number;
+  };
 
 /**
  * Describes the message stately.generated.InGameLoadoutIdentifiers.
@@ -249,9 +294,11 @@ export declare type InGameLoadoutIdentifiers = Message<"stately.generated.InGame
 export declare const InGameLoadoutIdentifiersSchema: GenMessage<InGameLoadoutIdentifiers>;
 
 /**
+ * Any extra info added by the user to individual items - tags, notes, etc.
+ *
  * @generated from message stately.generated.ItemAnnotation
  */
-export declare type ItemAnnotation = Message<"stately.generated.ItemAnnotation"> & {
+export declare type ItemAnnotation = Message<'stately.generated.ItemAnnotation'> & {
   /**
    * @generated from field: uint64 profileId = 1;
    */
@@ -273,11 +320,17 @@ export declare type ItemAnnotation = Message<"stately.generated.ItemAnnotation">
   notes: string;
 
   /**
+   * The item instance ID for an individual item
+   *
    * @generated from field: uint64 id = 5;
    */
   id: bigint;
 
   /**
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
+   * match up items that have changed instance ID from being reshaped since they
+   * were tagged.
+   *
    * @generated from field: sint64 craftedDate = 6;
    */
   craftedDate: bigint;
@@ -290,9 +343,11 @@ export declare type ItemAnnotation = Message<"stately.generated.ItemAnnotation">
 export declare const ItemAnnotationSchema: GenMessage<ItemAnnotation>;
 
 /**
+ * Any extra info added by the user to item hashes (shaders and mods)
+ *
  * @generated from message stately.generated.ItemHashTag
  */
-export declare type ItemHashTag = Message<"stately.generated.ItemHashTag"> & {
+export declare type ItemHashTag = Message<'stately.generated.ItemHashTag'> & {
   /**
    * @generated from field: uint64 profileId = 1;
    */
@@ -314,6 +369,8 @@ export declare type ItemHashTag = Message<"stately.generated.ItemHashTag"> & {
   notes: string;
 
   /**
+   * The inventory item hash for an item
+   *
    * @generated from field: uint32 hash = 5;
    */
   hash: number;
@@ -328,8 +385,10 @@ export declare const ItemHashTagSchema: GenMessage<ItemHashTag>;
 /**
  * @generated from message stately.generated.Loadout
  */
-export declare type Loadout = Message<"stately.generated.Loadout"> & {
+export declare type Loadout = Message<'stately.generated.Loadout'> & {
   /**
+   * A globally unique (UUID) identifier for the loadout. Chosen by the client, not autogenerated by the DB.
+   *
    * @generated from field: bytes id = 1;
    */
   id: Uint8Array;
@@ -394,28 +453,41 @@ export declare const LoadoutSchema: GenMessage<Loadout>;
 /**
  * @generated from message stately.generated.LoadoutItem
  */
-export declare type LoadoutItem = Message<"stately.generated.LoadoutItem"> & {
+export declare type LoadoutItem = Message<'stately.generated.LoadoutItem'> & {
   /**
+   * itemInstanceId of the item (if it's instanced). Default to zero for an uninstanced item or unknown ID.
+   *
    * @generated from field: uint64 id = 1;
    */
   id: bigint;
 
   /**
+   * DestinyInventoryItemDefinition hash of the item
+   *
    * @generated from field: uint32 hash = 2;
    */
   hash: number;
 
   /**
+   * Optional amount (for consumables), default to zero
+   *
    * @generated from field: uint32 amount = 3;
    */
   amount: number;
 
   /**
+   * The socket overrides for the item. These signal what DestinyInventoryItemDefinition
+   * (by it's hash) is supposed to be socketed into the given socket index.
+   *
    * @generated from field: repeated stately.generated.SocketOverride socketOverrides = 4;
    */
   socketOverrides: SocketOverride[];
 
   /**
+   * UTC epoch seconds timestamp of when the item was crafted. Used to
+   * match up items that have changed instance ID from being reshaped since they
+   * were added to the loadout.
+   *
    * @generated from field: sint64 craftedDate = 5;
    */
   craftedDate: bigint;
@@ -428,70 +500,124 @@ export declare type LoadoutItem = Message<"stately.generated.LoadoutItem"> & {
 export declare const LoadoutItemSchema: GenMessage<LoadoutItem>;
 
 /**
+ * Parameters that explain how this loadout was chosen (in Loadout Optimizer)
+ * and at the same time, how this loadout should be configured when equipped.
+ * This can be used to re-load a loadout into Loadout Optimizer with its
+ * settings intact, or to equip the right mods when applying a loadout if AWA is
+ * ever released.
+ *
+ * Originally this was meant to model parameters independent of specific items,
+ * as a means of sharing Loadout Optimizer settings between users, but now we
+ * just share whole loadouts, so this can be used for any sort of parameter we
+ * want to add to loadouts.
+ *
+ * All properties are optional, but most have defaults specified in
+ * defaultLoadoutParameters that should be used if they are undefined.
+ *
  * @generated from message stately.generated.LoadoutParameters
  */
-export declare type LoadoutParameters = Message<"stately.generated.LoadoutParameters"> & {
+export declare type LoadoutParameters = Message<'stately.generated.LoadoutParameters'> & {
   /**
+   * The stats the user cared about for this loadout, in the order they cared about them and
+   * with optional range by tier. If a stat is "ignored" it should just be missing from this
+   * list.
+   *
    * @generated from field: repeated stately.generated.StatConstraint statConstraints = 1;
    */
   statConstraints: StatConstraint[];
 
   /**
+   * The mods that will be used with this loadout. Each entry is an inventory
+   * item hash representing the mod item. Hashes may appear multiple times.
+   * These are not associated with any specific item in the loadout - when
+   * applying the loadout we should automatically determine the minimum of
+   * changes required to match the desired mods, and apply these mods to the
+   * equipped items.
+   *
    * @generated from field: repeated uint32 mods = 2;
    */
   mods: number[];
 
   /**
+   * If set, after applying the mods above, all other mods will be removed from armor.
+   *
    * @generated from field: bool clearMods = 3;
    */
   clearMods: boolean;
 
   /**
+   * Whether to clear out other weapons when applying this loadout
+   *
    * @generated from field: bool clearWeapons = 4;
    */
   clearWeapons: boolean;
 
   /**
+   * Whether to clear out other weapons when applying this loadout
+   *
    * @generated from field: bool clearArmor = 5;
    */
   clearArmor: boolean;
 
   /**
+   * Mods that must be applied to a specific bucket hash. In general, prefer to
+   * use the flat mods list above, and rely on the loadout function to assign
+   * mods automatically. However there are some mods like shaders which can't
+   * be automatically assigned to the right piece. These only apply to the equipped
+   * item.
+   *
    * @generated from field: repeated stately.generated.ModsByBucketEntry modsByBucket = 6;
    */
   modsByBucket: ModsByBucketEntry[];
 
   /**
+   * The artifact unlocks relevant to this build.
+   *
    * @generated from field: stately.generated.ArtifactUnlocks artifactUnlocks = 7;
    */
   artifactUnlocks?: ArtifactUnlocks;
 
   /**
+   * Whether to automatically add stat mods.
+   *
    * @generated from field: bool autoStatMods = 8;
    */
   autoStatMods: boolean;
 
   /**
+   * A search filter applied while editing the loadout in Loadout Optimizer,
+   * which constrains the items that can be in the loadout.
+   *
    * @generated from field: string query = 9;
    */
   query: string;
 
   /**
+   * Whether armor of this type will have assumed masterwork stats in the Loadout Optimizer.
+   *
    * @generated from field: stately.generated.AssumeArmorMasterwork assumeArmorMasterwork = 10;
    */
   assumeArmorMasterwork: AssumeArmorMasterwork;
 
   /**
+   * The InventoryItemHash of the pinned exotic, if any was chosen.
+   *
    * @generated from field: int64 exoticArmorHash = 11;
    */
   exoticArmorHash: bigint;
 
   /**
+   * a user may optionally specify which icon/color/name will be used,
+   * if this DIM loadout is saved to an in-game slot.
+   *
    * @generated from field: stately.generated.InGameLoadoutIdentifiers inGameIdentifiers = 12;
    */
   inGameIdentifiers?: InGameLoadoutIdentifiers;
 
   /**
+   * When calculating loadout stats, should "Font of ..." mods be assumed active
+   * and their runtime bonus stats be included?
+   *
    * @generated from field: bool includeRuntimeStatBenefits = 13;
    */
   includeRuntimeStatBenefits: boolean;
@@ -506,8 +632,12 @@ export declare const LoadoutParametersSchema: GenMessage<LoadoutParameters>;
 /**
  * @generated from message stately.generated.LoadoutShare
  */
-export declare type LoadoutShare = Message<"stately.generated.LoadoutShare"> & {
+export declare type LoadoutShare = Message<'stately.generated.LoadoutShare'> & {
   /**
+   * A globally unique short random string to be used when sharing the loadout, but which is hard to guess.
+   * This is essentially 35 random bits encoded via base32 into a 7-character string. It'd be neat if we could
+   * support that, with a parameterizable string length.
+   *
    * @generated from field: string id = 1;
    */
   id: string;
@@ -563,6 +693,9 @@ export declare type LoadoutShare = Message<"stately.generated.LoadoutShare"> & {
   profileId: bigint;
 
   /**
+   * A count that increases on each view. Not the most efficient way to deal
+   * with this - maybe that should be a child document.
+   *
    * @generated from field: uint32 viewCount = 15;
    */
   viewCount: number;
@@ -577,7 +710,7 @@ export declare const LoadoutShareSchema: GenMessage<LoadoutShare>;
 /**
  * @generated from message stately.generated.ModsByBucketEntry
  */
-export declare type ModsByBucketEntry = Message<"stately.generated.ModsByBucketEntry"> & {
+export declare type ModsByBucketEntry = Message<'stately.generated.ModsByBucketEntry'> & {
   /**
    * @generated from field: uint32 bucketHash = 1;
    */
@@ -596,45 +729,67 @@ export declare type ModsByBucketEntry = Message<"stately.generated.ModsByBucketE
 export declare const ModsByBucketEntrySchema: GenMessage<ModsByBucketEntry>;
 
 /**
+ * A search query. This can either be from history (recent searches), pinned (saved searches), or suggested.
+ *
  * @generated from message stately.generated.Search
  */
-export declare type Search = Message<"stately.generated.Search"> & {
+export declare type Search = Message<'stately.generated.Search'> & {
   /**
+   * The full search query. These are
+   *
    * @generated from field: string query = 1;
    */
   query: string;
 
   /**
+   * A zero usage count means this is a suggested/preloaded search.
+   *
    * @generated from field: uint32 usageCount = 2;
    */
   usageCount: number;
 
   /**
+   * Has this search been saved/favorite'd/pinned by the user?
+   *
    * @generated from field: bool saved = 3;
    */
   saved: boolean;
 
   /**
+   * The last time this was used, as a unix millisecond timestamp. We don't
+   * use fromMetadata: 'lastModifiedAtTime' because on import we want to set this
+   * to whatever value it was, not the insert time.
+   *
    * @generated from field: sint64 lastUsage = 4;
    */
   lastUsage: bigint;
 
   /**
+   * Which kind of thing is this search for? Searches of different types are
+   * stored together and need to be filtered to the specific type.
+   *
    * @generated from field: stately.generated.SearchType type = 5;
    */
   type: SearchType;
 
   /**
+   * MD5 hash of the query string. This is used to enforce uniqueness of
+   * queries without using the whole long query string as a key.
+   *
    * @generated from field: bytes qhash = 6;
    */
   qhash: Uint8Array;
 
   /**
+   * The profile ID this search is associated with.
+   *
    * @generated from field: uint64 profileId = 7;
    */
   profileId: bigint;
 
   /**
+   * The Destiny version this search is associated with.
+   *
    * @generated from field: uint32 destinyVersion = 8;
    */
   destinyVersion: number;
@@ -649,118 +804,165 @@ export declare const SearchSchema: GenMessage<Search>;
 /**
  * @generated from message stately.generated.Settings
  */
-export declare type Settings = Message<"stately.generated.Settings"> & {
+export declare type Settings = Message<'stately.generated.Settings'> & {
   /**
    * @generated from field: uint64 memberId = 1;
    */
   memberId: bigint;
 
   /**
+   * Show item quality percentages
+   *
    * @generated from field: bool itemQuality = 2;
    */
   itemQuality: boolean;
 
   /**
+   * Show new items with an overlay
+   *
    * @generated from field: bool showNewItems = 3;
    */
   showNewItems: boolean;
 
   /**
+   * Sort characters (mostRecent, mostRecentReverse, fixed)
+   *
    * @generated from field: stately.generated.CharacterOrder characterOrder = 4;
    */
   characterOrder: CharacterOrder;
 
   /**
+   * Custom sorting properties, in order of application
+   *
    * @generated from field: repeated string itemSortOrderCustom = 5;
    */
   itemSortOrderCustom: string[];
 
   /**
+   * supplements itemSortOrderCustom by allowing each sort to be reversed
+   *
    * @generated from field: repeated string itemSortReversals = 6;
    */
   itemSortReversals: string[];
 
   /**
+   * How many columns to display character buckets
+   *
    * @generated from field: uint32 charCol = 7;
    */
   charCol: number;
 
   /**
+   * How many columns to display character buckets on Mobile
+   *
    * @generated from field: uint32 charColMobile = 8;
    */
   charColMobile: number;
 
   /**
+   * How big in pixels to draw items - start smaller for iPad
+   *
    * @generated from field: uint32 itemSize = 9;
    */
   itemSize: number;
 
   /**
+   * Which categories or buckets should be collapsed?
+   *
    * @generated from field: repeated stately.generated.CollapsedSection collapsedSections = 10;
    */
   collapsedSections: CollapsedSection[];
 
   /**
+   * Hide triumphs once they're completed
+   *
    * @generated from field: bool completedRecordsHidden = 11;
    */
   completedRecordsHidden: boolean;
 
   /**
+   * Hide show triumphs the manifest recommends be redacted
+   *
    * @generated from field: bool redactedRecordsRevealed = 12;
    */
   redactedRecordsRevealed: boolean;
 
   /**
+   * Whether to keep one slot per item type open
+   *
    * @generated from field: bool farmingMakeRoomForItems = 13;
    */
   farmingMakeRoomForItems: boolean;
 
   /**
+   * How many spaces to clear when using Farming Mode (make space).
+   *
    * @generated from field: uint32 inventoryClearSpaces = 14;
    */
   inventoryClearSpaces: number;
 
   /**
+   * Hide completed triumphs/collections
+   *
    * @generated from field: bool hideCompletedRecords = 15;
    */
   hideCompletedRecords: boolean;
 
   /**
+   * Custom character sort - across all accounts and characters! The values are character IDs.
+   *
    * @generated from field: repeated string customCharacterSort = 16;
    */
   customCharacterSort: string[];
 
   /**
+   * The last direction the infusion fuel finder was set to.
+   *
    * @generated from field: stately.generated.InfuseDirection infusionDirection = 17;
    */
   infusionDirection: InfuseDirection;
 
   /**
+   * The user's preferred language code.
+   *
    * @generated from field: string language = 18;
    */
   language: string;
 
   /**
+   * External sources for wish lists.
+   * Expected to be a valid URL.
+   * initialState should hold the current location of a reasonably-useful collection of rolls.
+   * Set to empty string to not use wishListSource.
+   *
    * @generated from field: repeated string wishListSources = 19;
    */
   wishListSources: string[];
 
   /**
+   * The last used settings for the Loadout Optimizer. These apply to all classes.
+   *
    * @generated from field: stately.generated.LoadoutParameters loParameters = 20;
    */
   loParameters?: LoadoutParameters;
 
   /**
+   * Stat order, enablement, etc. Stored per class.
+   *
    * @generated from field: repeated stately.generated.StatConstraintsEntry loStatConstraintsByClass = 21;
    */
   loStatConstraintsByClass: StatConstraintsEntry[];
 
   /**
+   * list of stat hashes of interest, keyed by class enum
+   *
    * @generated from field: repeated stately.generated.CustomStatsEntry customTotalStatsByClass = 22;
    */
   customTotalStatsByClass: CustomStatsEntry[];
 
   /**
+   * Selected columns for the Vault Organizer
+   *
    * @generated from field: repeated string organizerColumnsWeapons = 23;
    */
   organizerColumnsWeapons: string[];
@@ -776,101 +978,144 @@ export declare type Settings = Message<"stately.generated.Settings"> & {
   organizerColumnsGhost: string[];
 
   /**
+   * Compare base stats or actual stats in Compare
+   *
    * @generated from field: bool compareBaseStats = 26;
    */
   compareBaseStats: boolean;
 
   /**
+   * Item popup sidecar collapsed just shows icon and no character locations
+   *
    * @generated from field: bool sidecarCollapsed = 27;
    */
   sidecarCollapsed: boolean;
 
   /**
+   * In "Single Character Mode" DIM pretends you only have one (active) character and all the other characters' items are in the vault.
+   *
    * @generated from field: bool singleCharacter = 28;
    */
   singleCharacter: boolean;
 
   /**
+   * Badge the app icon with the number of postmaster items on the current character
+   *
    * @generated from field: bool badgePostmaster = 29;
    */
   badgePostmaster: boolean;
 
   /**
+   * Display perks as a list instead of a grid.
+   *
    * @generated from field: bool perkList = 30;
    */
   perkList: boolean;
 
   /**
+   * How the loadouts menu and page should be sorted
+   *
    * @generated from field: stately.generated.LoadoutSort loadoutSort = 31;
    */
   loadoutSort: LoadoutSort;
 
   /**
+   * Hide tagged items in the Item Feed
+   *
    * @generated from field: bool itemFeedHideTagged = 32;
    */
   itemFeedHideTagged: boolean;
 
   /**
+   * Show the Item Feed
+   *
    * @generated from field: bool itemFeedExpanded = 33;
    */
   itemFeedExpanded: boolean;
 
   /**
+   * Pull from postmaster is an irreversible action and some people don't want to accidentally hit it.
+   *
    * @generated from field: bool hidePullFromPostmaster = 34;
    */
   hidePullFromPostmaster: boolean;
 
   /**
+   * Select descriptions to display
+   *
    * @generated from field: stately.generated.DescriptionOptions descriptionsToDisplay = 35;
    */
   descriptionsToDisplay: DescriptionOptions;
 
   /**
+   * Plug the T10 masterwork into D2Y2+ random roll weapons for comparison purposes.
+   *
    * @generated from field: bool compareWeaponMasterwork = 36;
    */
   compareWeaponMasterwork: boolean;
 
   /**
+   * Cutoff point; the instance ID of the newest item that isn't shown in
+   * the item feed anymore after the user presses the "clear" button.
+   *
    * @generated from field: uint64 itemFeedWatermark = 37;
    */
   itemFeedWatermark: bigint;
 
   /**
+   * a set of user-defined custom stat totals.
+   * this will supersede customTotalStatsByClass.
+   * it defaults below to empty, which in DIM, initiates fallback to customTotalStatsByClass
+   *
    * @generated from field: repeated stately.generated.CustomStatDef customStats = 38;
    */
   customStats: CustomStatDef[];
 
   /**
+   * Automatically sync lock status with tag
+   *
    * @generated from field: bool autoLockTagged = 39;
    */
   autoLockTagged: boolean;
 
   /**
+   * The currently chosen theme.
+   *
    * @generated from field: string theme = 40;
    */
   theme: string;
 
   /**
+   * Whether to sort triumphs on the records tab by their progression percentage.
+   *
    * @generated from field: bool sortRecordProgression = 41;
    */
   sortRecordProgression: boolean;
 
   /**
+   * Whether to hide items that cost silver from the Vendors screen.
+   *
    * @generated from field: bool vendorsHideSilverItems = 42;
    */
   vendorsHideSilverItems: boolean;
 
   /**
+   * An additional layer of grouping for weapons in the vault.
+   *
    * @generated from field: string vaultWeaponGrouping = 43;
    */
   vaultWeaponGrouping: string;
 
   /**
+   * How grouped weapons in the vault should be displayed.
+   *
    * @generated from field: stately.generated.VaultWeaponGroupingStyle vaultWeaponGroupingStyle = 44;
    */
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle;
 
   /**
+   * The currently selected item popup tab.
+   *
    * @generated from field: stately.generated.ItemPopupTab itemPopupTab = 45;
    */
   itemPopupTab: ItemPopupTab;
@@ -885,13 +1130,17 @@ export declare const SettingsSchema: GenMessage<Settings>;
 /**
  * @generated from message stately.generated.SocketOverride
  */
-export declare type SocketOverride = Message<"stately.generated.SocketOverride"> & {
+export declare type SocketOverride = Message<'stately.generated.SocketOverride'> & {
   /**
+   * The index of the socket in the item
+   *
    * @generated from field: uint32 socketIndex = 1;
    */
   socketIndex: number;
 
   /**
+   * The hash of the item that should be in this socket
+   *
    * @generated from field: uint32 itemHash = 2;
    */
   itemHash: number;
@@ -904,20 +1153,28 @@ export declare type SocketOverride = Message<"stately.generated.SocketOverride">
 export declare const SocketOverrideSchema: GenMessage<SocketOverride>;
 
 /**
+ * A constraint on the values an armor stat can take
+ *
  * @generated from message stately.generated.StatConstraint
  */
-export declare type StatConstraint = Message<"stately.generated.StatConstraint"> & {
+export declare type StatConstraint = Message<'stately.generated.StatConstraint'> & {
   /**
+   * The stat definition hash of the stat
+   *
    * @generated from field: uint32 statHash = 1;
    */
   statHash: number;
 
   /**
+   * The minimum tier value for the stat. 0 if unset.
+   *
    * @generated from field: uint32 minTier = 2;
    */
   minTier: number;
 
   /**
+   * The maximum tier value for the stat. 10 if unset.
+   *
    * @generated from field: uint32 maxTier = 3;
    */
   maxTier: number;
@@ -932,7 +1189,7 @@ export declare const StatConstraintSchema: GenMessage<StatConstraint>;
 /**
  * @generated from message stately.generated.StatConstraintsEntry
  */
-export declare type StatConstraintsEntry = Message<"stately.generated.StatConstraintsEntry"> & {
+export declare type StatConstraintsEntry = Message<'stately.generated.StatConstraintsEntry'> & {
   /**
    * @generated from field: stately.generated.DestinyClass classType = 1;
    */
@@ -951,9 +1208,12 @@ export declare type StatConstraintsEntry = Message<"stately.generated.StatConstr
 export declare const StatConstraintsEntrySchema: GenMessage<StatConstraintsEntry>;
 
 /**
+ * Triumph stores a single record hash for a tracked triumph. Users can have any
+ * number of tracked triumphs, with one item per triumph.
+ *
  * @generated from message stately.generated.Triumph
  */
-export declare type Triumph = Message<"stately.generated.Triumph"> & {
+export declare type Triumph = Message<'stately.generated.Triumph'> & {
   /**
    * @generated from field: uint32 recordHash = 1;
    */
@@ -977,25 +1237,35 @@ export declare type Triumph = Message<"stately.generated.Triumph"> & {
 export declare const TriumphSchema: GenMessage<Triumph>;
 
 /**
+ * Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer.
+ *
  * @generated from enum stately.generated.AssumeArmorMasterwork
  */
 export enum AssumeArmorMasterwork {
   /**
+   * No armor will have assumed masterworked stats.
+   *
    * @generated from enum value: AssumeArmorMasterwork_None = 0;
    */
   AssumeArmorMasterwork_None = 0,
 
   /**
+   * Only legendary armor will have assumed masterworked stats.
+   *
    * @generated from enum value: AssumeArmorMasterwork_Legendary = 1;
    */
   AssumeArmorMasterwork_Legendary = 1,
 
   /**
+   * All armor (legendary & exotic) will have assumed masterworked stats.
+   *
    * @generated from enum value: AssumeArmorMasterwork_All = 2;
    */
   AssumeArmorMasterwork_All = 2,
 
   /**
+   * All armor (legendary & exotic) will have assumed masterworked stats, and Exotic Armor will be upgraded to have an artifice mod slot.
+   *
    * @generated from enum value: AssumeArmorMasterwork_ArtificeExotic = 3;
    */
   AssumeArmorMasterwork_ArtificeExotic = 3,
@@ -1111,11 +1381,15 @@ export enum InfuseDirection {
   InfuseDirection_UNSPECIFIED = 0,
 
   /**
+   * infuse something into the query (query = target)
+   *
    * @generated from enum value: InfuseDirection_Infuse = 1;
    */
   InfuseDirection_Infuse = 1,
 
   /**
+   * infuse the query into the target (query = source)
+   *
    * @generated from enum value: InfuseDirection_Fuel = 2;
    */
   InfuseDirection_Fuel = 2,
@@ -1147,6 +1421,8 @@ export enum ItemPopupTab {
 export declare const ItemPopupTabSchema: GenEnum<ItemPopupTab>;
 
 /**
+ * How the loadouts menu and page should be sorted
+ *
  * @generated from enum stately.generated.LoadoutSort
  */
 export enum LoadoutSort {
@@ -1245,4 +1521,3 @@ export enum VaultWeaponGroupingStyle {
  * Describes the enum stately.generated.VaultWeaponGroupingStyle.
  */
 export declare const VaultWeaponGroupingStyleSchema: GenEnum<VaultWeaponGroupingStyle>;
-

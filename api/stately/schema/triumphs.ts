@@ -8,13 +8,10 @@ import { DestinyVersion, HashID, ProfileID } from './types.js';
 export const Triumph = itemType('Triumph', {
   keyPath: '/p-:profileId/d-:destinyVersion/triumph-:recordHash',
   fields: {
-    recordHash: { type: HashID, fieldNum: 1 },
-    profileId: { type: ProfileID, fieldNum: 2 },
+    recordHash: { type: HashID },
+    profileId: { type: ProfileID },
 
-    // This is always "2"
-    destinyVersion: {
-      type: DestinyVersion,
-      fieldNum: 7,
-    },
+    // This is always "2" but we can't have constants in key paths
+    destinyVersion: { type: DestinyVersion },
   },
 });
