@@ -1,5 +1,6 @@
 import { keyPath, StatelyError, WithPutOptions } from '@stately-cloud/client';
 import { Loadout } from '../shapes/loadouts.js';
+import { delay } from '../utils.js';
 import { client } from './client.js';
 import { LoadoutShare as StatelyLoadoutShare } from './generated/index.js';
 import {
@@ -82,18 +83,30 @@ export async function addLoadoutSharesForMigration(
  * Touch the last_accessed_at and visits fields to keep track of access.
  */
 export async function recordAccess(shareId: string): Promise<void> {
-  // Hmm this is probably pretty expensive. Should I store the view count in a
-  // separate item? It'd also be nice to have an Update API.
-  await client.transaction(async (txn) => {
-    const loadoutShare = await txn.get('LoadoutShare', keyFor(shareId));
-    if (!loadoutShare) {
-      throw new Error("somehow this loadout share doesn't exist");
+  for (let attempts = 0; attempts < 3; attempts++) {
+    try {
+      // Hmm this is probably pretty expensive. Should I store the view count in a
+      // separate item? It'd also be nice to have an Update API.
+      await client.transaction(async (txn) => {
+        const loadoutShare = await txn.get('LoadoutShare', keyFor(shareId));
+        if (!loadoutShare) {
+          throw new Error("somehow this loadout share doesn't exist");
+        }
+
+        loadoutShare.viewCount++;
+
+        await txn.put(loadoutShare);
+      });
+      return;
+    } catch (e) {
+      if (e instanceof StatelyError && e.statelyCode === 'ConcurrentModification') {
+        // try again after a delay
+        await delay(100 * Math.random() + 100);
+      } else {
+        throw e;
+      }
     }
-
-    loadoutShare.viewCount++;
-
-    await txn.put(loadoutShare);
-  });
+  }
 }
 
 export async function getLoadoutShareByShareId(shareId: string): Promise<Loadout | undefined> {

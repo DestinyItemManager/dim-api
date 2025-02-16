@@ -167,13 +167,14 @@ function validateUpdates(
         };
     }
     if (result.status !== 'Success') {
+      const dimVersion = req.headers['x-dim-version']?.[0];
       captureMessage(`update ${update.action} failed validation: ${result.message}`, {
         extra: {
           update,
           result,
           platformMembershipId,
           appId,
-          dimVersion: req.headers['x-dim-version']?.[0],
+          dimVersion: `v${dimVersion?.replaceAll('.', '_') ?? 'Unknown'}`,
         },
       });
       console.log('Stately failed update', update.action, result, appId);
