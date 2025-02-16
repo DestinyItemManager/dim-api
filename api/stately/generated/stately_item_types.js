@@ -54,7 +54,7 @@ export const typeToSchema = {
 };
 
 /** The version of the schema that this client was generated for. */
-const SCHEMA_VERSION_ID = 2;
+const SCHEMA_VERSION_ID = 3;
 
 export function createClient(storeId, opts) {
   return createGenericClient(storeId, typeToSchema, SCHEMA_VERSION_ID, opts);

@@ -13,17 +13,17 @@ export const ApiApp = itemType('ApiApp', {
   keyPath: '/apps-:partition/app-:id',
   fields: {
     /** A short ID that uniquely identifies the app. */
-    id: { type: string, fieldNum: 1 },
+    id: { type: string },
     /** Apps must share their Bungie.net API key with us. */
-    bungieApiKey: { type: string, fieldNum: 2 },
+    bungieApiKey: { type: string },
     /** Apps also get a generated API key for accessing DIM APIs that don't involve user data. */
     dimApiKey: {
       type: uuidString,
-      fieldNum: 3 /* initialValue: 'uuid' Sad, I actually wanted this to be a new random UUID on insert */,
+      /* initialValue: 'uuid' Sad, I actually wanted this to be a new random UUID on insert */
     },
     /** The origin used to allow CORS for this app. Only requests from this origin are allowed. */
-    origin: { type: string, fieldNum: 4 },
+    origin: { type: string },
     /** This isn't a "real" field but StatelyDB won't allow a group without an ID. */
-    partition: { type: uint, fieldNum: 5 },
+    partition: { type: uint },
   },
 });

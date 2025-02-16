@@ -21,7 +21,7 @@ export const LoadoutShare = itemType('LoadoutShare', {
      * This is essentially 35 random bits encoded via base32 into a 7-character string. It'd be neat if we could
      * support that, with a parameterizable string length.
      */
-    id: { type: string, fieldNum: 1 /* initialValue: 'rand35str' */ },
+    id: { type: string /* initialValue: 'rand35str' */ },
     ...loadoutFields,
     // destinyVersion is always 2
 
@@ -29,6 +29,6 @@ export const LoadoutShare = itemType('LoadoutShare', {
      * A count that increases on each view. Not the most efficient way to deal
      * with this - maybe that should be a child document.
      */
-    viewCount: { type: uint32, fieldNum: 15, required: false },
+    viewCount: { type: uint32, required: false },
   },
 });

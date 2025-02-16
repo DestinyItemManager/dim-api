@@ -10,22 +10,22 @@ import {
 export const GlobalSettings = itemType('GlobalSettings', {
   keyPath: '/gs-:stage',
   fields: {
-    stage: { type: string, fieldNum: 1 },
+    stage: { type: string },
     /** Whether the API is enabled or not.  */
-    dimApiEnabled: { type: bool, fieldNum: 2 },
+    dimApiEnabled: { type: bool },
     /** Don't allow refresh more often than this many seconds. */
-    destinyProfileMinimumRefreshInterval: { type: durationSeconds, fieldNum: 3 },
+    destinyProfileMinimumRefreshInterval: { type: durationSeconds },
     /** Time in seconds to refresh the profile when autoRefresh is true. */
-    destinyProfileRefreshInterval: { type: durationSeconds, fieldNum: 4 },
+    destinyProfileRefreshInterval: { type: durationSeconds },
     /** Whether to refresh profile automatically. */
-    autoRefresh: { type: bool, fieldNum: 5 },
+    autoRefresh: { type: bool },
     /** Whether to refresh profile when the page becomes visible after being in the background. */
-    refreshProfileOnVisible: { type: bool, fieldNum: 6 },
+    refreshProfileOnVisible: { type: bool },
     /** Don't automatically refresh DIM profile info more often than this many seconds. */
-    dimProfileMinimumRefreshInterval: { type: durationSeconds, fieldNum: 7 },
+    dimProfileMinimumRefreshInterval: { type: durationSeconds },
     /** Display an issue banner, if there is one. */
-    showIssueBanner: { type: bool, fieldNum: 8 },
+    showIssueBanner: { type: bool },
 
-    lastUpdated: { type: timestampMilliseconds, fieldNum: 9, fromMetadata: 'lastModifiedAtTime' },
+    lastUpdated: { type: timestampMilliseconds, fromMetadata: 'lastModifiedAtTime' },
   },
 });

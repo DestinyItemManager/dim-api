@@ -28,7 +28,8 @@ export const profileHandler = asyncHandler(async (req, res) => {
   const { id: appId } = req.dimApp as ApiApp;
   metrics.increment(`profile.app.${appId}`, 1);
 
-  const platformMembershipId = req.query.platformMembershipId?.toString();
+  const platformMembershipId =
+    typeof req.query.platformMembershipId === 'string' ? req.query.platformMembershipId : undefined;
 
   if (platformMembershipId && !isValidPlatformMembershipId(platformMembershipId)) {
     badRequest(res, `platformMembershipId ${platformMembershipId} is not in the right format`);
@@ -54,7 +55,7 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const components = (req.query.components?.toString() || '').split(
+  const components = (typeof req.query.components === 'string' ? req.query.components : '').split(
     /\s*,\s*/,
   ) as ProfileComponent[];
 
@@ -71,7 +72,9 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const syncTokens = extractSyncToken(req.query.sync?.toString());
+  const syncTokens = extractSyncToken(
+    typeof req.query.sync === 'string' ? req.query.sync : undefined,
+  );
 
   let response: ProfileResponse | undefined;
   try {
