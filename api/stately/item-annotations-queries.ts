@@ -111,7 +111,7 @@ export async function updateItemAnnotation(
       (tagValue === 'clear' && notesValue === 'clear')
     ) {
       itemsToDelete.push(keyFor(platformMembershipId, destinyVersion, itemAnnotation.id));
-      return;
+      continue;
     }
 
     if (tagValue === 'clear') {
