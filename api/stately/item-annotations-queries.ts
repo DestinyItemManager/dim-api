@@ -1,5 +1,4 @@
 import { keyPath, ListToken } from '@stately-cloud/client';
-import { partition } from 'es-toolkit';
 import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, TagValue } from '../shapes/item-annotations.js';
 import { getProfile } from './bulk-queries.js';
@@ -83,55 +82,20 @@ export async function updateItemAnnotation(
   destinyVersion: DestinyVersion,
   itemAnnotations: ItemAnnotation[],
 ): Promise<void> {
-  interface DelInstr {
-    type: 'delete';
-    key: string;
-  }
-  interface PutInstr {
-    type: 'put';
-    itemAnnotation: ItemAnnotation;
-    tagValue: TagValue | 'clear' | null;
-    notesValue: string | null;
-  }
-
-  const [deletes, puts] = partition(
-    itemAnnotations.map((itemAnnotation): DelInstr | PutInstr => {
-      const tagValue = clearValue(itemAnnotation.tag);
-      const notesValue = clearValue(itemAnnotation.notes);
-
-      if (tagValue === 'clear' && notesValue === 'clear') {
-        return {
-          type: 'delete',
-          key: keyFor(platformMembershipId, destinyVersion, itemAnnotation.id),
-        };
-      }
-
-      return {
-        type: 'put',
-        itemAnnotation,
-        tagValue,
-        notesValue,
-      };
-    }),
-    (v) => v.type === 'delete',
-  ) as [DelInstr[], PutInstr[]];
-
-  if (deletes.length) {
-    await txn.del(...deletes.map((v) => v.key));
-  }
-
-  if (!puts.length) {
-    return;
-  }
-
   // We want to merge the incoming values with the existing values, so we need
   // to read the existing values first.
   const existingTags = (
     await txn.getBatch(
-      ...puts.map((v) => keyFor(platformMembershipId, destinyVersion, v.itemAnnotation.id)),
+      ...itemAnnotations.map((v) => keyFor(platformMembershipId, destinyVersion, v.id)),
     )
   ).filter((i) => client.isType(i, 'ItemAnnotation'));
-  const itemsToPut = puts.map(({ itemAnnotation, tagValue, notesValue }) => {
+
+  const itemsToPut = [];
+  const itemsToDelete: string[] = [];
+  for (const itemAnnotation of itemAnnotations) {
+    const tagValue = clearValue(itemAnnotation.tag);
+    const notesValue = clearValue(itemAnnotation.notes);
+
     const idBigInt = BigInt(itemAnnotation.id);
     const ia =
       existingTags.find((t) => t.id === idBigInt) ??
@@ -140,6 +104,15 @@ export async function updateItemAnnotation(
         profileId: BigInt(platformMembershipId),
         destinyVersion,
       });
+
+    if (
+      (tagValue === 'clear' && !ia.notes) ||
+      (notesValue === 'clear' && !ia.tag) ||
+      (tagValue === 'clear' && notesValue === 'clear')
+    ) {
+      itemsToDelete.push(keyFor(platformMembershipId, destinyVersion, itemAnnotation.id));
+      continue;
+    }
 
     if (tagValue === 'clear') {
       ia.tag = StatelyTagValue.TagValue_UNSPECIFIED;
@@ -156,9 +129,17 @@ export async function updateItemAnnotation(
     if (itemAnnotation.craftedDate) {
       ia.craftedDate = BigInt(itemAnnotation.craftedDate * 1000);
     }
-    return ia;
-  });
-  await txn.putBatch(...itemsToPut);
+
+    itemsToPut.push(ia);
+  }
+
+  if (itemsToDelete.length) {
+    await txn.del(...itemsToDelete);
+  }
+
+  if (itemsToPut.length) {
+    await txn.putBatch(...itemsToPut);
+  }
 }
 
 export function importTags(

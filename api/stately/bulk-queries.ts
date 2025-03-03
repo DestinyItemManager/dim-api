@@ -1,3 +1,4 @@
+import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
@@ -271,8 +272,18 @@ export async function syncProfile(
               (response.deletedSearchHashes ??= []).push(idStr);
               break;
             }
+            default:
+              captureMessage(`Unknown deleted type ${type}`);
+              break;
           }
+        } else {
+          captureMessage(`Unknown deleted keyPath ${change.keyPath}`);
         }
+        break;
+      }
+      case 'updatedOutsideWindow': {
+        captureMessage(`Unexpected updatedOutsideWindow ${change.keyPath}`);
+        break;
       }
     }
   }
