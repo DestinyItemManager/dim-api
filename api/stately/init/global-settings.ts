@@ -7,7 +7,7 @@ const devSettings = client.create('GlobalSettings', {
   destinyProfileRefreshInterval: 120n,
   autoRefresh: true,
   refreshProfileOnVisible: true,
-  dimProfileMinimumRefreshInterval: 600n,
+  dimProfileMinimumRefreshInterval: 1n,
   showIssueBanner: false,
 });
 
@@ -18,7 +18,7 @@ const betaSettings = client.create('GlobalSettings', {
   destinyProfileRefreshInterval: 120n,
   autoRefresh: true,
   refreshProfileOnVisible: true,
-  dimProfileMinimumRefreshInterval: 600n,
+  dimProfileMinimumRefreshInterval: 1n,
   showIssueBanner: false,
 });
 
@@ -29,7 +29,7 @@ const prodSettings = client.create('GlobalSettings', {
   destinyProfileRefreshInterval: 120n,
   autoRefresh: true,
   refreshProfileOnVisible: true,
-  dimProfileMinimumRefreshInterval: 600n,
+  dimProfileMinimumRefreshInterval: 1n,
   showIssueBanner: false,
 });
 
