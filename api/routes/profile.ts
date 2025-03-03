@@ -153,7 +153,7 @@ function extractSyncToken(syncTokenParam: string | undefined) {
 // TODO: It'd be nice to pass a signal in so we can abort all the parallel fetches
 async function statelyProfile(
   res: express.Response,
-  components: (ProfileComponent | 'profile')[],
+  components: (ProfileComponent | 'all')[],
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
@@ -204,11 +204,11 @@ async function statelyProfile(
     )
   ) {
     // Replace the individual components with a bulk fetch
-    components = components.includes('settings') ? ['settings', 'profile'] : ['profile'];
+    components = components.includes('settings') ? ['settings', 'all'] : ['all'];
   }
 
   const loadComponent = (
-    name: Exclude<ProfileComponent, 'settings'> | 'profile',
+    name: Exclude<ProfileComponent, 'settings'> | 'all',
     suffix: string,
     handleEmpty: () => void,
   ) => {
@@ -235,7 +235,7 @@ async function statelyProfile(
     }
   };
 
-  loadComponent('profile', '', () => {
+  loadComponent('all', '', () => {
     response.loadouts ??= [];
     response.searches ??= [];
     response.tags ??= [];
