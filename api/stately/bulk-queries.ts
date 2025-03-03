@@ -13,7 +13,7 @@ import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-qu
 import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
 import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
 import { deleteSettings, getSettings } from './settings-queries.js';
-import { batches, parseKeyPath } from './stately-utils.js';
+import { batches, fromStatelyUUID, parseKeyPath } from './stately-utils.js';
 import { keyFor as triumphKeyFor } from './triumphs-queries.js';
 
 /**
@@ -265,7 +265,7 @@ export async function syncProfile(
               break;
             }
             case 'loadout': {
-              (response.deletedLoadoutIds ??= []).push(idStr);
+              (response.deletedLoadoutIds ??= []).push(fromStatelyUUID(idStr));
               break;
             }
             case 'search': {

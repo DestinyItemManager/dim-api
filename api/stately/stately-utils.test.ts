@@ -3,6 +3,7 @@ import {
   BigIntToNumber,
   bigIntToNumber,
   clearValue,
+  fromStatelyUUID,
   listToMap,
   NumberToBigInt,
   numberToBigInt,
@@ -153,4 +154,10 @@ describe('batches', () => {
       expect(num).toBe(size);
     });
   }
+});
+
+describe('fromStatelyUUID', () => {
+  it('converts a Stately UUID to a string', () => {
+    expect(fromStatelyUUID('_XBlcIuJTLCITKFKCQEJPQ')).toBe('fd706570-8b89-4cb0-884c-a14a0901093d');
+  });
 });
