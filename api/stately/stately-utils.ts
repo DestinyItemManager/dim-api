@@ -144,10 +144,16 @@ export function* batches<T>(input: T[]): Generator<T[]> {
 }
 
 export function parseKeyPath(keyPath: string): { ns: string; id: string }[] {
-  return keyPath.split('/').map((p) => {
-    const splitIndex = p.indexOf('-');
-    const ns = p.slice(0, splitIndex);
-    const id = p.slice(splitIndex + 1);
-    return { ns, id };
-  });
+  if (!keyPath.startsWith('/')) {
+    throw new Error(`Invalid keyPath ${keyPath}`);
+  }
+  return keyPath
+    .slice(1)
+    .split('/')
+    .map((p) => {
+      const splitIndex = p.indexOf('-');
+      const ns = p.slice(0, splitIndex);
+      const id = p.slice(splitIndex + 1);
+      return { ns, id };
+    });
 }
