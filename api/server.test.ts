@@ -168,9 +168,12 @@ describe('profile', () => {
       'name',
     ]);
     expect(profileResponse.tags!.length).toBe(592);
+    expect(profileResponse.loadouts!.length).toBe(19);
     expect(profileResponse.sync).toBe(false);
 
     const request: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
       updates: [
         {
           action: 'setting',
@@ -184,6 +187,10 @@ describe('profile', () => {
             id: '1234',
             tag: 'favorite',
           },
+        },
+        {
+          action: 'delete_loadout',
+          payload: profileResponse.loadouts![0].id,
         },
       ],
     };
@@ -201,6 +208,7 @@ describe('profile', () => {
     expect(profileSyncResponse.settings?.showNewItems).toBe(true);
     expect(profileSyncResponse.tags?.length).toBe(1);
     expect(profileSyncResponse.tags?.[0].id).toBe('1234');
+    expect(profileSyncResponse.deletedLoadoutIds?.length).toBe(1);
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {
