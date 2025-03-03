@@ -145,7 +145,9 @@ export function* batches<T>(input: T[]): Generator<T[]> {
 
 export function parseKeyPath(keyPath: string): { ns: string; id: string }[] {
   return keyPath.split('/').map((p) => {
-    const [ns, id] = p.split('-');
+    const splitIndex = p.indexOf('-');
+    const ns = p.slice(0, splitIndex);
+    const id = p.slice(splitIndex + 1);
     return { ns, id };
   });
 }
