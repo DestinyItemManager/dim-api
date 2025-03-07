@@ -72,9 +72,14 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const syncTokens = extractSyncToken(
+  let syncTokens = extractSyncToken(
     typeof req.query.sync === 'string' ? req.query.sync : undefined,
   );
+
+  // Ignore old sync tokens
+  if (syncTokens && (syncTokens.all || syncTokens.profile)) {
+    syncTokens = undefined;
+  }
 
   let response: ProfileResponse | undefined;
   try {
