@@ -185,10 +185,6 @@ function validateUpdates(
   return results;
 }
 
-// TODO: For ease of porting, I made each update a separate transaction. But it
-// would be more efficient to batch them all into one transaction. That said,
-// aside from bulk-tagging, it's most likely that only one update will be sent
-// at a time.
 async function statelyUpdate(
   updates: ProfileUpdate[],
   bungieMembershipId: number,
