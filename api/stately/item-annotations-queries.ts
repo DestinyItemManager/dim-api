@@ -105,15 +105,6 @@ export async function updateItemAnnotation(
         destinyVersion,
       });
 
-    if (
-      (tagValue === 'clear' && !ia.notes) ||
-      (notesValue === 'clear' && !ia.tag) ||
-      (tagValue === 'clear' && notesValue === 'clear')
-    ) {
-      itemsToDelete.push(keyFor(platformMembershipId, destinyVersion, itemAnnotation.id));
-      continue;
-    }
-
     if (tagValue === 'clear') {
       ia.tag = StatelyTagValue.TagValue_UNSPECIFIED;
     } else if (tagValue !== null) {
@@ -130,7 +121,12 @@ export async function updateItemAnnotation(
       ia.craftedDate = BigInt(itemAnnotation.craftedDate * 1000);
     }
 
-    itemsToPut.push(ia);
+    // If we're updating them both to nothing, delete the annotation
+    if (!ia.notes && !ia.tag) {
+      itemsToDelete.push(keyFor(platformMembershipId, destinyVersion, itemAnnotation.id));
+    } else {
+      itemsToPut.push(ia);
+    }
   }
 
   if (itemsToDelete.length) {
