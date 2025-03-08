@@ -79,6 +79,24 @@ it('can update tags clearing value', async () => {
   });
 });
 
+it('can create tags while passing null notes', async () => {
+  await client.transaction(async (txn) => {
+    await updateItemAnnotation(txn, platformMembershipId, 2, [
+      {
+        id: '123456',
+        tag: 'favorite',
+        notes: null,
+      },
+    ]);
+  });
+
+  const annotations = (await getItemAnnotationsForProfile(platformMembershipId, 2)).tags;
+  expect(annotations[0]).toEqual({
+    id: '123456',
+    tag: 'favorite',
+  });
+});
+
 it('can delete tags', async () => {
   await client.transaction(async (txn) => {
     await updateItemAnnotation(txn, platformMembershipId, 2, [
