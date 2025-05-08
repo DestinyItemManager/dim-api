@@ -59,11 +59,6 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: stately_access_key
-            - name: GCP_CREDENTIALS
-              valueFrom:
-                secretKeyRef:
-                  name: gcp-credentials
-                  key: gcp_credentials
           envFrom:
             - configMapRef:
                 name: dim-api-config
