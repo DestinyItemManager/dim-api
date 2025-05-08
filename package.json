@@ -64,7 +64,6 @@
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.3",
     "@godaddy/terminus": "^4.12.1",
-    "@google-cloud/profiler": "^6.0.2",
     "@sentry/node": "^7.120.3",
     "@sentry/tracing": "^7.120.3",
     "@stately-cloud/client": "^0.24.0",
