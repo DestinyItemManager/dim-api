@@ -527,6 +527,11 @@ export declare type Settings = ProtobufESMessage<'stately.generated.stately.Sett
    */
 
   itemPopupTab: ItemPopupTab;
+  /**
+   * How grouped armor in the vault should be displayed.
+   */
+
+  vaultArmorGroupingStyle: VaultWeaponGroupingStyle;
 };
 
 /**

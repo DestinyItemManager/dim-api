@@ -6,6 +6,7 @@ import {
   double,
   enumType,
   itemType,
+  migrate,
   objectType,
   string,
   type,
@@ -239,7 +240,16 @@ export const Settings = itemType('Settings', {
     /** How grouped weapons in the vault should be displayed. */
     vaultWeaponGroupingStyle: { type: VaultWeaponGroupingStyle, required: false },
 
+    /** How grouped armor in the vault should be displayed. */
+    vaultArmorGroupingStyle: { type: VaultWeaponGroupingStyle, required: false },
+
     /** The currently selected item popup tab. */
     itemPopupTab: { type: ItemPopupTab, required: false },
   },
+});
+
+migrate(4, 'Add new Settings fields', (t) => {
+  t.changeType(Settings, (m) => {
+    m.addField('vaultArmorGroupingStyle');
+  });
 });
