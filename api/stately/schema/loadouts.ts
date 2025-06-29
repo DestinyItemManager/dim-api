@@ -270,9 +270,9 @@ export function StatConstraint() {
       /** The maximum tier value for the stat. 10 if unset. */
       maxTier: { type: uint32, required: false, valid: 'this <= 10 && this >= 0' },
       /** Minimum absolute value for the stat. 0 if unset. Replaces minTier in Edge of Fate. */
-      minStat: { type: uint32, required: false },
+      minStat: { type: uint32, required: false, valid: 'this <= 200 && this >= 0' },
       /** Maximum absolute value for the stat. Max Possible Stat Value if unset. Replaces maxTier in Edge of Fate. */
-      maxStat: { type: uint32, required: false },
+      maxStat: { type: uint32, required: false, valid: 'this <= 200 && this >= 0' },
     },
   });
 }
