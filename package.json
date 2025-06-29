@@ -67,7 +67,7 @@
     "@godaddy/terminus": "^4.12.1",
     "@sentry/node": "^7.120.3",
     "@sentry/tracing": "^7.120.3",
-    "@stately-cloud/client": "^0.24.0",
+    "@stately-cloud/client": "^0.32.0",
     "bungie-api-ts": "^5.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
