@@ -182,6 +182,26 @@ export function LoadoutParameters() {
       mods: { type: arrayOf(HashID), required: false },
 
       /**
+       * A list of perks that should be activated by this loadout. This
+       * expresses a desire in the Loadout Optimizer to generate sets that have
+       * these perks.
+       *
+       * For "armor set perks" this indicates that the perk should be activated
+       * by having enough set pieces to activate it. For regular perks, each
+       * occurrence of the perk in this list represents one instance of the perk
+       * that should appear on an item in the loadout.
+       *
+       * For example, this can be used to:
+       * - Specify what exotic class item perks you want
+       * - Specify set bonuses that you want to activate
+       * - Specify that you want some seasonal armor perks to be used (e.g. 3
+       *   instances of the Iron Banner experience perk)
+       *
+       *  For picking specific perks on weapons, use modsByBucket instead.
+       */
+      perks: { type: arrayOf(HashID), required: false },
+
+      /**
        * If set, after applying the mods above, all other mods will be removed from armor.
        */
       clearMods: { type: bool },
