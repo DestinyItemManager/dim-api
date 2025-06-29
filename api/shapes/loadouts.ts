@@ -218,8 +218,24 @@ export const defaultLoadoutParameters: LoadoutParameters = {
 export interface StatConstraint {
   /** The stat definition hash of the stat */
   statHash: number;
-  /** The minimum tier value for the stat. 0 if unset. */
+  /**
+   * The minimum tier value for the stat. 0 if unset.
+   * @deprecated in favor of minStat
+   */
   minTier?: number;
-  /** The maximum tier value for the stat. 10 if unset. */
+  /**
+   * The maximum tier value for the stat. 10 if unset.
+   * @deprecated in favor of maxStat
+   */
   maxTier?: number;
+  /**
+   * Minimum absolute value for the stat. 0 if unset. Replaces minTier in Edge
+   * of Fate.
+   */
+  minStat?: number;
+  /**
+   * Maximum absolute value for the stat. Max Possible Stat Value if unset.
+   * Replaces maxTier in Edge of Fate.
+   */
+  maxStat?: number;
 }
