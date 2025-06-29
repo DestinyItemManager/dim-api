@@ -172,6 +172,10 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
       vaultWeaponGroupingStyle === StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Inline
         ? VaultWeaponGroupingStyle.Inline
         : VaultWeaponGroupingStyle.Lines,
+    vaultArmorGroupingStyle:
+      vaultWeaponGroupingStyle === StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Inline
+        ? VaultWeaponGroupingStyle.Inline
+        : VaultWeaponGroupingStyle.Lines,
     itemPopupTab:
       itemPopupTab === StatelyItemPopupTab.ItemPopupTab_Overview
         ? ItemPopupTab.Overview
@@ -268,6 +272,10 @@ export function convertToStatelyItem(
     itemFeedWatermark: BigInt(itemFeedWatermark || '0'),
     customStats: customStatsFixed,
     vaultWeaponGroupingStyle:
+      vaultWeaponGroupingStyle === VaultWeaponGroupingStyle.Inline
+        ? StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Inline
+        : StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Lines,
+    vaultArmorGroupingStyle:
       vaultWeaponGroupingStyle === VaultWeaponGroupingStyle.Inline
         ? StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Inline
         : StatelyVaultWeaponGroupingStyle.VaultWeaponGroupingStyle_Lines,
