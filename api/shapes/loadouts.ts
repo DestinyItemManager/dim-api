@@ -225,6 +225,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
     { statHash: 4244567218 }, // Strength
   ],
   mods: [],
+  perks: [],
   assumeArmorMasterwork: AssumeArmorMasterwork.None,
   autoStatMods: true,
   includeRuntimeStatBenefits: true,
