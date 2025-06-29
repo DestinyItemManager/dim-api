@@ -1,10 +1,8 @@
-import { FieldDescriptorProto_Type } from '@bufbuild/protobuf/wkt';
-import { enumType, type, uint } from '@stately-cloud/schema';
+import { enumType, ProtoScalarType, type, uint, uint32 } from '@stately-cloud/schema';
 
-export const uint32 = type('uint32', FieldDescriptorProto_Type.UINT32);
 // Normally we'd use sint64, but this field used to be uint32 before I realized
 // it included some signed special values.
-export const LockedExoticHash = type('LockedExoticHash', FieldDescriptorProto_Type.INT64);
+export const LockedExoticHash = type('LockedExoticHash', ProtoScalarType.INT64);
 
 /** The unique ID of an inventory item */
 export const ItemID = type('ItemID', uint);

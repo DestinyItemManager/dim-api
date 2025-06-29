@@ -15,6 +15,9 @@ Key paths are laid out like this:
     - `/loadout-:id`: `Loadout`
     - `/search-:qhash`: `Search`
     - `/triumph-:recordHash`: `Triumph`
+    - `/wl-:wishlistId`: `WishListInfo`
+- `/wl-:wishlistId`: `WishListInfo` (uuid? rand?)
+  - `/e-:wishlistEntry`: `WishListEntry`
 
 The goal with this modeling is to allow for syncing all of a user's info in two StatelyDB operations:
 

@@ -9,9 +9,10 @@ import {
   objectType,
   string,
   type,
+  uint32,
 } from '@stately-cloud/schema';
 import { LoadoutParameters, LoadoutSort, StatConstraint } from './loadouts.js';
-import { DestinyClass, HashID, ItemID, MembershipID, uint32 } from './types.js';
+import { DestinyClass, HashID, ItemID, MembershipID } from './types.js';
 
 export const CharacterOrder = enumType('CharacterOrder', {
   mostRecent: 1,

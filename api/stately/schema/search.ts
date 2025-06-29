@@ -5,8 +5,9 @@ import {
   itemType,
   string,
   timestampMilliseconds,
+  uint32,
 } from '@stately-cloud/schema';
-import { DestinyVersion, ProfileID, uint32 } from './types.js';
+import { DestinyVersion, ProfileID } from './types.js';
 
 export const SearchType = enumType('SearchType', { Item: 0, Loadout: 1 });
 

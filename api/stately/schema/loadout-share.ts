@@ -1,6 +1,5 @@
-import { itemType, string } from '@stately-cloud/schema';
+import { itemType, string, uint32 } from '@stately-cloud/schema';
 import { loadoutFields } from './loadouts.js';
-import { uint32 } from './types.js';
 
 // TODO: I'd love a way to specify that this item is immutable (save for viewCount).
 export const LoadoutShare = itemType('LoadoutShare', {

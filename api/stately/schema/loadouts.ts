@@ -4,10 +4,12 @@ import {
   enumType,
   Fields,
   itemType,
+  migrate,
   objectType,
   string,
   timestampMilliseconds,
   timestampSeconds,
+  uint32,
   uuid,
 } from '@stately-cloud/schema';
 import {
@@ -17,7 +19,6 @@ import {
   ItemID,
   LockedExoticHash,
   ProfileID,
-  uint32,
 } from './types.js';
 
 export const SocketOverride = objectType('SocketOverride', {
@@ -275,3 +276,13 @@ export function StatConstraint() {
     },
   });
 }
+
+migrate(3, 'Add new Loadout fields', (t) => {
+  t.changeType(StatConstraint, (m) => {
+    m.addField('maxStat');
+    m.addField('minStat');
+  });
+  t.changeType(LoadoutParameters, (m) => {
+    m.addField('perks');
+  });
+});
