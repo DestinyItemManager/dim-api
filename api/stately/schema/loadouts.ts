@@ -4,10 +4,12 @@ import {
   enumType,
   Fields,
   itemType,
+  migrate,
   objectType,
   string,
   timestampMilliseconds,
   timestampSeconds,
+  uint32,
   uuid,
 } from '@stately-cloud/schema';
 import {
@@ -17,7 +19,6 @@ import {
   ItemID,
   LockedExoticHash,
   ProfileID,
-  uint32,
 } from './types.js';
 
 export const SocketOverride = objectType('SocketOverride', {
@@ -182,6 +183,26 @@ export function LoadoutParameters() {
       mods: { type: arrayOf(HashID), required: false },
 
       /**
+       * A list of perks that should be activated by this loadout. This
+       * expresses a desire in the Loadout Optimizer to generate sets that have
+       * these perks.
+       *
+       * For "armor set perks" this indicates that the perk should be activated
+       * by having enough set pieces to activate it. For regular perks, each
+       * occurrence of the perk in this list represents one instance of the perk
+       * that should appear on an item in the loadout.
+       *
+       * For example, this can be used to:
+       * - Specify what exotic class item perks you want
+       * - Specify set bonuses that you want to activate
+       * - Specify that you want some seasonal armor perks to be used (e.g. 3
+       *   instances of the Iron Banner experience perk)
+       *
+       *  For picking specific perks on weapons, use modsByBucket instead.
+       */
+      perks: { type: arrayOf(HashID), required: false },
+
+      /**
        * If set, after applying the mods above, all other mods will be removed from armor.
        */
       clearMods: { type: bool },
@@ -248,6 +269,20 @@ export function StatConstraint() {
       minTier: { type: uint32, required: false, valid: 'this <= 10 && this >= 0' },
       /** The maximum tier value for the stat. 10 if unset. */
       maxTier: { type: uint32, required: false, valid: 'this <= 10 && this >= 0' },
+      /** Minimum absolute value for the stat. 0 if unset. Replaces minTier in Edge of Fate. */
+      minStat: { type: uint32, required: false, valid: 'this <= 200 && this >= 0' },
+      /** Maximum absolute value for the stat. Max Possible Stat Value if unset. Replaces maxTier in Edge of Fate. */
+      maxStat: { type: uint32, required: false, valid: 'this <= 200 && this >= 0' },
     },
   });
 }
+
+migrate(3, 'Add new Loadout fields', (t) => {
+  t.changeType(StatConstraint, (m) => {
+    m.addField('maxStat');
+    m.addField('minStat');
+  });
+  t.changeType(LoadoutParameters, (m) => {
+    m.addField('perks');
+  });
+});

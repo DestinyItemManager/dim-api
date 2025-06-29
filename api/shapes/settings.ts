@@ -158,6 +158,9 @@ export interface Settings {
   /** How grouped weapons in the vault should be displayed. */
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle;
 
+  /** How grouped armor in the vault should be displayed. */
+  vaultArmorGroupingStyle: VaultWeaponGroupingStyle;
+
   /** The currently selected item popup tab. */
   itemPopupTab: ItemPopupTab;
 }
@@ -250,5 +253,6 @@ export const defaultSettings: Settings = {
   vendorsHideSilverItems: false,
   vaultWeaponGrouping: '',
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle.Lines,
+  vaultArmorGroupingStyle: VaultWeaponGroupingStyle.Inline,
   itemPopupTab: ItemPopupTab.Overview,
 };

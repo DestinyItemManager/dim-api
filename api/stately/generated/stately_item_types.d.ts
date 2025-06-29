@@ -12,8 +12,8 @@ import type {
   ArtifactUnlocksSchema,
   CollapsedSectionSchema,
   CustomStatDefSchema,
-  CustomStatWeightsEntrySchema,
   CustomStatsEntrySchema,
+  CustomStatWeightsEntrySchema,
   GlobalSettings,
   GlobalSettingsSchema,
   InGameLoadoutIdentifiersSchema,
@@ -52,8 +52,8 @@ export declare const itemTypeToSchema: {
   ArtifactUnlocks: typeof ArtifactUnlocksSchema;
   CollapsedSection: typeof CollapsedSectionSchema;
   CustomStatDef: typeof CustomStatDefSchema;
-  CustomStatWeightsEntry: typeof CustomStatWeightsEntrySchema;
   CustomStatsEntry: typeof CustomStatsEntrySchema;
+  CustomStatWeightsEntry: typeof CustomStatWeightsEntrySchema;
   InGameLoadoutIdentifiers: typeof InGameLoadoutIdentifiersSchema;
   LoadoutItem: typeof LoadoutItemSchema;
   LoadoutParameters: typeof LoadoutParametersSchema;

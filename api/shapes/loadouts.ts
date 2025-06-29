@@ -128,6 +128,25 @@ export interface LoadoutParameters {
   mods?: number[];
 
   /**
+   * A list of perks that should be activated by this loadout. This expresses a
+   * desire in the Loadout Optimizer to generate sets that have these perks.
+   *
+   * For "armor set perks" this indicates that the perk should be activated by
+   * having enough set pieces to activate it. For regular perks, each occurrence
+   * of the perk in this list represents one instance of the perk that should
+   * appear on an item in the loadout.
+   *
+   * For example, this can be used to:
+   * - Specify what exotic class item perks you want
+   * - Specify set bonuses that you want to activate
+   * - Specify that you want some seasonal armor perks to be used (e.g. 3
+   *   instances of the Iron Banner experience perk)
+   *
+   *  For picking specific perks on weapons, use modsByBucket instead.
+   */
+  perks?: number[];
+
+  /**
    * If set, after applying the mods above, all other mods will be removed from armor.
    */
   clearMods?: boolean;
@@ -206,6 +225,7 @@ export const defaultLoadoutParameters: LoadoutParameters = {
     { statHash: 4244567218 }, // Strength
   ],
   mods: [],
+  perks: [],
   assumeArmorMasterwork: AssumeArmorMasterwork.None,
   autoStatMods: true,
   includeRuntimeStatBenefits: true,
@@ -218,8 +238,24 @@ export const defaultLoadoutParameters: LoadoutParameters = {
 export interface StatConstraint {
   /** The stat definition hash of the stat */
   statHash: number;
-  /** The minimum tier value for the stat. 0 if unset. */
+  /**
+   * The minimum tier value for the stat. 0 if unset.
+   * @deprecated in favor of minStat
+   */
   minTier?: number;
-  /** The maximum tier value for the stat. 10 if unset. */
+  /**
+   * The maximum tier value for the stat. 10 if unset.
+   * @deprecated in favor of maxStat
+   */
   maxTier?: number;
+  /**
+   * Minimum absolute value for the stat. 0 if unset. Replaces minTier in Edge
+   * of Fate.
+   */
+  minStat?: number;
+  /**
+   * Maximum absolute value for the stat. Max Possible Stat Value if unset.
+   * Replaces maxTier in Edge of Fate.
+   */
+  maxStat?: number;
 }
