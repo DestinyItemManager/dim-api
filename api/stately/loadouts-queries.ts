@@ -155,6 +155,13 @@ export function statConstraintsFromStately(statConstraints: StatelyStatConstrain
     if (c.maxTier !== 10) {
       constraint.maxTier = c.maxTier;
     }
+    if (c.minStat !== 0) {
+      constraint.minStat = c.minStat;
+    }
+    // This is the tricky one - an undefined value means max stat 200
+    if (c.maxStat !== 200 && c.maxStat !== 0) {
+      constraint.maxStat = c.maxStat;
+    }
     return constraint;
   });
 
@@ -275,6 +282,8 @@ export function statConstraintsToStately(statConstraints: StatConstraint[] | und
         statHash: c.statHash,
         minTier: Math.max(0, Math.floor(c.minTier ?? 0)),
         maxTier: Math.min(Math.ceil(c.maxTier ?? 10), 10),
+        minStat: Math.max(0, Math.floor(c.minStat ?? 0)),
+        maxStat: Math.min(Math.ceil(c.maxStat ?? 200), 200),
       }))
     : [];
 }
