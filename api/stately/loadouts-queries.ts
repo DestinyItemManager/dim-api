@@ -281,7 +281,7 @@ export function statConstraintsToStately(statConstraints: StatConstraint[] | und
     ? statConstraints.map((c) => ({
         statHash: c.statHash,
         minTier: Math.max(0, Math.floor(c.minTier ?? 0)),
-        maxTier: Math.min(Math.ceil(c.maxTier ?? 200), 200),
+        maxTier: Math.min(Math.ceil(c.maxTier ?? 10), 10),
         minStat: Math.max(0, Math.floor(c.minStat ?? 0)),
         maxStat: Math.min(Math.ceil(c.maxStat ?? 200), 200),
       }))
