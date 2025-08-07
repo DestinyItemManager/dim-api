@@ -147,6 +147,15 @@ export function ArtifactUnlocks() {
   });
 }
 
+const SetBonusCount = objectType('SetBonusCount', {
+  fields: {
+    /** The DestinyEquipableItemSetDefinition hash of the set bonus */
+    setBonusHash: { type: HashID },
+    /** The number of pieces we require that provide that setBonus */
+    count: { type: uint32, valid: 'this >= 0 && this <= 5' },
+  },
+});
+
 /**
  * Parameters that explain how this loadout was chosen (in Loadout Optimizer)
  * and at the same time, how this loadout should be configured when equipped.
@@ -183,24 +192,29 @@ export function LoadoutParameters() {
       mods: { type: arrayOf(HashID), required: false },
 
       /**
-       * A list of perks that should be activated by this loadout. This
+       * A list of armor perks that should be included in this loadout. This
        * expresses a desire in the Loadout Optimizer to generate sets that have
        * these perks.
        *
-       * For "armor set perks" this indicates that the perk should be activated
-       * by having enough set pieces to activate it. For regular perks, each
-       * occurrence of the perk in this list represents one instance of the perk
-       * that should appear on an item in the loadout.
+       *  For regular perks each occurrence of the perk in this list represents one
+       * instance of the perk that should appear on an item in the loadout. For
+       * armor set bonuses, use setBonuses instead.
        *
        * For example, this can be used to:
        * - Specify what exotic class item perks you want
-       * - Specify set bonuses that you want to activate
        * - Specify that you want some seasonal armor perks to be used (e.g. 3
-       *   instances of the Iron Banner experience perk)
+       *   instances of Iron Lord's Pride)
        *
        *  For picking specific perks on weapons, use modsByBucket instead.
        */
       perks: { type: arrayOf(HashID), required: false },
+
+      /**
+       * The set bonuses that we want to activate with this loadout. This is a
+       * mapping of one or more DestinyEquipableItemSetDefinition hashes to the
+       * number of pieces we require that provide that setBonus.
+       */
+      setBonuses: { type: arrayOf(SetBonusCount), required: false },
 
       /**
        * If set, after applying the mods above, all other mods will be removed from armor.
@@ -284,5 +298,12 @@ migrate(3, 'Add new Loadout fields', (t) => {
   });
   t.changeType(LoadoutParameters, (m) => {
     m.addField('perks');
+  });
+});
+
+migrate(6, 'Add setBonus', (t) => {
+  t.addType(SetBonusCount);
+  t.changeType(LoadoutParameters, (m) => {
+    m.addField('setBonuses');
   });
 });

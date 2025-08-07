@@ -100,6 +100,9 @@ devDependencies:
   '@sentry/cli':
     specifier: ^2.41.1
     version: 2.41.1
+  '@stately-cloud/cli':
+    specifier: ^0.82.1
+    version: 0.82.1
   '@stately-cloud/schema':
     specifier: ^0.33.1
     version: 0.33.1
@@ -2423,6 +2426,13 @@ packages:
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
     dependencies:
       '@sinonjs/commons': 3.0.1
+    dev: true
+
+  /@stately-cloud/cli@0.82.1:
+    resolution: {integrity: sha512-DTxSkdmllzulajZcau7/OGU+X0We/tjql5waahFDP4UfnJ/VkMDFNrji0HyOg9grPx+/Llivpwapx6gSR6dHOw==}
+    engines: {node: '>=20'}
+    hasBin: true
+    requiresBuild: true
     dev: true
 
   /@stately-cloud/client@0.32.0(@bufbuild/protobuf@2.6.0):

@@ -95,6 +95,16 @@ export const enum LoadoutSort {
 }
 
 /**
+ * A mapping from a DestinyEquipableItemSetDefinition hash to the number of
+ * pieces we require that provide that setBonus. The intention is that the count
+ * is always exactly enough to activate some number of perks in that set (so
+ * far, 2 or 4 pieces).
+ */
+export interface SetBonusCounts {
+  [setBonusHash: number]: number | undefined;
+}
+
+/**
  * Parameters that explain how this loadout was chosen (in Loadout Optimizer)
  * and at the same time, how this loadout should be configured when equipped.
  * This can be used to re-load a loadout into Loadout Optimizer with its
@@ -123,28 +133,34 @@ export interface LoadoutParameters {
    * These are not associated with any specific item in the loadout - when
    * applying the loadout we should automatically determine the minimum of
    * changes required to match the desired mods, and apply these mods to the
-   * equipped items.
+   * equipped items. For shaders/ornaments, use modsByBucket instead.
    */
   mods?: number[];
 
   /**
-   * A list of perks that should be activated by this loadout. This expresses a
-   * desire in the Loadout Optimizer to generate sets that have these perks.
+   * A list of armor perks that should be included in this loadout. This
+   * expresses a desire in the Loadout Optimizer to generate sets that have
+   * these perks.
    *
-   * For "armor set perks" this indicates that the perk should be activated by
-   * having enough set pieces to activate it. For regular perks, each occurrence
-   * of the perk in this list represents one instance of the perk that should
-   * appear on an item in the loadout.
+   *  For regular perks each occurrence of the perk in this list represents one
+   * instance of the perk that should appear on an item in the loadout. For
+   * armor set bonuses, use setBonuses instead.
    *
    * For example, this can be used to:
    * - Specify what exotic class item perks you want
-   * - Specify set bonuses that you want to activate
    * - Specify that you want some seasonal armor perks to be used (e.g. 3
-   *   instances of the Iron Banner experience perk)
+   *   instances of Iron Lord's Pride)
    *
    *  For picking specific perks on weapons, use modsByBucket instead.
    */
   perks?: number[];
+
+  /**
+   * The set bonuses that we want to activate with this loadout. This is a
+   * mapping of one or more DestinyEquipableItemSetDefinition hashes to the
+   * number of pieces we require that provide that setBonus.
+   */
+  setBonuses?: SetBonusCounts;
 
   /**
    * If set, after applying the mods above, all other mods will be removed from armor.
@@ -158,11 +174,11 @@ export interface LoadoutParameters {
   clearArmor?: boolean;
 
   /**
-   * Mods that must be applied to a specific bucket hash. In general, prefer to
-   * use the flat mods list above, and rely on the loadout function to assign
-   * mods automatically. However there are some mods like shaders which can't
-   * be automatically assigned to the right piece. These only apply to the equipped
-   * item.
+   * Mods or perks that must be applied to a specific bucket hash. In general,
+   * prefer to use the flat mods list above, and rely on the loadout function to
+   * assign mods automatically. However there are some mods like shaders which
+   * can't be automatically assigned to the right piece. These only apply to the
+   * equipped item.
    */
   modsByBucket?: {
     [bucketHash: number]: number[];
