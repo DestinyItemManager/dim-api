@@ -22,7 +22,7 @@
     "eslint-inspect": "pnpm dlx @eslint/config-inspector",
     "generate": "stately schema generate -l js --schema-id 8030842688320564 api/stately/generated && prettier \"api/stately/**/*.{js,ts}\" --write",
     "generate-preview": "stately schema generate -l js --preview api/stately/schema/index.ts api/stately/generated && prettier \"api/stately/**/*.{js,ts}\" --write",
-    "publish-schema": "stately schema put --allow-backwards-incompatible --schema-id 8030842688320564 api/stately/schema/index.ts",
+    "publish-schema": "stately schema put --allow-backwards-incompatible --schema-id 8030842688320564 api/stately/schema/index.ts && pnpm run generate",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
@@ -36,6 +36,7 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^15.3.1",
     "@sentry/cli": "^2.41.1",
+    "@stately-cloud/cli": "^0.82.1",
     "@stately-cloud/schema": "^0.33.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

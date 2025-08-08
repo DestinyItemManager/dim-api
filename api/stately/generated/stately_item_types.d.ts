@@ -30,6 +30,7 @@ import type {
   ModsByBucketEntrySchema,
   Search,
   SearchSchema,
+  SetBonusCountSchema,
   Settings,
   SettingsSchema,
   SocketOverrideSchema,
@@ -58,6 +59,7 @@ export declare const itemTypeToSchema: {
   LoadoutItem: typeof LoadoutItemSchema;
   LoadoutParameters: typeof LoadoutParametersSchema;
   ModsByBucketEntry: typeof ModsByBucketEntrySchema;
+  SetBonusCount: typeof SetBonusCountSchema;
   SocketOverride: typeof SocketOverrideSchema;
   StatConstraint: typeof StatConstraintSchema;
   StatConstraintsEntry: typeof StatConstraintsEntrySchema;

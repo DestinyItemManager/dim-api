@@ -8,6 +8,7 @@ import {
   Loadout,
   LoadoutItem,
   LoadoutParameters,
+  SetBonusCounts,
   StatConstraint,
 } from '../shapes/loadouts.js';
 import { isValidItemId } from '../utils.js';
@@ -17,6 +18,7 @@ import {
   LoadoutParametersSchema,
   LoadoutSchema,
   LoadoutShareSchema,
+  SetBonusCount,
   Loadout as StatelyLoadout,
   LoadoutItem as StatelyLoadoutItem,
   LoadoutParameters as StatelyLoadoutParameters,
@@ -110,6 +112,7 @@ export function convertLoadoutParametersFromStately(
     modsByBucket,
     artifactUnlocks,
     inGameIdentifiers,
+    setBonuses,
     ...loParametersDefaulted
   } = stripTypeName(loParameters);
   return {
@@ -123,7 +126,32 @@ export function convertLoadoutParametersFromStately(
       : listToMap('bucketHash', 'modHashes', modsByBucket),
     artifactUnlocks: artifactUnlocks ? stripTypeName(artifactUnlocks) : undefined,
     inGameIdentifiers: inGameIdentifiers ? stripTypeName(inGameIdentifiers) : undefined,
+    setBonuses: setBonusesFromStately(setBonuses),
   };
+}
+
+function setBonusesFromStately(
+  setBonuses: SetBonusCount[] | undefined,
+): SetBonusCounts | undefined {
+  if (!setBonuses || setBonuses.length === 0) {
+    return undefined;
+  }
+  return setBonuses.reduce((m: SetBonusCounts, b) => {
+    m[b.setBonusHash] = b.count;
+    return m;
+  }, {});
+}
+
+function setBonusCountsToStately(setBonuses: SetBonusCounts | undefined): SetBonusCount[] {
+  if (!setBonuses || isEmpty(setBonuses)) {
+    return [];
+  }
+  return Object.entries(setBonuses).map(([setBonusHash, count]) =>
+    client.create('SetBonusCount', {
+      setBonusHash: Number(setBonusHash),
+      count: Number(count),
+    }),
+  );
 }
 
 function exoticArmorHashFromStately(hash: bigint) {
@@ -257,6 +285,7 @@ export function convertLoadoutParametersToStately(
       exoticArmorHash,
       statConstraints,
       modsByBucket,
+      setBonuses,
       ...loParametersDefaulted
     } = loParameters;
     loParametersFixed = {
@@ -271,6 +300,7 @@ export function convertLoadoutParametersToStately(
             modHashes: modHashes.filter((h) => Number.isInteger(h)),
           }))
         : undefined,
+      setBonuses: setBonusCountsToStately(setBonuses),
     };
   }
   return loParametersFixed;
