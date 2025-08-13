@@ -95,6 +95,35 @@ it('can roundtrip loadout parameters w/ a negative armor hash', () => {
   expect(loParams2).toEqual(loParams);
 });
 
+it('filters out set bonuses with zero count when converting to Stately', () => {
+  const loParams: LoadoutParameters = {
+    ...defaultLoadoutParameters,
+    setBonuses: {
+      123456789: 2, // Valid set bonus with 2 pieces
+      987654321: 0, // Should be filtered out - zero count
+      555666777: 4, // Valid set bonus with 4 pieces
+    },
+  };
+
+  const statelyLoParams = client.create(
+    'LoadoutParameters',
+    convertLoadoutParametersToStately(loParams),
+  );
+  
+  // The Stately version should only have the non-zero entries
+  expect(statelyLoParams.setBonuses).toHaveLength(2);
+  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 123456789)?.count).toBe(2);
+  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 555666777)?.count).toBe(4);
+  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 987654321)).toBeUndefined();
+
+  // When converting back, the zero entry should not be present
+  const loParams2 = convertLoadoutParametersFromStately(statelyLoParams);
+  expect(loParams2.setBonuses).toEqual({
+    123456789: 2,
+    555666777: 4,
+  });
+});
+
 it('can record a loadout', async () => {
   await client.transaction(async (txn) => {
     await updateLoadout(txn, platformMembershipId, 2, [loadout]);

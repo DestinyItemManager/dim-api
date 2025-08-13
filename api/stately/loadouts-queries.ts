@@ -146,12 +146,14 @@ function setBonusCountsToStately(setBonuses: SetBonusCounts | undefined): SetBon
   if (!setBonuses || isEmpty(setBonuses)) {
     return [];
   }
-  return Object.entries(setBonuses).map(([setBonusHash, count]) =>
-    client.create('SetBonusCount', {
-      setBonusHash: Number(setBonusHash),
-      count: Number(count),
-    }),
-  );
+  return Object.entries(setBonuses)
+    .filter(([, count]) => count !== undefined && count > 0)
+    .map(([setBonusHash, count]) =>
+      client.create('SetBonusCount', {
+        setBonusHash: Number(setBonusHash),
+        count: Number(count),
+      }),
+    );
 }
 
 function exoticArmorHashFromStately(hash: bigint) {
