@@ -158,7 +158,12 @@ export function parseKeyPath(keyPath: string): { ns: string; id: string }[] {
     });
 }
 
+/** Convert a UUID from a Stately key path into a string-form UUID. */
 export function fromStatelyUUID(id: string): string {
+  if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    // It's already in that format
+    return id;
+  }
   const bytes = Buffer.from(id, 'base64');
   return stringifyUUID(new Uint8Array(bytes));
 }
