@@ -160,4 +160,9 @@ describe('fromStatelyUUID', () => {
   it('converts a Stately UUID to a string', () => {
     expect(fromStatelyUUID('_XBlcIuJTLCITKFKCQEJPQ')).toBe('fd706570-8b89-4cb0-884c-a14a0901093d');
   });
+  it('passes through a string UUID', () => {
+    expect(fromStatelyUUID('fd706570-8b89-4cb0-884c-a14a0901093d')).toBe(
+      'fd706570-8b89-4cb0-884c-a14a0901093d',
+    );
+  });
 });
