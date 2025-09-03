@@ -106,8 +106,11 @@ export interface Settings {
   /** Badge the app icon with the number of postmaster items on the current character */
   readonly badgePostmaster: boolean;
 
-  /** Display perks as a list instead of a grid. */
+  /** Display perks as a list instead of a grid (mobile). */
   readonly perkList: boolean;
+
+  /** Display perks as a list instead of a grid (desktop). */
+  readonly perkListDesktop: boolean;
 
   /** How the loadouts menu and page should be sorted */
   readonly loadoutSort: LoadoutSort;
@@ -239,6 +242,7 @@ export const defaultSettings: Settings = {
   singleCharacter: false,
   badgePostmaster: true,
   perkList: true,
+  perkListDesktop: false,
   loadoutSort: LoadoutSort.ByEditTime,
   itemFeedHideTagged: true,
   itemFeedExpanded: false,

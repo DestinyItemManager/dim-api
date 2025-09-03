@@ -364,7 +364,7 @@ export declare type Settings = ProtobufESMessage<'stately.generated.stately.Sett
    */
   badgePostmaster: boolean;
   /**
-   * Display perks as a list instead of a grid.
+   * Display perks as a list instead of a grid (mobile).
    */
   perkList: boolean;
   /**
@@ -434,6 +434,10 @@ export declare type Settings = ProtobufESMessage<'stately.generated.stately.Sett
    * How grouped armor in the vault should be displayed.
    */
   vaultArmorGroupingStyle: VaultWeaponGroupingStyle;
+  /**
+   * Display perks as a list instead of a grid (desktop).
+   */
+  perkListDesktop: boolean;
 };
 
 /**
