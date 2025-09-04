@@ -109,12 +109,12 @@ it('filters out set bonuses with zero count when converting to Stately', () => {
     'LoadoutParameters',
     convertLoadoutParametersToStately(loParams),
   );
-  
+
   // The Stately version should only have the non-zero entries
   expect(statelyLoParams.setBonuses).toHaveLength(2);
-  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 123456789)?.count).toBe(2);
-  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 555666777)?.count).toBe(4);
-  expect(statelyLoParams.setBonuses.find(b => b.setBonusHash === 987654321)).toBeUndefined();
+  expect(statelyLoParams.setBonuses.find((b) => b.setBonusHash === 123456789)?.count).toBe(2);
+  expect(statelyLoParams.setBonuses.find((b) => b.setBonusHash === 555666777)?.count).toBe(4);
+  expect(statelyLoParams.setBonuses.find((b) => b.setBonusHash === 987654321)).toBeUndefined();
 
   // When converting back, the zero entry should not be present
   const loParams2 = convertLoadoutParametersFromStately(statelyLoParams);

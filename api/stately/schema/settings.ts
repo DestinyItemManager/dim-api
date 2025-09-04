@@ -188,8 +188,11 @@ export const Settings = itemType('Settings', {
     /** Badge the app icon with the number of postmaster items on the current character */
     badgePostmaster: { type: bool },
 
-    /** Display perks as a list instead of a grid. */
+    /** Display perks as a list instead of a grid (mobile). */
     perkList: { type: bool },
+
+    /** Display perks as a list instead of a grid (desktop). */
+    perkListDesktop: { type: bool },
 
     /** How the loadouts menu and page should be sorted */
     loadoutSort: { type: LoadoutSort, required: false },
@@ -251,5 +254,11 @@ export const Settings = itemType('Settings', {
 migrate(4, 'Add new Settings fields', (t) => {
   t.changeType(Settings, (m) => {
     m.addField('vaultArmorGroupingStyle');
+  });
+});
+
+migrate(7, 'Add perkListDesktop setting', (t) => {
+  t.changeType(Settings, (m) => {
+    m.addField('perkListDesktop');
   });
 });
