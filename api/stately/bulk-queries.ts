@@ -190,7 +190,7 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
 export async function getProfile(
   platformMembershipId: string | bigint,
   destinyVersion: DestinyVersion,
-  suffix?: string,
+  suffix: string,
 ): Promise<{ profile: ProfileResponse; token: ListToken }> {
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}/d-${destinyVersion}` + suffix;
 
