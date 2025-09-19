@@ -25,10 +25,6 @@ export default {
 
   output: [
     {
-      file: 'dim-api-types/' + pkg.main,
-      format: 'cjs',
-    },
-    {
       file: 'dim-api-types/' + pkg.module,
       format: 'es',
     },

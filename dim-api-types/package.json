@@ -1,13 +1,20 @@
 {
   "name": "@destinyitemmanager/dim-api-types",
-  "version": "1.38.0",
+  "version": "1.39.0",
   "description": "TypeScript types for the DIM API",
-  "main": "./index.cjs",
   "types": "./index.d.ts",
   "module": "./index.js",
   "type": "module",
   "sideEffects": false,
   "scripts": {},
+  "files": [
+    "index.cjs",
+    "index.d.ts",
+    "index.js",
+    "README.md",
+    "LICENSE.md",
+    "package.json"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/DestinyItemManager/dim-api.git"
