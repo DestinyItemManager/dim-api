@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Destiny Item Manager API Server",
   "main": "api/index.js",
-  "repository": "https://github.com/DestinyItemManager/dim-api",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DestinyItemManager/dim-api.git"
+  },
   "private": true,
   "author": "Ben Hollis <ben@benhollis.net>",
   "license": "MIT",
