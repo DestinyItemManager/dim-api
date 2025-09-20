@@ -47,4 +47,7 @@ jobs:
 
       - name: Publish the package to NPM
         if: steps.check.outputs.changed == 'true'
-        run: cd dim-api-types && npm publish --access public --provenance
+        run: |
+          cd dim-api-types
+          npm install -g npm@latest
+          npm publish --access public --provenance

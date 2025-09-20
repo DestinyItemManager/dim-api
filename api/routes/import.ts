@@ -1,3 +1,4 @@
+import { uniqBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
 import { ExportResponse } from '../shapes/export.js';
@@ -104,9 +105,13 @@ export async function statelyImport(
   const items: AnyItem[] = [];
   items.push(...importLoadouts(loadouts));
   items.push(...importTags(itemAnnotations));
+  // TODO: I guess save item hash tags to each platform? I should really
+  // refactor the import shape to have hashtags per platform, or merge/unique
+  // them.
   for (const platformMembershipId of platformMembershipIds) {
-    // TODO: I guess save them to each platform? I should really refactor the
-    // import shape to have hashtags per platform, or merge/unique them.
+    // The export will have duplicates because import saved to each profile
+    // instead of the one that was exported.
+    itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
     items.push(...importHashTags(platformMembershipId, itemHashTags));
   }
   if (Array.isArray(triumphs)) {
