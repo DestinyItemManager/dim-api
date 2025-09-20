@@ -298,6 +298,7 @@ async function statelyProfile(
       extra: { syncToken: response.syncToken },
     });
   }
+  metrics.increment(response.sync ? `profile.response.sync` : `profile.response.full`, 1);
   return response;
 }
 
