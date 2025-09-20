@@ -102,6 +102,11 @@ export async function statelyImport(
     bungieMembershipId,
   );
 
+  // The export will have duplicates because import saved to each profile
+  // instead of the one that was exported.
+  itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
+  searches = uniqBy(searches, (s) => s.search.query);
+
   const items: AnyItem[] = [];
   items.push(...importLoadouts(loadouts));
   items.push(...importTags(itemAnnotations));
@@ -109,9 +114,6 @@ export async function statelyImport(
   // refactor the import shape to have hashtags per platform, or merge/unique
   // them.
   for (const platformMembershipId of platformMembershipIds) {
-    // The export will have duplicates because import saved to each profile
-    // instead of the one that was exported.
-    itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
     items.push(...importHashTags(platformMembershipId, itemHashTags));
   }
   if (Array.isArray(triumphs)) {
