@@ -121,7 +121,7 @@ export function stripDefaults<T extends Record<string, unknown>>(data: T): Parti
  * If it's set, we'll return the input which will update the existing value.
  */
 export function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | null {
-  if (val === null || (val !== undefined && val.length === 0)) {
+  if (val === null || val?.length === 0) {
     return 'clear';
   } else if (!val) {
     return null;
