@@ -4,7 +4,8 @@
 import type {
   ClientOptions,
   DatabaseClient as GenericDatabaseClient,
-  StoreID,
+  Item,
+  ItemInit,
 } from '@stately-cloud/client';
 import type {
   ApiApp,
@@ -89,8 +90,32 @@ export type AnyItem =
   | Settings
   | Triumph;
 
-// DatabaseClient is a database client that has been customized with your schema.
-export type DatabaseClient = GenericDatabaseClient<typeof itemTypeToSchema, AllItemTypes>;
+type TypeMap = typeof itemTypeToSchema;
 
-// createClient creates a new database client with your schema.
-export declare function createClient(storeId: StoreID, opts?: ClientOptions): DatabaseClient;
+// DatabaseClient is a database client that has been customized with your schema.
+export type DatabaseClient = GenericDatabaseClient<TypeMap, AllItemTypes>;
+
+/**
+ * Create a new DatabaseClient bound to your schema that allows operations against
+ * stores that use that schema.
+ * @example
+ * import { createClient } from "./my_schema";
+ *  import { nodeTransport } from "@stately-cloud/client/node";
+ * const client = createClient({ storeId: 1221515n, transport: nodeTransport });
+ * const item = await client.get("Equipment", "/jedi-luke/equipment-lightsaber");
+ * @private this is used by the generated code and should not be called directly.
+ */
+export declare function createClient(options: ClientOptions): DatabaseClient;
+
+/**
+ * create builds a new item of the specified type. You *must* use this
+ * function to create items so that they have the proper metadata for the
+ * client to use them.
+ * @param typeName - One of the itemType or objectType names from your schema.
+ * @param init - The initial data for the item. Any values that aren't set
+ * here will be set to their zero value.
+ */
+export declare function create<T extends keyof TypeMap>(
+  typeName: T,
+  init?: ItemInit<TypeMap, T>,
+): Item<TypeMap, T>;

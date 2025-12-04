@@ -3,8 +3,8 @@
 This is an auto-generated README file to help you understand your schema!
 
 * SchemaID => `8030842688320564`
-* Schema Version => `8`
-* See schema on the [Stately Console](https://console.stately.cloud/1org/schemas/8030842688320564).
+* Schema Version => `9`
+* See schema on the [Stately Console](https://console.stately.cloud/6529794557127699/schemas/?schemaVersion=9).
 
 ### Key Path Layout
 
