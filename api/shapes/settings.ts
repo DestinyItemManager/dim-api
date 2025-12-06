@@ -22,6 +22,13 @@ export const enum VaultWeaponGroupingStyle {
   Inline,
 }
 
+export const enum OrnamentDisplay {
+  /** Always display the ornament's image. */
+  All,
+  /** Always display the base image. */
+  None,
+}
+
 export interface Settings {
   /** Show item quality percentages */
   readonly itemQuality: boolean;
@@ -166,6 +173,15 @@ export interface Settings {
 
   /** The currently selected item popup tab. */
   itemPopupTab: ItemPopupTab;
+
+  /** Whether to show vaulted items underneath equipped items in Desktop view. */
+  vaultBelow: boolean;
+
+  /** Different modes for how armor stats can be compared. */
+  armorCompare: 'current' | 'base' | 'baseMasterwork';
+
+  /** Whether to show the ornamented state of items. */
+  ornamentDisplay: OrnamentDisplay;
 }
 
 export const defaultSettings: Settings = {
@@ -259,4 +275,7 @@ export const defaultSettings: Settings = {
   vaultWeaponGroupingStyle: VaultWeaponGroupingStyle.Lines,
   vaultArmorGroupingStyle: VaultWeaponGroupingStyle.Inline,
   itemPopupTab: ItemPopupTab.Overview,
+  vaultBelow: false,
+  armorCompare: 'baseMasterwork',
+  ornamentDisplay: OrnamentDisplay.All,
 };

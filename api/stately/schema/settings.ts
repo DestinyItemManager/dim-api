@@ -34,6 +34,19 @@ export const ItemPopupTab = enumType('ItemPopupTab', {
   Triage: 1,
 });
 
+export const ArmorStatCompare = enumType('ArmorStatCompare', {
+  Current: 0,
+  Base: 1,
+  BaseMasterwork: 2,
+});
+
+export const OrnamentDisplay = enumType('OrnamentDisplay', {
+  /** Always display the ornament's image. */
+  All: 0,
+  /** Always display the base image. */
+  None: 1,
+});
+
 export const VaultWeaponGroupingStyle = enumType('VaultWeaponGroupingStyle', {
   Lines: 0,
   Inline: 1,
@@ -248,6 +261,15 @@ export const Settings = itemType('Settings', {
 
     /** The currently selected item popup tab. */
     itemPopupTab: { type: ItemPopupTab, required: false },
+
+    /** Whether to show vaulted items underneath equipped items in Desktop view. */
+    vaultBelow: { type: bool },
+
+    /** Different modes for how armor stats can be compared. */
+    armorCompare: { type: ArmorStatCompare, required: false },
+
+    /** Whether to show the ornamented state of items. */
+    ornamentDisplay: { type: OrnamentDisplay, required: false },
   },
 });
 
@@ -261,4 +283,15 @@ migrate(7, 'Add perkListDesktop setting', (t) => {
   t.changeType(Settings, (m) => {
     m.addField('perkListDesktop');
   });
+});
+
+migrate(8, 'Add settings', (t) => {
+  t.changeType(Settings, (m) => {
+    m.addField('vaultBelow');
+    m.addField('armorCompare');
+    m.addField('ornamentDisplay');
+  });
+
+  t.addType(ArmorStatCompare);
+  t.addType(OrnamentDisplay);
 });

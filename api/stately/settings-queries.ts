@@ -6,16 +6,19 @@ import {
   defaultSettings,
   InfuseDirection,
   ItemPopupTab,
+  OrnamentDisplay,
   Settings,
   VaultWeaponGroupingStyle,
 } from '../shapes/settings.js';
 import { client } from './client.js';
 import {
+  ArmorStatCompare,
   CharacterOrder,
   DescriptionOptions,
   InfuseDirection as StatelyInfuseDirection,
   ItemPopupTab as StatelyItemPopupTab,
   LoadoutSort as StatelyLoadoutSort,
+  OrnamentDisplay as StatelyOrnamentDisplay,
   Settings as StatelySettings,
   VaultWeaponGroupingStyle as StatelyVaultWeaponGroupingStyle,
 } from './generated/index.js';
@@ -117,6 +120,8 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
     vaultWeaponGroupingStyle,
     vaultArmorGroupingStyle,
     itemPopupTab,
+    armorCompare,
+    ornamentDisplay,
     ...rest
   } = settings;
 
@@ -181,6 +186,16 @@ export function convertToDimSettings(settings: StatelySettings): Settings {
       itemPopupTab === StatelyItemPopupTab.ItemPopupTab_Overview
         ? ItemPopupTab.Overview
         : ItemPopupTab.Triage,
+    armorCompare:
+      armorCompare === ArmorStatCompare.ArmorStatCompare_BaseMasterwork
+        ? 'baseMasterwork'
+        : armorCompare === ArmorStatCompare.ArmorStatCompare_Current
+          ? 'current'
+          : 'base',
+    ornamentDisplay:
+      ornamentDisplay === StatelyOrnamentDisplay.OrnamentDisplay_All
+        ? OrnamentDisplay.All
+        : OrnamentDisplay.None,
   };
 }
 
@@ -208,6 +223,8 @@ export function convertToStatelyItem(
     itemPopupTab,
     itemSize,
     charCol,
+    armorCompare,
+    ornamentDisplay,
     ...rest
   } = settings;
 
@@ -285,6 +302,16 @@ export function convertToStatelyItem(
       itemPopupTab === ItemPopupTab.Overview
         ? StatelyItemPopupTab.ItemPopupTab_Overview
         : StatelyItemPopupTab.ItemPopupTab_Triage,
+    ornamentDisplay:
+      ornamentDisplay === OrnamentDisplay.All
+        ? StatelyOrnamentDisplay.OrnamentDisplay_All
+        : StatelyOrnamentDisplay.OrnamentDisplay_None,
+    armorCompare:
+      armorCompare === 'baseMasterwork'
+        ? ArmorStatCompare.ArmorStatCompare_BaseMasterwork
+        : armorCompare === 'current'
+          ? ArmorStatCompare.ArmorStatCompare_Current
+          : ArmorStatCompare.ArmorStatCompare_Base,
   });
 }
 
