@@ -2,6 +2,8 @@ import * as Sentry from '@sentry/node';
 import { ListToken } from '@stately-cloud/client';
 import { keyBy } from 'es-toolkit';
 import { RequestHandler } from 'express';
+import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
+import { pool } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { getAllApps, updateApps } from '../stately/apps-queries.js';
@@ -70,6 +72,13 @@ export async function refreshApps(): Promise<void> {
   stopAppsRefresh();
 
   try {
+    if (apps.length === 0) {
+      // Start off with a copy from postgres, just in case StatelyDB is having
+      // problems.
+      await fetchAppsFromPostgres();
+      digestApps();
+    }
+
     if (!token) {
       // First time, get 'em all
       const [appsFromStately, newToken] = await getAllApps();
@@ -98,6 +107,21 @@ export async function refreshApps(): Promise<void> {
     if (!appsInterval) {
       appsInterval = setTimeout(refreshApps, 60000 + Math.random() * 10000);
     }
+  }
+}
+
+async function fetchAppsFromPostgres() {
+  const client = await pool.connect();
+  try {
+    apps = await getAllAppsPostgres(client);
+    appsByApiKey = keyBy(apps, (a) => a.dimApiKey.toLowerCase());
+    origins = new Set<string>();
+    for (const app of apps) {
+      origins.add(app.origin);
+    }
+    return apps;
+  } finally {
+    client.release();
   }
 }
 
