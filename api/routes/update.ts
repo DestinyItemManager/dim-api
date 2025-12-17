@@ -421,7 +421,6 @@ async function pgUpdate(
         case 'loadout':
           await updateLoadout(
             client,
-            appId,
             bungieMembershipId,
             platformMembershipId!,
             destinyVersion,
@@ -430,7 +429,7 @@ async function pgUpdate(
           break;
 
         case 'delete_loadout':
-          await deleteLoadout(client, bungieMembershipId, update.payload);
+          await deleteLoadout(client, platformMembershipId!, update.payload);
           break;
 
         case 'tag':
@@ -498,7 +497,6 @@ async function updateSetting(
 
 async function updateLoadout(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
@@ -507,7 +505,6 @@ async function updateLoadout(
   const start = new Date();
   await updateLoadoutInDb(
     client,
-    appId,
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
@@ -607,11 +604,11 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
 
 async function deleteLoadout(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   loadoutId: string,
 ): Promise<void> {
   const start = new Date();
-  await deleteLoadoutInDb(client, bungieMembershipId, loadoutId);
+  await deleteLoadoutInDb(client, platformMembershipId, loadoutId);
   metrics.timing('update.deleteLoadout', start);
 }
 

@@ -18,20 +18,20 @@ export interface LoadoutRow
  */
 export async function getLoadoutsForProfile(
   client: ClientBase,
-  bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
 ): Promise<Loadout[]> {
   const results = await client.query<LoadoutRow>({
     name: 'get_loadouts_for_platform_membership_id',
-    text: 'SELECT id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion],
+    text: 'SELECT id, name, notes, class_type, items, parameters, created_at, last_updated_at FROM loadouts WHERE platform_membership_id = $1 and destiny_version = $2 and deleted_at IS NULL',
+    values: [platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertLoadout);
 }
 
 /**
  * Get ALL of loadouts for a particular user across all platforms.
+ * @deprecated
  */
 export async function getAllLoadoutsForUser(
   client: ClientBase,
@@ -47,7 +47,7 @@ export async function getAllLoadoutsForUser(
     LoadoutRow & { platform_membership_id: string; destiny_version: DestinyVersion }
   >({
     name: 'get_all_loadouts_for_user',
-    text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
+    text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
     values: [bungieMembershipId],
   });
   return results.rows.map((row) => {
@@ -65,7 +65,6 @@ export function convertLoadout(row: LoadoutRow): Loadout {
     id: row.id,
     name: row.name,
     classType: row.class_type,
-    clearSpace: row.clear_space,
     equipped: row.items.equipped || [],
     unequipped: row.items.unequipped || [],
     createdAt: row.created_at.getTime(),
@@ -73,9 +72,6 @@ export function convertLoadout(row: LoadoutRow): Loadout {
   };
   if (row.notes) {
     loadout.notes = row.notes;
-  }
-  if (row.emblem_hash) {
-    loadout.emblemHash = row.emblem_hash;
   }
   if (row.parameters) {
     loadout.parameters = row.parameters;
@@ -88,7 +84,6 @@ export function convertLoadout(row: LoadoutRow): Loadout {
  */
 export async function updateLoadout(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
@@ -96,10 +91,10 @@ export async function updateLoadout(
 ): Promise<QueryResult> {
   const response = await client.query({
     name: 'upsert_loadout',
-    text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, emblem_hash, clear_space, items, parameters, created_by, last_updated_by)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
-on conflict (membership_id, id)
-do update set (name, notes, class_type, emblem_hash, clear_space, items, parameters, last_updated_at, last_updated_by) = ($5, $6, $7, $8, $9, $10, $11, current_timestamp, $12)`,
+    text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, items, parameters)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+on conflict (platform_membership_id, id)
+do update set (name, notes, class_type, items, parameters) = ($5, $6, $7, $8, $9)`,
     values: [
       loadout.id,
       bungieMembershipId,
@@ -108,14 +103,11 @@ do update set (name, notes, class_type, emblem_hash, clear_space, items, paramet
       loadout.name,
       loadout.notes,
       loadout.classType,
-      loadout.emblemHash || null,
-      loadout.clearSpace,
       {
         equipped: loadout.equipped.map(cleanItem),
         unequipped: loadout.unequipped.map(cleanItem),
       },
       loadout.parameters,
-      appId,
     ],
   });
 
@@ -168,13 +160,13 @@ export function cleanItem(item: LoadoutItem): LoadoutItem {
  */
 export async function deleteLoadout(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   loadoutId: string,
 ): Promise<boolean> {
   const response = await client.query<LoadoutRow>({
     name: 'delete_loadout',
-    text: `delete from loadouts where membership_id = $1 and id = $2`,
-    values: [bungieMembershipId, loadoutId],
+    text: `update loadouts set deleted_at = now() where platform_membership_id = $1 and id = $2`,
+    values: [platformMembershipId, loadoutId],
   });
 
   return response.rowCount! >= 1;
@@ -185,11 +177,11 @@ export async function deleteLoadout(
  */
 export async function deleteAllLoadouts(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_all_loadouts',
-    text: `delete from loadouts where membership_id = $1`,
-    values: [bungieMembershipId],
+    text: `delete from loadouts where platform_membership_id = $1`,
+    values: [platformMembershipId],
   });
 }

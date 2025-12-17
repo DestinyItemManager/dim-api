@@ -3,7 +3,6 @@ import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { closeDbPool, transaction } from './index.js';
 import { deleteLoadout, getLoadoutsForProfile, updateLoadout } from './loadouts-queries.js';
 
-const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 const platformMembershipId = '213512057';
 
@@ -19,7 +18,6 @@ const loadout: Loadout = {
   id: uuid(),
   name: 'Test Loadout',
   classType: 1,
-  clearSpace: false,
   equipped: [
     {
       hash: 100,
@@ -45,14 +43,9 @@ const loadout: Loadout = {
 
 it('can record a loadout', async () => {
   await transaction(async (client) => {
-    await updateLoadout(client, appId, bungieMembershipId, platformMembershipId, 2, loadout);
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
 
-    const loadouts = await getLoadoutsForProfile(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      2,
-    );
+    const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
     expect(loadouts.length).toBe(1);
 
@@ -70,20 +63,15 @@ it('can record a loadout', async () => {
 
 it('can update a loadout', async () => {
   await transaction(async (client) => {
-    await updateLoadout(client, appId, bungieMembershipId, platformMembershipId, 2, loadout);
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
 
-    await updateLoadout(client, appId, bungieMembershipId, platformMembershipId, 2, {
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, {
       ...loadout,
       name: 'Updated',
       unequipped: [],
     });
 
-    const loadouts = await getLoadoutsForProfile(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      2,
-    );
+    const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
     expect(loadouts.length).toBe(1);
     expect(loadouts[0].name).toEqual('Updated');
@@ -94,17 +82,12 @@ it('can update a loadout', async () => {
 
 it('can delete a loadout', async () => {
   await transaction(async (client) => {
-    await updateLoadout(client, appId, bungieMembershipId, platformMembershipId, 2, loadout);
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
 
-    const success = await deleteLoadout(client, bungieMembershipId, loadout.id);
+    const success = await deleteLoadout(client, platformMembershipId, loadout.id);
     expect(success).toBe(true);
 
-    const loadouts = await getLoadoutsForProfile(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      2,
-    );
+    const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
     expect(loadouts.length).toBe(0);
   });

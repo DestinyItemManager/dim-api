@@ -41,19 +41,6 @@ export interface Loadout {
    * to. This is optional (set to Unknown for loadouts that can be used anywhere).
    */
   classType: DestinyClass;
-  /**
-   * DestinyInventoryItemDefinition hash of an emblem to use as
-   * an icon for this loadout.
-   *
-   * @deprecated this was added for Little Light but never used by DIM.
-   */
-  emblemHash?: number;
-  /**
-   * Whether to clear out other items when applying this loadout
-   * @deprecated in favor of parameters.clearWeapons and parameters.clearArmor
-   */
-  /** Whether to clear out other items when applying this loadout */
-  clearSpace?: boolean;
   /** List of equipped items in the loadout */
   equipped: LoadoutItem[];
   /** List of unequipped items in the loadout */
@@ -64,16 +51,6 @@ export interface Loadout {
   createdAt?: number;
   /** When was this Loadout last changed? Tracked automatically by the API - when saving a loadout this field is ignored. */
   lastUpdatedAt?: number;
-  /**
-   * Automatically added stat mods. These are separate from the manually chosen
-   * mods in parameters.mods, and are saved here to avoid having to figure them
-   * out all over again every time (especially since our algorithm might
-   * change). Combine this list and parameters.mods when displaying or actually
-   * applying the loadout.
-   *
-   * @deprecated we just throw away stat mods when using LO auto stats
-   */
-  autoStatMods?: number[];
 }
 
 /** Whether armor of this type will have assumed masterworked stats in the Loadout Optimizer. */
