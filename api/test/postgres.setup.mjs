@@ -34,7 +34,7 @@ export default async function setupDatabase() {
     throw error;
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   const dbmigrate = DBMigrate.getInstance(true, {
     config: './api/database.json',

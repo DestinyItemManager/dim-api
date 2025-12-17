@@ -453,13 +453,7 @@ async function pgUpdate(
           break;
 
         case 'track_triumph':
-          await trackTriumph(
-            client,
-            appId,
-            bungieMembershipId,
-            platformMembershipId!,
-            update.payload,
-          );
+          await trackTriumph(client, bungieMembershipId, platformMembershipId!, update.payload);
           break;
 
         case 'search':
@@ -708,21 +702,14 @@ async function tagCleanup(
 
 async function trackTriumph(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   platformMembershipId: string,
   payload: TrackTriumphUpdate['payload'],
 ): Promise<void> {
   const start = new Date();
   payload.tracked
-    ? await trackTriumphInDb(
-        client,
-        appId,
-        bungieMembershipId,
-        platformMembershipId,
-        payload.recordHash,
-      )
-    : await unTrackTriumph(client, bungieMembershipId, platformMembershipId, payload.recordHash);
+    ? await trackTriumphInDb(client, bungieMembershipId, platformMembershipId, payload.recordHash)
+    : await unTrackTriumph(client, platformMembershipId, payload.recordHash);
   metrics.timing('update.trackTriumph', start);
 }
 
