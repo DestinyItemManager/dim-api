@@ -4,7 +4,7 @@ import { getSettings, setSetting } from './settings-queries.js';
 const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 it('can insert settings where none exist before', async () => {
   await transaction(async (client) => {

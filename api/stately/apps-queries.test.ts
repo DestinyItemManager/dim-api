@@ -10,7 +10,7 @@ const app: ApiApp = {
   dimApiKey: uuid(),
 };
 
-beforeEach(() => deleteApp(appId));
+beforeEach(async () => deleteApp(appId));
 
 it('can create a new app', async () => {
   expect(await getAppById(appId)).toBeUndefined();

@@ -11,7 +11,7 @@ const platformMembershipId = '213512057';
 
 const shareID = 'ABCDEFG';
 
-beforeEach(() => deleteLoadoutShare(shareID));
+beforeEach(async () => deleteLoadoutShare(shareID));
 
 const loadout: Loadout = {
   id: uuid(),

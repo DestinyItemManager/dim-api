@@ -18,7 +18,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 it('can insert tags where none exist before', async () => {
   await transaction(async (client) => {

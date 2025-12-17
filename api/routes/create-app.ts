@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { DatabaseError } from 'pg-protocol';
 import { v4 as uuid } from 'uuid';
-import { insertApp as insertAppPostgres } from '../db/apps-queries.js';
+import { getAppById, insertApp as insertAppPostgres } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
 import { ApiApp, CreateAppRequest } from '../shapes/app.js';
 import { insertApp as insertAppStately } from '../stately/apps-queries.js';
@@ -49,6 +49,9 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     dimApiKey: uuid(),
   };
 
+  // Put it in StatelyDB
+  app = await insertAppStately(app);
+
   // Put it in Postgres
   await transaction(async (client) => {
     try {
@@ -57,14 +60,18 @@ export const createAppHandler = asyncHandler(async (req, res) => {
       // This is a unique constraint violation, so just get the app!
       if (e instanceof DatabaseError && e.code === '23505') {
         await client.query('ROLLBACK');
+
+        const existingApp = await getAppById(client, request.id);
+        if (existingApp) {
+          app = existingApp;
+        }
       } else {
         throw e;
       }
     }
   });
 
-  // Also put it in StatelyDB
-  app = await insertAppStately(app);
+  // TODO: fetch back f
 
   // Only return the recovered app if it's for the same origin and key
   if (app.origin === originUrl.origin && app.bungieApiKey === request.bungieApiKey) {

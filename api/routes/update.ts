@@ -154,7 +154,6 @@ export const updateHandler = asyncHandler(async (req, res) => {
       triumphs,
       searches,
       itemHashTags,
-      migrationState.attemptCount > 0 || Boolean(migrationState.lastError),
     );
   };
 

@@ -19,7 +19,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 it('can record a used search where none was recorded before', async () => {
   await transaction(async (client) => {

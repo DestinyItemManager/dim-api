@@ -17,9 +17,9 @@ exports.setup = function (options, seedLink) {
 exports.up = function (db, callback) {
   db.runSql(
     `CREATE TABLE apps (
-      id UUID PRIMARY KEY NOT NULL default gen_random_uuid(),
+      id text PRIMARY KEY NOT NULL,
       bungie_api_key text NOT NULL,
-      dim_api_key UUID NOT NULL,
+      dim_api_key UUID NOT NULL default gen_random_uuid(),
       origin text NOT NULL,
       created_at timestamp NOT NULL default current_timestamp
     );

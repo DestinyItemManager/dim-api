@@ -13,7 +13,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 const loadout: Loadout = {
   id: uuid(),

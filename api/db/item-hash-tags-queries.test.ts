@@ -15,7 +15,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 it('can insert item hash tags where none exist before', async () => {
   await transaction(async (client) => {

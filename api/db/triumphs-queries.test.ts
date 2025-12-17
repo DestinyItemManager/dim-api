@@ -17,7 +17,7 @@ beforeEach(() =>
   }),
 );
 
-afterAll(() => closeDbPool());
+afterAll(async () => closeDbPool());
 
 it('can track a triumph where none was tracked before', async () => {
   await transaction(async (client) => {
