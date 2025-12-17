@@ -37,7 +37,7 @@ exports.up = function (db, callback) {
       PRIMARY KEY(platform_membership_id, id)
     );
 
-    /* This can be reused on other tables as well.
+    /* This can be reused on other tables as well. */
     CREATE FUNCTION sync_lastmod() RETURNS trigger AS $$
     BEGIN
       NEW.last_updated_at := NOW();

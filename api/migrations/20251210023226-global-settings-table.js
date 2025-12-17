@@ -18,7 +18,7 @@ exports.up = function (db, callback) {
   // It's a single-row table (for now at least) to hold global settings as a JSON blob.
   db.runSql(
     `CREATE TABLE global_settings (
-      settings jsonb NOT NULL default '{}'::jsonb,
+      settings jsonb NOT NULL default '{}'::jsonb
     );
 
     INSERT INTO global_settings (settings) VALUES ('{}'::jsonb);

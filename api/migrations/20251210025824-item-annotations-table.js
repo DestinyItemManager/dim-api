@@ -26,7 +26,7 @@ exports.up = function (db, callback) {
 
       tag smallint, /* nullable tag enum defined in shapes - null means no tag */
       notes text, /* nullable user notes - null means no notes */
-      crafted_date timestamp; /* Items get reissued with a new ID when they are recrafted */
+      crafted_date timestamp, /* Items get reissued with a new ID when they are recrafted */
 
       created_at timestamp NOT NULL default current_timestamp,
       last_updated_at timestamp NOT NULL default current_timestamp,

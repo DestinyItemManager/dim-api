@@ -26,7 +26,7 @@ exports.up = function (db, callback) {
       settings jsonb NOT NULL default '{}'::jsonb,
       created_at timestamp NOT NULL default current_timestamp,
       last_updated_at timestamp NOT NULL default current_timestamp,
-      deleted_at timestamp, /* soft delete timestamp, applies to the whole account */
+      deleted_at timestamp /* soft delete timestamp, applies to the whole account */
     )`,
     callback,
   );

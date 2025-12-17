@@ -23,7 +23,7 @@ exports.up = function (db, callback) {
       * This is essentially 35 random bits encoded via base32 into a 7-character string. It'd be neat if we could
       * support that, with a parameterizable string length.
       */
-      id string NOT NULL,
+      id text NOT NULL,
       platform_membership_id bigint NOT NULL,
       destiny_version smallint NOT NULL default 2,
       membership_id int NOT NULL, /* Not especially useful but good to keep track of for emergencies */
