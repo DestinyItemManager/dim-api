@@ -415,7 +415,7 @@ async function pgUpdate(
     for (const update of updates) {
       switch (update.action) {
         case 'setting':
-          await updateSetting(client, appId, bungieMembershipId, update.payload);
+          await updateSetting(client, bungieMembershipId, update.payload);
           break;
 
         case 'loadout':
@@ -474,14 +474,13 @@ async function pgUpdate(
 
 async function updateSetting(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   settings: Partial<Settings>,
 ): Promise<void> {
   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
 
   const start = new Date();
-  await setSettingInDb(client, appId, bungieMembershipId, settings);
+  await setSettingInDb(client, bungieMembershipId, settings);
   metrics.timing('update.setting', start);
 }
 

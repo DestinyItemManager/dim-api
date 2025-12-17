@@ -1,14 +1,13 @@
 import { closeDbPool, transaction } from './index.js';
 import { getSettings, setSetting } from './settings-queries.js';
 
-const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 
 afterAll(async () => closeDbPool());
 
 it('can insert settings where none exist before', async () => {
   await transaction(async (client) => {
-    await setSetting(client, appId, bungieMembershipId, {
+    await setSetting(client, bungieMembershipId, {
       showNewItems: true,
     });
 
@@ -19,14 +18,14 @@ it('can insert settings where none exist before', async () => {
 
 it('can update settings', async () => {
   await transaction(async (client) => {
-    await setSetting(client, appId, bungieMembershipId, {
+    await setSetting(client, bungieMembershipId, {
       showNewItems: true,
     });
 
     const settings = await getSettings(client, bungieMembershipId);
     expect(settings.showNewItems).toBe(true);
 
-    await setSetting(client, appId, bungieMembershipId, {
+    await setSetting(client, bungieMembershipId, {
       showNewItems: false,
     });
 
@@ -37,14 +36,14 @@ it('can update settings', async () => {
 
 it('can partially update settings', async () => {
   await transaction(async (client) => {
-    await setSetting(client, appId, bungieMembershipId, {
+    await setSetting(client, bungieMembershipId, {
       showNewItems: true,
     });
 
     const settings = await getSettings(client, bungieMembershipId);
     expect(settings.showNewItems).toBe(true);
 
-    await setSetting(client, appId, bungieMembershipId, {
+    await setSetting(client, bungieMembershipId, {
       singleCharacter: true,
     });
 

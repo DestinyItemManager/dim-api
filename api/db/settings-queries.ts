@@ -10,7 +10,7 @@ export async function getSettings(
 ): Promise<Partial<Settings>> {
   const results = await client.query<{ settings: Settings }>({
     name: 'get_settings',
-    text: 'SELECT settings FROM settings WHERE membership_id = $1',
+    text: 'SELECT settings FROM settings WHERE membership_id = $1 and deleted_at IS NULL',
     values: [bungieMembershipId],
   });
   return results.rows.length > 0 ? results.rows[0].settings : {};
@@ -21,17 +21,16 @@ export async function getSettings(
  */
 export async function replaceSettings(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   settings: Partial<Settings>,
 ): Promise<QueryResult> {
   const result = await client.query({
     name: 'upsert_settings',
-    text: `insert into settings (membership_id, settings, created_by, last_updated_by)
-values ($1, $2, $3, $3)
+    text: `insert into settings (membership_id, settings)
+values ($1, $2)
 on conflict (membership_id)
-do update set (settings, last_updated_at, last_updated_by) = ($2, current_timestamp, $3)`,
-    values: [bungieMembershipId, settings, appId],
+do update set settings = $2, deleted_at = null`,
+    values: [bungieMembershipId, settings],
   });
   return result;
 }
@@ -41,17 +40,17 @@ do update set (settings, last_updated_at, last_updated_by) = ($2, current_timest
  */
 export async function setSetting(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   settings: Partial<Settings>,
 ): Promise<QueryResult> {
   return client.query({
     name: 'set_setting',
-    text: `insert into settings (membership_id, settings, created_by, last_updated_by)
-values ($1, $2, $3, $3)
+    text: `insert into settings (membership_id, settings)
+values ($1, $2)
 on conflict (membership_id)
-do update set (settings, last_updated_at, last_updated_by) = (settings.settings || $2, current_timestamp, $3)`,
-    values: [bungieMembershipId, settings, appId],
+do update set settings = (settings.settings || $2), deleted_at = null`,
+    // The `||` operator merges two JSONB objects, with the right-hand object's keys taking precedence.
+    values: [bungieMembershipId, settings],
   });
 }
 
@@ -64,7 +63,7 @@ export async function deleteSettings(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_settings',
-    text: `delete FROM settings WHERE membership_id = $1`,
+    text: `update settings set deleted_at = now(), settings = '{}'::jsonb WHERE membership_id = $1`,
     values: [bungieMembershipId],
   });
 }
