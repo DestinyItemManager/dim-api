@@ -435,7 +435,6 @@ async function pgUpdate(
         case 'tag':
           await updateItemAnnotation(
             client,
-            appId,
             bungieMembershipId,
             platformMembershipId!,
             destinyVersion,
@@ -444,7 +443,7 @@ async function pgUpdate(
           break;
 
         case 'tag_cleanup':
-          await tagCleanup(client, bungieMembershipId, update.payload);
+          await tagCleanup(client, platformMembershipId!, update.payload);
           break;
 
         case 'item_hash_tag':
@@ -614,7 +613,6 @@ async function deleteLoadout(
 
 async function updateItemAnnotation(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
@@ -623,7 +621,6 @@ async function updateItemAnnotation(
   const start = new Date();
   await updateItemAnnotationInDb(
     client,
-    appId,
     bungieMembershipId,
     platformMembershipId,
     destinyVersion,
@@ -694,13 +691,13 @@ function validateUpdateItemHashTag(itemAnnotation: ItemHashTag): ProfileUpdateRe
 
 async function tagCleanup(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   inventoryItemIds: string[],
 ): Promise<ProfileUpdateResult> {
   const start = new Date();
   await deleteItemAnnotationList(
     client,
-    bungieMembershipId,
+    platformMembershipId,
     inventoryItemIds.filter(isValidItemId),
   );
   metrics.timing('update.tagCleanup', start);

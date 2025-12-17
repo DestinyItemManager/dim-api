@@ -54,7 +54,7 @@ export async function updateItemHashTag(
 
   const response = await client.query({
     name: 'upsert_hash_tag',
-    text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes, created_by, last_updated_by)
+    text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes)
 values ($1, $2, (CASE WHEN $3 = 'clear'::item_tag THEN NULL ELSE $3 END)::item_tag, (CASE WHEN $4 = 'clear' THEN NULL ELSE $4 END), $5, $5)
 on conflict (membership_id, item_hash)
 do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 'clear' THEN NULL WHEN $3 IS NULL THEN item_hash_tags.tag ELSE $3 END), (CASE WHEN $4 = 'clear' THEN NULL WHEN $4 IS NULL THEN item_hash_tags.notes ELSE $4 END), current_timestamp, $5)`,
@@ -76,7 +76,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 
  * If it's set, we'll return the input which will update the existing value.
  */
 function clearValue(val: string | null | undefined) {
-  if (val === null || (val !== undefined && val.length === 0)) {
+  if (val === null || val?.length === 0) {
     return 'clear';
   } else if (!val) {
     return null;

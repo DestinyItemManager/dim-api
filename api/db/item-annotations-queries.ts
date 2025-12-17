@@ -1,14 +1,23 @@
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { DestinyVersion } from '../shapes/general.js';
-import { ItemAnnotation, TagValue, TagVariant } from '../shapes/item-annotations.js';
+import { ItemAnnotation, TagValue } from '../shapes/item-annotations.js';
 
 interface ItemAnnotationRow {
   inventory_item_id: string;
   tag: TagValue | null;
   notes: string | null;
-  variant: TagVariant | null;
   crafted_date: Date | null;
+}
+
+// eslint-disable-next-line no-restricted-syntax
+export enum TagValueEnum {
+  clear = 0,
+  favorite = 1,
+  keep = 2,
+  infuse = 3,
+  junk = 4,
+  archive = 5,
 }
 
 /**
@@ -16,14 +25,13 @@ interface ItemAnnotationRow {
  */
 export async function getItemAnnotationsForProfile(
   client: ClientBase,
-  bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
 ): Promise<ItemAnnotation[]> {
   const results = await client.query<ItemAnnotationRow>({
     name: 'get_item_annotations',
-    text: 'SELECT inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE membership_id = $1 and platform_membership_id = $2 and destiny_version = $3',
-    values: [bungieMembershipId, platformMembershipId, destinyVersion],
+    text: 'SELECT inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE platform_membership_id = $1 and destiny_version = $2 and deleted_at IS NULL',
+    values: [platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertItemAnnotation);
 }
@@ -46,7 +54,7 @@ export async function getAllItemAnnotationsForUser(
     ItemAnnotationRow & { platform_membership_id: string; destiny_version: DestinyVersion }
   >({
     name: 'get_all_item_annotations',
-    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE inventory_item_id != 0 and membership_id = $1',
+    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, crafted_date FROM item_annotations WHERE inventory_item_id != 0 and platform_membership_id = $1 and deleted_at IS NULL',
     values: [bungieMembershipId],
   });
   return results.rows.map((row) => ({
@@ -69,9 +77,6 @@ function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
   if (row.crafted_date) {
     result.craftedDate = row.crafted_date.getTime() / 1000;
   }
-  if (row.variant) {
-    result.v = row.variant;
-  }
   return result;
 }
 
@@ -80,36 +85,31 @@ function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
  */
 export async function updateItemAnnotation(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation,
 ): Promise<QueryResult> {
   const tagValue = clearValue(itemAnnotation.tag);
-  // Variant will only be set when tag is set and only for "keep" values
-  const variant = variantValue(tagValue, itemAnnotation.v);
   const notesValue = clearValue(itemAnnotation.notes);
 
   if (tagValue === 'clear' && notesValue === 'clear') {
-    return deleteItemAnnotation(client, bungieMembershipId, itemAnnotation.id);
+    return deleteItemAnnotation(client, platformMembershipId, itemAnnotation.id);
   }
   const response = await client.query({
     name: 'upsert_item_annotation',
-    text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, variant, crafted_date, created_by, last_updated_by)
-values ($1, $2, $3, $4, (CASE WHEN $5 = 'clear'::item_tag THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $9, $8, $7, $7)
-on conflict (membership_id, inventory_item_id)
-do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), (CASE WHEN $9 = 0 THEN NULL WHEN $9 IS NULL THEN item_annotations.variant ELSE $9 END), current_timestamp, $7)`,
+    text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, crafted_date)
+values ($1, $2, $3, $4, (CASE WHEN $5 = 0 THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7)
+on conflict (platform_membership_id, inventory_item_id)
+do update set (tag, notes, deleted_at) = ((CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), $7, null)`,
     values: [
-      bungieMembershipId,
-      platformMembershipId,
-      destinyVersion,
-      itemAnnotation.id,
-      tagValue,
-      notesValue,
-      appId,
-      itemAnnotation.craftedDate ? new Date(itemAnnotation.craftedDate * 1000) : null,
-      variant,
+      bungieMembershipId, // $1
+      platformMembershipId, // $2
+      destinyVersion, // $3
+      itemAnnotation.id, // $4
+      tagValue === null ? null : TagValueEnum[tagValue], // $5
+      notesValue, // $6
+      itemAnnotation.craftedDate ? new Date(itemAnnotation.craftedDate * 1000) : null, // $7
     ],
   });
 
@@ -128,7 +128,7 @@ do update set (tag, notes, variant, last_updated_at, last_updated_by) = ((CASE W
  * If it's set, we'll return the input which will update the existing value.
  */
 function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | null {
-  if (val === null || (val !== undefined && val.length === 0)) {
+  if (val === null || val?.length === 0) {
     return 'clear';
   } else if (!val) {
     return null;
@@ -138,57 +138,38 @@ function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | 
 }
 
 /**
- * Like clearValue, this decides whether the variant should be set, cleared, or left alone.
- * Returning null preserves the existing value.
- * Returning 0, removes the existing value,
- */
-function variantValue(
-  tag: TagValue | 'clear' | null,
-  v: TagVariant | undefined,
-): TagVariant | 0 | null {
-  if (tag === 'keep') {
-    return v ?? 0;
-  } else if (tag !== null) {
-    // If tag is being cleared or set to a non-keep value, remove the variant
-    return 0;
-  } else {
-    // Otherwise leave it be
-    return null;
-  }
-}
-
-/**
  * Delete an item annotation.
  */
 export async function deleteItemAnnotation(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   inventoryItemId: string,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation',
-    text: `delete from item_annotations where membership_id = $1 and inventory_item_id = $2`,
-    values: [bungieMembershipId, inventoryItemId],
+    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and inventory_item_id = $2`,
+    values: [platformMembershipId, inventoryItemId],
   });
 }
 
 /**
- * Delete an item annotation.
+ * Delete an list of annotations.
  */
 export async function deleteItemAnnotationList(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   inventoryItemIds: string[],
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation_list',
-    text: `delete from item_annotations where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
-    values: [bungieMembershipId, inventoryItemIds],
+    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
+    values: [platformMembershipId, inventoryItemIds],
   });
 }
 
 /**
  * Delete all item annotations for a user (on all platforms).
+ * @deprecated
  */
 export async function deleteAllItemAnnotations(
   client: ClientBase,

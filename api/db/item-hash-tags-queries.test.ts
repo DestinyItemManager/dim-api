@@ -19,7 +19,7 @@ afterAll(async () => closeDbPool());
 
 it('can insert item hash tags where none exist before', async () => {
   await transaction(async (client) => {
-    await updateItemHashTag(client, appId, bungieMembershipId, {
+    await updateItemHashTag(client, bungieMembershipId, platformMembershipId, {
       hash: 2926662838,
       tag: 'favorite',
       notes: 'the best',
