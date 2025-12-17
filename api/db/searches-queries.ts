@@ -102,19 +102,19 @@ function convertSearch(row: SearchRow): Search {
  */
 export async function updateUsedSearch(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
   type: SearchType,
 ): Promise<QueryResult> {
   const response = await client.query({
     name: 'upsert_search',
-    text: `insert INTO searches (membership_id, destiny_version, query, search_type, created_by, last_updated_by)
-values ($1, $2, $3, $5, $4, $4)
-on conflict (membership_id, destiny_version, qhash)
-do update set (usage_count, last_used, last_updated_at, last_updated_by) = (searches.usage_count + 1, current_timestamp, current_timestamp, $4)`,
-    values: [bungieMembershipId, destinyVersion, query, appId, type],
+    text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type)
+values ($1, $2, $3, $4, $5)
+on conflict (platform_membership_id, destiny_version, qhash)
+do update set (usage_count, last_used, deleted_at) = (searches.usage_count + 1, current_timestamp, null)`,
+    values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
   });
 
   if (response.rowCount! < 1) {
@@ -131,8 +131,8 @@ do update set (usage_count, last_used, last_updated_at, last_updated_by) = (sear
  */
 export async function saveSearch(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
   type: SearchType,
@@ -140,8 +140,8 @@ export async function saveSearch(
 ): Promise<QueryResult> {
   const response = await client.query({
     name: 'save_search',
-    text: `UPDATE searches SET (saved, last_updated_by) = ($4, $5) WHERE membership_id = $1 AND destiny_version = $2 AND qhash = decode(md5($3), 'hex') AND query = $3`,
-    values: [bungieMembershipId, destinyVersion, query, saved, appId],
+    text: `UPDATE searches SET saved = $4 WHERE platform_membership_id = $1 AND destiny_version = $2 AND qhash = decode(md5($3), 'hex') AND query = $3 and search_type = $5`,
+    values: [platformMembershipId, destinyVersion, query, saved, type],
   });
 
   if (response.rowCount! < 1) {
@@ -149,9 +149,9 @@ export async function saveSearch(
     metrics.increment('db.searches.noRowUpdated.count', 1);
     const insertSavedResponse = await client.query({
       name: 'insert_search_fallback',
-      text: `insert INTO searches (membership_id, destiny_version, query, search_type, saved, created_by, last_updated_by)
-  values ($1, $2, $3, $5, true, $4, $4)`,
-      values: [bungieMembershipId, destinyVersion, query, appId, type],
+      text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type, saved)
+  values ($1, $2, $3, $4, $5, true)`,
+      values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
     });
     return insertSavedResponse;
   }
@@ -163,8 +163,8 @@ export async function saveSearch(
  */
 export async function importSearch(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
   saved: boolean,
@@ -174,17 +174,17 @@ export async function importSearch(
 ): Promise<QueryResult> {
   const response = await client.query({
     name: 'insert_search',
-    text: `insert INTO searches (membership_id, destiny_version, query, saved, search_type, usage_count, last_used, created_by, last_updated_by)
-values ($1, $2, $3, $4, $8, $5, $6, $7, $7)`,
+    text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, saved, search_type, usage_count, last_used)
+values ($1, $2, $3, $4, $5, $6, $7, $8)`,
     values: [
       bungieMembershipId,
+      platformMembershipId,
       destinyVersion,
       query,
       saved,
+      type,
       usageCount,
       new Date(lastUsage),
-      appId,
-      type,
     ],
   });
 
@@ -202,15 +202,15 @@ values ($1, $2, $3, $4, $8, $5, $6, $7, $7)`,
  */
 export async function deleteSearch(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
   type: SearchType,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_search',
-    text: `delete from searches where membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
-    values: [bungieMembershipId, destinyVersion, query, type],
+    text: `update searches set deleted_at = now(), usage_count = 0, last_used = now() where platform_membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
+    values: [platformMembershipId, destinyVersion, query, type],
   });
 }
 
@@ -219,11 +219,11 @@ export async function deleteSearch(
  */
 export async function deleteAllSearches(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_all_searches',
-    text: `delete from searches where membership_id = $1`,
-    values: [bungieMembershipId],
+    text: `delete from searches where platform_membership_id = $1`,
+    values: [platformMembershipId],
   });
 }

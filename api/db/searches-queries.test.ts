@@ -10,12 +10,12 @@ import {
   updateUsedSearch,
 } from './searches-queries.js';
 
-const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
+const platformMembershipId = '213512057';
 
 beforeEach(() =>
   transaction(async (client) => {
-    await deleteAllSearches(client, bungieMembershipId);
+    await deleteAllSearches(client, platformMembershipId);
   }),
 );
 
@@ -23,7 +23,14 @@ afterAll(async () => closeDbPool());
 
 it('can record a used search where none was recorded before', async () => {
   await transaction(async (client) => {
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
 
     const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
@@ -36,8 +43,22 @@ it('can record a used search where none was recorded before', async () => {
 
 it('can track search multiple times', async () => {
   await transaction(async (client) => {
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
 
     const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
@@ -50,8 +71,23 @@ it('can track search multiple times', async () => {
 
 it('can mark a search as favorite', async () => {
   await transaction(async (client) => {
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
-    await saveSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item, true);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
+    await saveSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+      true,
+    );
 
     const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
@@ -60,7 +96,15 @@ it('can mark a search as favorite', async () => {
     expect(searches[0].saved).toBe(true);
     expect(searches[0].usageCount).toBe(1);
 
-    await saveSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item, false);
+    await saveSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+      false,
+    );
 
     const searches2 = await getSearchesForProfile(client, bungieMembershipId, 2);
     expect(searches2[0].query).toBe('tag:junk');
@@ -72,7 +116,15 @@ it('can mark a search as favorite', async () => {
 });
 it('can mark a search as favorite even when it hasnt been used', async () => {
   await transaction(async (client) => {
-    await saveSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item, true);
+    await saveSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+      true,
+    );
 
     const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
@@ -85,8 +137,22 @@ it('can mark a search as favorite even when it hasnt been used', async () => {
 
 it('can get all searches across profiles', async () => {
   await transaction(async (client) => {
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
-    await updateUsedSearch(client, appId, bungieMembershipId, 1, 'is:tagged', SearchType.Item);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      1,
+      'is:tagged',
+      SearchType.Item,
+    );
 
     const searches = await getSearchesForUser(client, bungieMembershipId);
     expect(searches.length).toEqual(2);
@@ -98,7 +164,14 @@ it('can increment usage for one of the built-in searches', async () => {
     const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
     const query = searches[searches.length - 1].query;
 
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, query, SearchType.Item);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      query,
+      SearchType.Item,
+    );
 
     const searches2 = await getSearchesForProfile(client, bungieMembershipId, 2);
     const search = searches2.find((s) => s.query === query);
@@ -109,8 +182,15 @@ it('can increment usage for one of the built-in searches', async () => {
 
 it('can delete a search', async () => {
   await transaction(async (client) => {
-    await updateUsedSearch(client, appId, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
-    await deleteSearch(client, bungieMembershipId, 2, 'tag:junk', SearchType.Item);
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'tag:junk',
+      SearchType.Item,
+    );
+    await deleteSearch(client, platformMembershipId, 2, 'tag:junk', SearchType.Item);
 
     const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
@@ -123,8 +203,8 @@ it('can import a search', async () => {
   await transaction(async (client) => {
     await importSearch(
       client,
-      appId,
       bungieMembershipId,
+      platformMembershipId,
       2,
       'tag:junk',
       true,
@@ -146,8 +226,8 @@ it('can record searches for loadouts', async () => {
   await transaction(async (client) => {
     await updateUsedSearch(
       client,
-      appId,
       bungieMembershipId,
+      platformMembershipId,
       2,
       'subclass:void',
       SearchType.Loadout,

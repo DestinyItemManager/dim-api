@@ -457,15 +457,27 @@ async function pgUpdate(
           break;
 
         case 'search':
-          await recordSearch(client, appId, bungieMembershipId, destinyVersion, update.payload);
+          await recordSearch(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
           break;
 
         case 'save_search':
-          await saveSearch(client, appId, bungieMembershipId, destinyVersion, update.payload);
+          await saveSearch(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
           break;
 
         case 'delete_search':
-          await deleteSearch(client, bungieMembershipId, destinyVersion, update.payload);
+          await deleteSearch(client, platformMembershipId!, destinyVersion, update.payload);
           break;
       }
     }
@@ -714,16 +726,16 @@ async function trackTriumph(
 
 async function recordSearch(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   payload: UsedSearchUpdate['payload'],
 ): Promise<void> {
   const start = new Date();
   await updateUsedSearch(
     client,
-    appId,
     bungieMembershipId,
+    platformMembershipId,
     destinyVersion,
     payload.query,
     payload.type ?? SearchType.Item,
@@ -733,16 +745,16 @@ async function recordSearch(
 
 async function saveSearch(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   payload: SavedSearchUpdate['payload'],
 ): Promise<void> {
   const start = new Date();
   await saveSearchInDb(
     client,
-    appId,
     bungieMembershipId,
+    platformMembershipId,
     destinyVersion,
     payload.query,
     payload.type ?? SearchType.Item,
@@ -770,14 +782,14 @@ function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResu
 
 async function deleteSearch(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
   payload: DeleteSearchUpdate['payload'],
 ): Promise<void> {
   const start = new Date();
   await deleteSearchInDb(
     client,
-    bungieMembershipId,
+    platformMembershipId,
     destinyVersion,
     payload.query,
     payload.type ?? SearchType.Item,
