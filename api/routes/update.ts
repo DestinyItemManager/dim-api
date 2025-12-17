@@ -169,13 +169,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
           destinyVersion,
         );
       } else {
-        await pgUpdate(
-          updatesToApply,
-          bungieMembershipId,
-          platformMembershipId,
-          destinyVersion,
-          appId,
-        );
+        await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
       }
       break;
     case MigrationState.Stately:
@@ -409,7 +403,6 @@ async function pgUpdate(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  appId: string,
 ) {
   return transaction(async (client) => {
     for (const update of updates) {
@@ -447,7 +440,12 @@ async function pgUpdate(
           break;
 
         case 'item_hash_tag':
-          await updateItemHashTag(client, appId, bungieMembershipId, update.payload);
+          await updateItemHashTag(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            update.payload,
+          );
           break;
 
         case 'track_triumph':
@@ -793,12 +791,12 @@ async function deleteSearch(
 
 async function updateItemHashTag(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   payload: ItemHashTagUpdate['payload'],
 ): Promise<void> {
   const start = new Date();
-  await updateItemHashTagInDb(client, appId, bungieMembershipId, payload);
+  await updateItemHashTagInDb(client, bungieMembershipId, platformMembershipId, payload);
   metrics.timing('update.updateItemHashTag', start);
 }
 

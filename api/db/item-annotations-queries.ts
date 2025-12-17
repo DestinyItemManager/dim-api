@@ -30,7 +30,7 @@ export async function getItemAnnotationsForProfile(
 ): Promise<ItemAnnotation[]> {
   const results = await client.query<ItemAnnotationRow>({
     name: 'get_item_annotations',
-    text: 'SELECT inventory_item_id, tag, notes, variant, crafted_date FROM item_annotations WHERE platform_membership_id = $1 and destiny_version = $2 and deleted_at IS NULL',
+    text: 'SELECT inventory_item_id, tag, notes, crafted_date FROM item_annotations WHERE platform_membership_id = $1 and destiny_version = $2 and deleted_at IS NULL',
     values: [platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertItemAnnotation);
@@ -69,7 +69,7 @@ function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
     id: row.inventory_item_id,
   };
   if (row.tag) {
-    result.tag = row.tag;
+    result.tag = TagValueEnum[row.tag] as unknown as TagValue;
   }
   if (row.notes) {
     result.notes = row.notes;
@@ -99,9 +99,9 @@ export async function updateItemAnnotation(
   const response = await client.query({
     name: 'upsert_item_annotation',
     text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, crafted_date)
-values ($1, $2, $3, $4, (CASE WHEN $5 = 0 THEN NULL ELSE $5 END)::item_tag, (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7)
+values ($1, $2, $3, $4, (CASE WHEN $5 = 0 THEN NULL ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7)
 on conflict (platform_membership_id, inventory_item_id)
-do update set (tag, notes, deleted_at) = ((CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), $7, null)`,
+do update set (tag, notes, crafted_date, deleted_at) = ((CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), $7, null)`,
     values: [
       bungieMembershipId, // $1
       platformMembershipId, // $2
@@ -162,7 +162,7 @@ export async function deleteItemAnnotationList(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation_list',
-    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
+    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
     values: [platformMembershipId, inventoryItemIds],
   });
 }

@@ -1,6 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { ItemHashTag, TagValue } from '../shapes/item-annotations.js';
+import { TagValueEnum } from './item-annotations-queries.js';
 
 interface ItemHashTagRow {
   item_hash: string;
@@ -13,12 +14,12 @@ interface ItemHashTagRow {
  */
 export async function getItemHashTagsForProfile(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
 ): Promise<ItemHashTag[]> {
   const results = await client.query({
     name: 'get_item_hash_tags',
-    text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE membership_id = $1',
-    values: [bungieMembershipId],
+    text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE platform_membership_id = $1 and deleted_at IS NULL',
+    values: [platformMembershipId],
   });
   return results.rows.map(convertItemHashTag);
 }
@@ -28,7 +29,7 @@ function convertItemHashTag(row: ItemHashTagRow): ItemHashTag {
     hash: parseInt(row.item_hash, 10),
   };
   if (row.tag) {
-    result.tag = row.tag;
+    result.tag = TagValueEnum[row.tag] as unknown as TagValue;
   }
   if (row.notes) {
     result.notes = row.notes;
@@ -41,24 +42,30 @@ function convertItemHashTag(row: ItemHashTagRow): ItemHashTag {
  */
 export async function updateItemHashTag(
   client: ClientBase,
-  appId: string,
   bungieMembershipId: number,
+  platformMembershipId: string,
   itemHashTag: ItemHashTag,
 ): Promise<QueryResult> {
   const tagValue = clearValue(itemHashTag.tag);
   const notesValue = clearValue(itemHashTag.notes);
 
   if (tagValue === 'clear' && notesValue === 'clear') {
-    return deleteItemHashTag(client, bungieMembershipId, itemHashTag.hash);
+    return deleteItemHashTag(client, platformMembershipId, itemHashTag.hash);
   }
 
   const response = await client.query({
     name: 'upsert_hash_tag',
-    text: `insert INTO item_hash_tags (membership_id, item_hash, tag, notes)
-values ($1, $2, (CASE WHEN $3 = 'clear'::item_tag THEN NULL ELSE $3 END)::item_tag, (CASE WHEN $4 = 'clear' THEN NULL ELSE $4 END), $5, $5)
-on conflict (membership_id, item_hash)
-do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 'clear' THEN NULL WHEN $3 IS NULL THEN item_hash_tags.tag ELSE $3 END), (CASE WHEN $4 = 'clear' THEN NULL WHEN $4 IS NULL THEN item_hash_tags.notes ELSE $4 END), current_timestamp, $5)`,
-    values: [bungieMembershipId, itemHashTag.hash, tagValue, notesValue, appId],
+    text: `insert INTO item_hash_tags (membership_id, platform_membership_id, item_hash, tag, notes)
+values ($1, $2, $3, (CASE WHEN $4 = 0 THEN NULL ELSE $4 END), (CASE WHEN $5 = 'clear' THEN NULL ELSE $5 END))
+on conflict (platform_membership_id, item_hash)
+do update set (tag, notes, deleted_at) = ((CASE WHEN $4 = 0 THEN NULL WHEN $4 IS NULL THEN item_hash_tags.tag ELSE $4 END), (CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_hash_tags.notes ELSE $5 END), null)`,
+    values: [
+      bungieMembershipId,
+      platformMembershipId,
+      itemHashTag.hash,
+      tagValue === null ? null : TagValueEnum[tagValue],
+      notesValue,
+    ],
   });
 
   if (response.rowCount! < 1) {
@@ -75,7 +82,7 @@ do update set (tag, notes, last_updated_at, last_updated_by) = ((CASE WHEN $3 = 
  * If it's undefined we return null, which will preserve the existing value.
  * If it's set, we'll return the input which will update the existing value.
  */
-function clearValue(val: string | null | undefined) {
+function clearValue<T extends string>(val: T | null | undefined): T | 'clear' | null {
   if (val === null || val?.length === 0) {
     return 'clear';
   } else if (!val) {
@@ -90,13 +97,13 @@ function clearValue(val: string | null | undefined) {
  */
 export async function deleteItemHashTag(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   itemHash: number,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_hash_tag',
-    text: `delete from item_hash_tags where membership_id = $1 and item_hash = $2`,
-    values: [bungieMembershipId, itemHash],
+    text: `update item_hash_tags set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and item_hash = $2`,
+    values: [platformMembershipId, itemHash],
   });
 }
 
@@ -105,11 +112,11 @@ export async function deleteItemHashTag(
  */
 export async function deleteAllItemHashTags(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_all_item_hash_tags',
-    text: `delete from item_hash_tags where membership_id = $1`,
-    values: [bungieMembershipId],
+    text: `delete from item_hash_tags where platform_membership_id = $1`,
+    values: [platformMembershipId],
   });
 }
