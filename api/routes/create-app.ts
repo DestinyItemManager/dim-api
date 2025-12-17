@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { insertApp as insertAppPostgres } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
 import { ApiApp, CreateAppRequest } from '../shapes/app.js';
-import { insertApp } from '../stately/apps-queries.js';
+import { insertApp as insertAppStately } from '../stately/apps-queries.js';
 import { badRequest } from '../utils.js';
 
 const localHosts =
@@ -49,10 +49,7 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     dimApiKey: uuid(),
   };
 
-  // Put it in StatelyDB
-  app = await insertApp(app);
-
-  // Also put it in Postgres, for now!
+  // Put it in Postgres
   await transaction(async (client) => {
     try {
       await insertAppPostgres(client, app);
@@ -65,6 +62,9 @@ export const createAppHandler = asyncHandler(async (req, res) => {
       }
     }
   });
+
+  // Also put it in StatelyDB
+  app = await insertAppStately(app);
 
   // Only return the recovered app if it's for the same origin and key
   if (app.origin === originUrl.origin && app.bungieApiKey === request.bungieApiKey) {

@@ -1,12 +1,11 @@
 import * as Sentry from '@sentry/node';
-import { ListToken } from '@stately-cloud/client';
 import { keyBy } from 'es-toolkit';
 import { RequestHandler } from 'express';
 import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
 import { pool } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
-import { getAllApps, updateApps } from '../stately/apps-queries.js';
+import { getAllApps as getAllAppsStately } from '../stately/apps-queries.js';
 
 /**
  * Express middleware that requires an API key be provided in a header
@@ -44,7 +43,6 @@ let apps: ApiApp[] = [];
 let appsByApiKey: { [apiKey: string]: ApiApp };
 let origins = new Set<string>();
 let appsInterval: NodeJS.Timeout | null = null;
-let token: ListToken | undefined;
 
 export function stopAppsRefresh() {
   if (appsInterval) {
@@ -73,28 +71,20 @@ export async function refreshApps(): Promise<void> {
 
   try {
     if (apps.length === 0) {
-      // Start off with a copy from postgres, just in case StatelyDB is having
+      // Start off with a copy from StatelyDB, just in case postgres is having
       // problems.
-      await fetchAppsFromPostgres();
-      digestApps();
+      const [appsFromStately] = await getAllAppsStately();
+      if (appsFromStately.length > 0) {
+        apps = appsFromStately;
+        digestApps();
+      }
     }
 
-    if (!token) {
-      // First time, get 'em all
-      const [appsFromStately, newToken] = await getAllApps();
-      if (appsFromStately.length > 0) {
-        apps = appsFromStately;
-        digestApps();
-        token = newToken;
-      }
-    } else {
-      // After that, use a sync to update them
-      const [appsFromStately, newToken] = await updateApps(token, apps);
-      if (appsFromStately.length > 0) {
-        apps = appsFromStately;
-        digestApps();
-        token = newToken;
-      }
+    const appsFromPostgres = await fetchAppsFromPostgres();
+
+    if (appsFromPostgres.length > 0) {
+      apps = appsFromPostgres;
+      digestApps();
     }
     metrics.increment('apps.refresh.success.count');
   } catch (e) {
@@ -113,13 +103,8 @@ export async function refreshApps(): Promise<void> {
 async function fetchAppsFromPostgres() {
   const client = await pool.connect();
   try {
-    apps = await getAllAppsPostgres(client);
-    appsByApiKey = keyBy(apps, (a) => a.dimApiKey.toLowerCase());
-    origins = new Set<string>();
-    for (const app of apps) {
-      origins.add(app.origin);
-    }
-    return apps;
+    const appsFromPostgres = await getAllAppsPostgres(client);
+    return appsFromPostgres;
   } finally {
     client.release();
   }
