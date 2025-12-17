@@ -8,13 +8,13 @@ let seed;
  * We receive the dbmigrate dependency from dbmigrate initially.
  * This enables us to not have to rely on NODE_PATH.
  */
-exports.setup = function(options, seedLink) {
+exports.setup = function (options, seedLink) {
   dbm = options.dbmigrate;
   type = dbm.dataType;
   seed = seedLink;
 };
 
-exports.up = function(db, callback) {
+exports.up = function (db, callback) {
   db.runSql(
     `CREATE TABLE loadouts (
       id UUID NOT NULL,
@@ -38,14 +38,14 @@ exports.up = function(db, callback) {
     /* The typical query to get all loadouts specifies both platform_membership_id and destiny_version. destiny_version is low-cardinality enough to not need to be indexed. */
     CREATE INDEX loadouts_by_platform_membership ON loadouts (membership_id, platform_membership_id);
     `,
-    callback
+    callback,
   );
 };
 
-exports.down = function(db, callback) {
+exports.down = function (db, callback) {
   db.dropTable('loadouts', callback);
 };
 
 exports._meta = {
-  version: 1
+  version: 1,
 };

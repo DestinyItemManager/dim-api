@@ -8,14 +8,14 @@ var seed;
  * We receive the dbmigrate dependency from dbmigrate initially.
  * This enables us to not have to rely on NODE_PATH.
  */
-exports.setup = function(options, seedLink) {
+exports.setup = function (options, seedLink) {
   dbm = options.dbmigrate;
   type = dbm.dataType;
   seed = seedLink;
 };
 
 /** An immutable log of actions per account. Entries are arbitrary JSON. */
-exports.up = function(db, callback) {
+exports.up = function (db, callback) {
   db.runSql(
     `
     CREATE TABLE audit_log (
@@ -34,14 +34,14 @@ exports.up = function(db, callback) {
     /* Add an index on date */
     CREATE INDEX audit_log_by_time ON audit_log (membership_id, created_at);
     `,
-    callback
+    callback,
   );
 };
 
-exports.down = function(db, callback) {
+exports.down = function (db, callback) {
   db.dropTable('audit_log', callback);
 };
 
 exports._meta = {
-  version: 1
+  version: 1,
 };
