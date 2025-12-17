@@ -36,6 +36,7 @@ exports.up = function (db, callback) {
       parameters jsonb,
 
       view_count int NOT NULL default 0,
+      last_accessed_at timestamp,
 
       created_at timestamp NOT NULL default current_timestamp,
       last_updated_at timestamp NOT NULL default current_timestamp,

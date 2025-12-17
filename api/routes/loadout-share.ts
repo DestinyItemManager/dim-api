@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
+import { transaction } from '../db/index.js';
+import { getLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import {
@@ -115,10 +117,25 @@ export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
 });
 
 export async function loadLoadoutShare(shareId: string) {
-  const loadout = await getLoadoutShareStately(shareId);
-  if (loadout) {
-    // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
-    await recordAccessStately(shareId);
-    return loadout;
+  // First look in Stately
+  try {
+    const loadout = await getLoadoutShareStately(shareId);
+    if (loadout) {
+      // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
+      await recordAccessStately(shareId);
+      return loadout;
+    }
+  } catch (e) {
+    console.error('Failed to load loadout share from Stately', e);
   }
+
+  // Fall back to Postgres
+  return transaction(async (client) => {
+    const loadout = await getLoadoutShare(client, shareId);
+    if (loadout) {
+      // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
+      await recordAccess(client, shareId);
+    }
+    return loadout;
+  });
 }
