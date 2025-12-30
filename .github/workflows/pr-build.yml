@@ -7,12 +7,12 @@ on: pull_request
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: 'test'
+    environment: "test"
 
     services:
       postgres:
         # Docker Hub image
-        image: nat212/postgres-cron
+        image: cleisonfmelo/postgres-pg-cron:latest
         # Provide the password for postgres
         env:
           POSTGRES_USER: postgres
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
           cache: pnpm
 
       - name: Install
