@@ -1,6 +1,7 @@
 import { ClientBase, QueryResult } from 'pg';
 import { ApiApp } from '../shapes/app.js';
 import { camelize, KeysToSnakeCase, TypesForKeys } from '../utils.js';
+import { transaction } from './index.js';
 
 /**
  * Get all registered apps.
@@ -11,6 +12,14 @@ export async function getAllApps(client: ClientBase): Promise<ApiApp[]> {
     text: 'SELECT * FROM apps',
   });
   return results.rows.map((row) => camelize(row));
+}
+
+export async function addAllApps(apps: ApiApp[]): Promise<void> {
+  await transaction(async (client) => {
+    for (const app of apps) {
+      await insertApp(client, app);
+    }
+  });
 }
 
 /**

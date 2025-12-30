@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
-import { refreshApps } from './apps/index.js';
+import { refreshApps, stopAppsRefresh } from './apps/index.js';
 import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
@@ -59,7 +59,10 @@ beforeAll(async () => {
   await client.putBatch(...globalSettings);
 });
 
-afterAll(async () => closeDbPool());
+afterAll(async () => {
+  stopAppsRefresh();
+  await closeDbPool();
+});
 
 it('returns basic info from GET /', async () => {
   // Sends GET Request to / endpoint

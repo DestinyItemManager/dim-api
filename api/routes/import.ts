@@ -1,8 +1,6 @@
 import { uniqBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
-import { readTransaction } from '../db/index.js';
-import { doMigration, getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
@@ -42,9 +40,9 @@ export const importHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const migrationState = await readTransaction(async (client) =>
-    getMigrationState(client, bungieMembershipId),
-  );
+  // const migrationState = await readTransaction(async (client) =>
+  //   getMigrationState(client, bungieMembershipId),
+  // );
 
   let numTriumphs = 0;
   const importToStately = async () => {
@@ -60,18 +58,20 @@ export const importHandler = asyncHandler(async (req, res) => {
     );
   };
 
-  switch (migrationState.state) {
-    case MigrationState.Postgres:
-      await doMigration(bungieMembershipId, importToStately);
-      break;
-    case MigrationState.Stately:
-      await importToStately();
-      break;
-    default:
-      // in-progress migration
-      badRequest(res, `Unable to import data - please wait a bit and try again.`);
-      return;
-  }
+  await importToStately();
+
+  // switch (migrationState.state) {
+  //   case MigrationState.Postgres:
+  //     await doMigration(bungieMembershipId, importToStately);
+  //     break;
+  //   case MigrationState.Stately:
+  //     await importToStately();
+  //     break;
+  //   default:
+  //     // in-progress migration
+  //     badRequest(res, `Unable to import data - please wait a bit and try again.`);
+  //     return;
+  // }
 
   const response: ImportResponse = {
     loadouts: loadouts.length,

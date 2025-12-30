@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import { keyBy } from 'es-toolkit';
 import { RequestHandler } from 'express';
-import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
+import { addAllApps, getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
 import { pool } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
@@ -85,6 +85,13 @@ export async function refreshApps(): Promise<void> {
     if (appsFromPostgres.length > 0) {
       apps = appsFromPostgres;
       digestApps();
+    } else {
+      // import them into Postgres
+      try {
+        await addAllApps(apps);
+      } catch (e) {
+        console.error('Error importing apps into Postgres', e);
+      }
     }
     metrics.increment('apps.refresh.success.count');
   } catch (e) {

@@ -71,8 +71,6 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     }
   });
 
-  // TODO: fetch back f
-
   // Only return the recovered app if it's for the same origin and key
   if (app.origin === originUrl.origin && app.bungieApiKey === request.bungieApiKey) {
     res.send({

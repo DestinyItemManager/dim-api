@@ -23,7 +23,7 @@ export const defaultGlobalSettings: GlobalSettings = {
   destinyProfileRefreshInterval: 120,
   autoRefresh: true,
   refreshProfileOnVisible: true,
-  dimProfileMinimumRefreshInterval: 600,
+  dimProfileMinimumRefreshInterval: 1,
   showIssueBanner: false,
   lastUpdated: 0,
 };
