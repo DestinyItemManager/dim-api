@@ -1,4 +1,8 @@
-/** Compatible superset of Little Light wishlist format */
+/** 
+ * Compatible superset of Little Light wishlist format for DIM.
+ *
+ * Note: This describes a future, theoretical wish list format that IS NOT IMPLEMENTED in DIM today.
+ */
 
 import { DestinyItemSubType } from 'bungie-api-ts/destiny2';
 
@@ -27,7 +31,8 @@ export interface WishList {
    * URLs of other wish lists that are transitively included into this wishlist.
    * This allows wish lists to be composed of other wish lists, which are then
    * fetched individually. A wish list may specify multiple includes, and no
-   * rolls of its own.
+   * rolls of its own. Wish lists may be in this format, in Little Light's 
+   * format, or in the legacy DIM wish list format.
    */
   include?: string[];
 
@@ -112,22 +117,26 @@ interface Roll {
    * the good and bad parts of this weapon.
    */
   description?: string; // e.g. notes
+  
   /**
    * Describe a combination of perks, which are really plugs for sockets.
    *
-   * ItemHash is the `DestinyInventoryItem` hash for a socket plug.
+   * ItemHash is the `DestinyInventoryItem` hash for a socket plug. You do not 
+   * need to, and should not, include "enhanced" versions of plugs - they will 
+   * automatically be matched when you use the hash for the unenhanced version.
    *
-   * Each element in the top-level array represents a "group" of perks, which
-   * means they belong to the same socket (column) in the perk selection UI.
+   * Each element in the top-level array represents a "group" of perks. The 
+   * weapon must have one or more of the perks in each group. In general it is 
+   * intended that groups correspond to sockets, but they don't need to.
+   * The order of perks in groups, or between groups, is not meaningful. Do not 
+   * include empty groups.
+   *
+   * For a hash in the same group, their relation is OR. For different groups,
+   * their relation is AND. (e.g. `[[1, 2], [3, 4, 5]]` means `(1 OR 2) AND (3 OR
+   * 4 OR 5)`).
    *
    * Masterworks, Weapon Mod, Shader, and other non-Perk plugs *should not* be
    * included.
-   *
-   * The order of perks group is not specified. Do not include empty groups.
-   *
-   * For hash in the same group, their relation is OR. For different groups,
-   * their relation is AND. (e.g. `[[1, 2], [3, 4]]` means `(1 OR 2) AND (3 OR
-   * 4)`)
    *
    * e.g. For `"Randy's Throwing Knife" <3292795429>`,
    * - `[[247725512, 2387244414]]` is a valid value meaning "the weapon must
@@ -137,7 +146,8 @@ interface Roll {
    * - `[[247725512], [2387244414]]` is a valid value meaning "the weapon must
    *   have plug 247725512 and 2387244414 available on it on different sockets".
    *
-   * Implementers must ignore any invalid combination they can't match.
+   * Implementers must ignore any invalid combination they can't match either 
+   * because the hashes are invalid or the plug set does not include those plugs.
    */
   plugs: ItemHash[][];
 
