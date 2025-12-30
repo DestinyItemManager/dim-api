@@ -310,7 +310,6 @@ const loadout: Loadout = {
   id: uuid(),
   name: 'Test Loadout',
   classType: 1,
-  clearSpace: false,
   equipped: [
     {
       hash: 100,

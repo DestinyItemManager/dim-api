@@ -9,25 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: "test"
 
-    services:
-      postgres:
-        # Docker Hub image
-        image: cleisonfmelo/postgres-pg-cron:latest
-        # Provide the password for postgres
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: travis_ci_test
-          POSTGRES_CRON_DB: travis_ci_test
-        ports:
-          - 5432:5432
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -41,12 +22,6 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile --prefer-offline
-
-      - name: Migrate Test DB
-        run: |
-          pushd api
-          npx db-migrate up -e test
-          popd
 
       - run: cp build/.env.travis .env
 

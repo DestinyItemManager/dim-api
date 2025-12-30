@@ -3,7 +3,6 @@ import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { closeDbPool, transaction } from './index.js';
 import { addLoadoutShare, getLoadoutShare, recordAccess } from './loadout-share-queries.js';
 
-const appId = 'settings-queries-test-app';
 const bungieMembershipId = 4321;
 const platformMembershipId = '213512057';
 
