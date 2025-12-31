@@ -1,5 +1,4 @@
 import asyncHandler from 'express-async-handler';
-import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 
@@ -13,8 +12,7 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   //   getMigrationState(client, bungieMembershipId),
   // );
 
-  let result: DeleteAllResponse['deleted'];
-  result = await deleteAllDataForUser(bungieMembershipId, profileIds);
+  const result = await deleteAllDataForUser(bungieMembershipId, profileIds);
 
   // switch (migrationState.state) {
   //   case MigrationState.Postgres:
