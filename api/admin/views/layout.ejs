@@ -75,24 +75,20 @@
     <h1>DIM Admin Panel</h1>
     <% if (locals.user) { %>
       <div class="user-info">
-        <%= user.login %>
+        <%= locals.user.login %>
         <a href="/admin/auth/logout">Logout</a>
-      </div>
-    <% } else { %>
-      <div class="user-info">
-        <a href="/admin/auth/login">Login with GitHub</a>
       </div>
     <% } %>
   </header>
-  
+
   <div class="container">
-    <% if (locals.user && user.isTeamMember) { %>
+    <% if (locals.user) { %>
       <nav>
         <a href="/admin">Dashboard</a>
         <a href="/admin/add-app">Add App</a>
       </nav>
     <% } %>
-    
+
     <div class="content">
       <%- body %>
     </div>
