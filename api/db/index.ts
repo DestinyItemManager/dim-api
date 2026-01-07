@@ -7,8 +7,8 @@ export const pool = new pg.Pool({
   max: 8,
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,
-  // Statement query is at the Postgres side, times out any individual query
-  statement_timeout: 750,
+  // Statement timeout is at the Postgres side, times out any individual query
+  // statement_timeout: 750, // TODO: doesn't work with pgbouncer?
   // Query timeout is on the NodeJS side, it times out the an operation on the client
   query_timeout: 1000,
 });
