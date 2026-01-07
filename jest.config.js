@@ -23,4 +23,6 @@ export default {
   },
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   setupFiles: ['dotenv/config'],
+  globalSetup: '<rootDir>/api/test/postgres.setup.mjs',
+  globalTeardown: '<rootDir>/api/test/postgres.teardown.mjs',
 };

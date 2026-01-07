@@ -49,6 +49,11 @@ spec:
               cpu: "150m"
               memory: "50Mi"
           env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: pg_password
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

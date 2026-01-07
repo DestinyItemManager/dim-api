@@ -88,6 +88,15 @@ export const updateHandler = asyncHandler(async (req, res) => {
     return;
   }
 
+  // const migrationState = await readTransaction(async (client) =>
+  //   getMigrationState(client, bungieMembershipId),
+  // );
+
+  // const desiredMigrationState = await getDesiredMigrationState(migrationState);
+  // const shouldMigrateToStately =
+  //   desiredMigrationState === MigrationState.Stately &&
+  //   migrationState.state !== desiredMigrationState;
+
   const results: ProfileUpdateResult[] = validateUpdates(req, updates, platformMembershipId, appId);
   // Only attempt updates that pass validation
   const updatesToApply = updates.filter((_, index) => results[index].status === 'Success');
@@ -98,6 +107,64 @@ export const updateHandler = asyncHandler(async (req, res) => {
     platformMembershipId ?? profileIds[0],
     destinyVersion,
   );
+
+  // const importToStately = async () => {
+  //   // Export from Postgres
+  //   const exportResponse = await pgExport(bungieMembershipId);
+
+  //   const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
+  //     extractImportData(exportResponse);
+
+  //   if (
+  //     isEmpty(settings) &&
+  //     loadouts.length === 0 &&
+  //     itemAnnotations.length === 0 &&
+  //     triumphs.length === 0 &&
+  //     searches.length === 0
+  //   ) {
+  //     // Nothing to import!
+  //     return;
+  //   }
+  //   await statelyImport(
+  //     bungieMembershipId,
+  //     profileIds,
+  //     settings,
+  //     loadouts,
+  //     itemAnnotations,
+  //     triumphs,
+  //     searches,
+  //     itemHashTags,
+  //   );
+  // };
+
+  // switch (migrationState.state) {
+  //   case MigrationState.Postgres:
+  //     if (shouldMigrateToStately) {
+  //       // For now let's leave the old data in Postgres as a backup
+  //       await doMigration(bungieMembershipId, importToStately);
+  //       await statelyUpdate(
+  //         updatesToApply,
+  //         bungieMembershipId,
+  //         platformMembershipId ?? profileIds[0],
+  //         destinyVersion,
+  //       );
+  //     } else {
+  //       await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
+  //     }
+  //     break;
+  //   case MigrationState.Stately:
+  //     await statelyUpdate(
+  //       updatesToApply,
+  //       bungieMembershipId,
+  //       platformMembershipId ?? profileIds[0],
+  //       destinyVersion,
+  //     );
+  //     break;
+  //   default:
+  //     // in-progress migration
+  //     badRequest(res, `Unable to import data - please wait a bit and try again.`);
+  //     return;
+  // }
 
   res.send({
     results,
@@ -311,6 +378,118 @@ async function statelyUpdate(
   }
 }
 
+// async function pgUpdate(
+//   updates: ProfileUpdate[],
+//   bungieMembershipId: number,
+//   platformMembershipId: string | undefined,
+//   destinyVersion: DestinyVersion,
+// ) {
+//   return transaction(async (client) => {
+//     for (const update of updates) {
+//       switch (update.action) {
+//         case 'setting':
+//           await updateSetting(client, bungieMembershipId, update.payload);
+//           break;
+
+//         case 'loadout':
+//           await updateLoadout(
+//             client,
+//             bungieMembershipId,
+//             platformMembershipId!,
+//             destinyVersion,
+//             update.payload,
+//           );
+//           break;
+
+//         case 'delete_loadout':
+//           await deleteLoadout(client, platformMembershipId!, update.payload);
+//           break;
+
+//         case 'tag':
+//           await updateItemAnnotation(
+//             client,
+//             bungieMembershipId,
+//             platformMembershipId!,
+//             destinyVersion,
+//             update.payload,
+//           );
+//           break;
+
+//         case 'tag_cleanup':
+//           await tagCleanup(client, platformMembershipId!, update.payload);
+//           break;
+
+//         case 'item_hash_tag':
+//           await updateItemHashTag(
+//             client,
+//             bungieMembershipId,
+//             platformMembershipId!,
+//             update.payload,
+//           );
+//           break;
+
+//         case 'track_triumph':
+//           await trackTriumph(client, bungieMembershipId, platformMembershipId!, update.payload);
+//           break;
+
+//         case 'search':
+//           await recordSearch(
+//             client,
+//             bungieMembershipId,
+//             platformMembershipId!,
+//             destinyVersion,
+//             update.payload,
+//           );
+//           break;
+
+//         case 'save_search':
+//           await saveSearch(
+//             client,
+//             bungieMembershipId,
+//             platformMembershipId!,
+//             destinyVersion,
+//             update.payload,
+//           );
+//           break;
+
+//         case 'delete_search':
+//           await deleteSearch(client, platformMembershipId!, destinyVersion, update.payload);
+//           break;
+//       }
+//     }
+//   });
+// }
+
+// async function updateSetting(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   settings: Partial<Settings>,
+// ): Promise<void> {
+//   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
+
+//   const start = new Date();
+//   await setSettingInDb(client, bungieMembershipId, settings);
+//   metrics.timing('update.setting', start);
+// }
+
+// async function updateLoadout(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   destinyVersion: DestinyVersion,
+//   loadout: Loadout,
+// ): Promise<void> {
+//   const start = new Date();
+//   await updateLoadoutInDb(
+//     client,
+//     bungieMembershipId,
+//     platformMembershipId,
+//     destinyVersion,
+//     loadout,
+//   );
+//   metrics.timing('update.loadout', start);
+// }
+
 function validateUpdateLoadout(loadout: Loadout): ProfileUpdateResult {
   return validateLoadout('update', loadout) ?? { status: 'Success' };
 }
@@ -400,6 +579,34 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   return undefined;
 }
 
+// async function deleteLoadout(
+//   client: ClientBase,
+//   platformMembershipId: string,
+//   loadoutId: string,
+// ): Promise<void> {
+//   const start = new Date();
+//   await deleteLoadoutInDb(client, platformMembershipId, loadoutId);
+//   metrics.timing('update.deleteLoadout', start);
+// }
+
+// async function updateItemAnnotation(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   destinyVersion: DestinyVersion,
+//   itemAnnotation: ItemAnnotation,
+// ): Promise<void> {
+//   const start = new Date();
+//   await updateItemAnnotationInDb(
+//     client,
+//     bungieMembershipId,
+//     platformMembershipId,
+//     destinyVersion,
+//     itemAnnotation,
+//   );
+//   metrics.timing('update.tag', start);
+// }
+
 function validateUpdateItemAnnotation(itemAnnotation: ItemAnnotation): ProfileUpdateResult {
   if (!isValidItemId(itemAnnotation.id)) {
     metrics.increment('update.validation.badItemId.count');
@@ -460,6 +667,74 @@ function validateUpdateItemHashTag(itemAnnotation: ItemHashTag): ProfileUpdateRe
   return { status: 'Success' };
 }
 
+// async function tagCleanup(
+//   client: ClientBase,
+//   platformMembershipId: string,
+//   inventoryItemIds: string[],
+// ): Promise<ProfileUpdateResult> {
+//   const start = new Date();
+//   await deleteItemAnnotationList(
+//     client,
+//     platformMembershipId,
+//     inventoryItemIds.filter(isValidItemId),
+//   );
+//   metrics.timing('update.tagCleanup', start);
+
+//   return { status: 'Success' };
+// }
+
+// async function trackTriumph(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   payload: TrackTriumphUpdate['payload'],
+// ): Promise<void> {
+//   const start = new Date();
+//   payload.tracked
+//     ? await trackTriumphInDb(client, bungieMembershipId, platformMembershipId, payload.recordHash)
+//     : await unTrackTriumph(client, platformMembershipId, payload.recordHash);
+//   metrics.timing('update.trackTriumph', start);
+// }
+
+// async function recordSearch(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   destinyVersion: DestinyVersion,
+//   payload: UsedSearchUpdate['payload'],
+// ): Promise<void> {
+//   const start = new Date();
+//   await updateUsedSearch(
+//     client,
+//     bungieMembershipId,
+//     platformMembershipId,
+//     destinyVersion,
+//     payload.query,
+//     payload.type ?? SearchType.Item,
+//   );
+//   metrics.timing('update.recordSearch', start);
+// }
+
+// async function saveSearch(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   destinyVersion: DestinyVersion,
+//   payload: SavedSearchUpdate['payload'],
+// ): Promise<void> {
+//   const start = new Date();
+//   await saveSearchInDb(
+//     client,
+//     bungieMembershipId,
+//     platformMembershipId,
+//     destinyVersion,
+//     payload.query,
+//     payload.type ?? SearchType.Item,
+//     payload.saved,
+//   );
+//   metrics.timing('update.saveSearch', start);
+// }
+
 function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResult {
   if (payload.query.length > 2048) {
     metrics.increment('update.validation.searchTooLong.count');
@@ -476,6 +751,34 @@ function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResu
   }
   return { status: 'Success' };
 }
+
+// async function deleteSearch(
+//   client: ClientBase,
+//   platformMembershipId: string,
+//   destinyVersion: DestinyVersion,
+//   payload: DeleteSearchUpdate['payload'],
+// ): Promise<void> {
+//   const start = new Date();
+//   await deleteSearchInDb(
+//     client,
+//     platformMembershipId,
+//     destinyVersion,
+//     payload.query,
+//     payload.type ?? SearchType.Item,
+//   );
+//   metrics.timing('update.deleteSearch', start);
+// }
+
+// async function updateItemHashTag(
+//   client: ClientBase,
+//   bungieMembershipId: number,
+//   platformMembershipId: string,
+//   payload: ItemHashTagUpdate['payload'],
+// ): Promise<void> {
+//   const start = new Date();
+//   await updateItemHashTagInDb(client, bungieMembershipId, platformMembershipId, payload);
+//   metrics.timing('update.updateItemHashTag', start);
+// }
 
 function consolidateSearchUpdates(
   updates: (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],

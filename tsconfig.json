@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
+    "isolatedModules": true,
     "sourceMap": true,
     "module": "NodeNext",
     "target": "ESNext",

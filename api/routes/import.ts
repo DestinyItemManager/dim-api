@@ -40,16 +40,38 @@ export const importHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const numTriumphs = await statelyImport(
-    bungieMembershipId,
-    profileIds,
-    settings,
-    loadouts,
-    itemAnnotations,
-    triumphs,
-    searches,
-    itemHashTags,
-  );
+  // const migrationState = await readTransaction(async (client) =>
+  //   getMigrationState(client, bungieMembershipId),
+  // );
+
+  let numTriumphs = 0;
+  const importToStately = async () => {
+    numTriumphs = await statelyImport(
+      bungieMembershipId,
+      profileIds,
+      settings,
+      loadouts,
+      itemAnnotations,
+      triumphs,
+      searches,
+      itemHashTags,
+    );
+  };
+
+  await importToStately();
+
+  // switch (migrationState.state) {
+  //   case MigrationState.Postgres:
+  //     await doMigration(bungieMembershipId, importToStately);
+  //     break;
+  //   case MigrationState.Stately:
+  //     await importToStately();
+  //     break;
+  //   default:
+  //     // in-progress migration
+  //     badRequest(res, `Unable to import data - please wait a bit and try again.`);
+  //     return;
+  // }
 
   const response: ImportResponse = {
     loadouts: loadouts.length,

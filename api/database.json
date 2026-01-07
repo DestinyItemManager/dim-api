@@ -4,7 +4,8 @@
     "user": "postgres",
     "password": "postgres",
     "host": "localhost",
-    "database": "travis_ci_test"
+    "database": "travis_ci_test",
+    "port": 5432
   },
   "dev": {
     "driver": "pg",
@@ -16,11 +17,21 @@
   },
   "prod": {
     "driver": "pg",
-    "user": { "ENV": "DATABASE_USER" },
-    "password": { "ENV": "DATABASE_PASSWORD" },
-    "host": { "ENV": "DATABASE_HOST" },
-    "database": { "ENV": "DATABASE_NAME" },
-    "port": { "ENV": "DATABASE_PORT" },
+    "user": {
+      "ENV": "DATABASE_USER"
+    },
+    "password": {
+      "ENV": "DATABASE_PASSWORD"
+    },
+    "host": {
+      "ENV": "DATABASE_HOST"
+    },
+    "database": {
+      "ENV": "DATABASE_NAME"
+    },
+    "port": {
+      "ENV": "DATABASE_PORT"
+    },
     "ssl": {
       "rejectUnauthorized": false,
       "ca": "./ca-certificate.crt"

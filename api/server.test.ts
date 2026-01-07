@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
-import { refreshApps } from './apps/index.js';
+import { refreshApps, stopAppsRefresh } from './apps/index.js';
+import { closeDbPool } from './db/index.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
 import { DeleteAllResponse } from './shapes/delete-all.js';
@@ -56,6 +57,11 @@ beforeAll(async () => {
     }),
   );
   await client.putBatch(...globalSettings);
+});
+
+afterAll(async () => {
+  stopAppsRefresh();
+  await closeDbPool();
 });
 
 it('returns basic info from GET /', async () => {
@@ -267,7 +273,7 @@ describe('profile', () => {
 });
 
 describe('settings', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('returns default settings', async () => {
     const profileResponse = (await getRequestAuthed('/profile?components=settings')
@@ -304,7 +310,6 @@ const loadout: Loadout = {
   id: uuid(),
   name: 'Test Loadout',
   classType: 1,
-  clearSpace: false,
   equipped: [
     {
       hash: 100,
@@ -324,7 +329,7 @@ const loadout: Loadout = {
 };
 
 describe('loadouts', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a loadout', async () => {
     const request: ProfileUpdateRequest = {
@@ -456,7 +461,7 @@ describe('loadouts', () => {
 });
 
 describe('tags', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a tag', async () => {
     const request: ProfileUpdateRequest = {
@@ -703,7 +708,7 @@ describe('tags', () => {
 });
 
 describe('item hash tags', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add an item hash tag', async () => {
     const request: ProfileUpdateRequest = {
@@ -891,7 +896,7 @@ describe('item hash tags', () => {
 });
 
 describe('triumphs', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a tracked triumph', async () => {
     const request: ProfileUpdateRequest = {
@@ -1032,7 +1037,7 @@ describe('triumphs', () => {
 });
 
 describe('searches', () => {
-  beforeEach(() => postRequestAuthed('/delete_all_data').expect(200));
+  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
   it('can add a recent search', async () => {
     const request: ProfileUpdateRequest = {
