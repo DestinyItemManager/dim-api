@@ -1,0 +1,61 @@
+<% const user = locals.user; %>
+<% const error = locals.error; %>
+<% const success = locals.success; %>
+<%- include('layout', { body: `
+  <h2>Add API App</h2>
+  
+  ${success ? '<div style="padding: 1rem; background: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 1rem;">App created successfully!</div>' : ''}
+  ${error ? '<div style="padding: 1rem; background: #f8d7da; color: #721c24; border-radius: 4px; margin-bottom: 1rem;">Error: ' + error + '</div>' : ''}
+  
+  <form method="POST" action="/admin/add-app" style="max-width: 600px;">
+    <div style="margin-bottom: 1rem;">
+      <label for="appId" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">App ID:</label>
+      <input 
+        type="text" 
+        id="appId" 
+        name="appId" 
+        required 
+        pattern="[a-z0-9-]{3,}"
+        placeholder="my-app-name"
+        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+      >
+      <small style="color: #666; display: block; margin-top: 0.25rem;">Lowercase letters, numbers, and hyphens only. Minimum 3 characters.</small>
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+      <label for="bungieApiKey" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Bungie API Key:</label>
+      <input 
+        type="text" 
+        id="bungieApiKey" 
+        name="bungieApiKey" 
+        required
+        placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+      >
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+      <label for="origin" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Origin URL:</label>
+      <input 
+        type="url" 
+        id="origin" 
+        name="origin" 
+        required
+        placeholder="https://example.com"
+        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+      >
+      <small style="color: #666; display: block; margin-top: 0.25rem;">The full URL origin (e.g., https://example.com)</small>
+    </div>
+    
+    <div style="margin-top: 1.5rem;">
+      <button 
+        type="submit"
+        style="background: #3498db; color: white; padding: 0.75rem 2rem; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;"
+      >Create App</button>
+      <a 
+        href="/admin"
+        style="margin-left: 1rem; padding: 0.75rem 2rem; display: inline-block; text-decoration: none; color: #666;"
+      >Cancel</a>
+    </div>
+  </form>
+`}) %>

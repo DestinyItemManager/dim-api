@@ -1,0 +1,16 @@
+<% const user = locals.user; %>
+<%- include('layout', { body: `
+  <h2>Admin Dashboard</h2>
+  
+  ${!user ? `
+    <p>Please <a href="/admin/auth/login">login with GitHub</a> to access the admin panel.</p>
+  ` : !user.isTeamMember ? `
+    <p>Access denied. You must be a member of the DestinyItemManager/developers team to access this panel.</p>
+  ` : `
+    <p>Welcome, ${user.login}!</p>
+    <h3>Available Tools:</h3>
+    <ul>
+      <li><a href="/admin/add-app">Add API App</a> - Create a new DIM API application</li>
+    </ul>
+  `}
+`}) %>

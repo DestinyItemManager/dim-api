@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { ErrorRequestHandler } from 'express';
 import { expressjwt as jwt } from 'express-jwt';
 import { type JwtPayload } from 'jsonwebtoken';
+import { adminRouter } from './admin/server.js';
 import { apiKey, isAppOrigin } from './apps/index.js';
 import expressStatsd from './metrics/express.js';
 import { metrics } from './metrics/index.js';
@@ -19,6 +20,10 @@ import { ApiApp } from './shapes/app.js';
 import { UserInfo } from './shapes/user.js';
 
 export const app = express();
+
+// View engine setup for admin panel
+app.set('view engine', 'ejs');
+app.set('views', './api');
 
 app.use(expressStatsd({ client: metrics, prefix: 'http' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
@@ -40,6 +45,9 @@ app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
 // Get a shared loadout
 app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
+
+// Admin panel routes (before API key middleware)
+app.use('/admin', adminRouter);
 
 /* ****** API KEY REQUIRED ****** */
 /* Any routes declared below this will require an API Key in X-API-Key header */
