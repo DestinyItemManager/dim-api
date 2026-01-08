@@ -4,6 +4,7 @@ process.env.GITHUB_CLIENT_SECRET = 'test-client-secret';
 process.env.ADMIN_SESSION_SECRET = 'test-session-secret-for-testing-only';
 
 import express from 'express';
+import { resolve } from 'node:path';
 import { makeFetch } from 'supertest-fetch';
 import { v4 as uuid } from 'uuid';
 import { closeDbPool, pool } from '../../db/index.js';
@@ -15,7 +16,7 @@ testApp.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Configure EJS
 testApp.set('view engine', 'ejs');
-testApp.set('views', '/Users/brh/Documents/oss/dim-api/api');
+testApp.set('views', resolve(new URL('.', import.meta.url).pathname, '../..'));
 
 // Mock req.session.user for all requests
 testApp.use((req, _res, next) => {
