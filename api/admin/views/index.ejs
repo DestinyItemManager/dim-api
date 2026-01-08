@@ -1,0 +1,15 @@
+<%- include('layout', { body: `
+  <h2>Admin Dashboard</h2>
+
+  <p>Welcome, ${locals.user.login}!</p>
+
+  <h3>Available Tools:</h3>
+  <ul class="tool-list">
+    <li class="tool-item">
+      <a href="/admin/add-app" class="tool-link">
+        <span class="tool-title">Add API App</span>
+        <span class="tool-desc">Create a new DIM API application</span>
+      </a>
+    </li>
+  </ul>
+`}) %>
