@@ -1,0 +1,36 @@
+<% const appId = locals.appId; %>
+<% const dimApiKey = locals.dimApiKey; %>
+<% const origin = locals.origin; %>
+<%- include('layout', { body: `
+  <h2>App Created Successfully!</h2>
+
+  <div class="alert alert-success success-card">
+    <div class="success-title">✓ Your API app has been created</div>
+
+    <div class="info-box">
+      <div class="info-item">
+        <strong>App ID:</strong>
+        <code>${appId}</code>
+      </div>
+
+      <div class="info-item">
+        <strong>DIM API Key:</strong>
+        <code>${dimApiKey}</code>
+      </div>
+
+      <div class="info-item">
+        <strong>Origin:</strong>
+        <code>${origin}</code>
+      </div>
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>⚠️ Important:</strong> Make sure to save the DIM API Key securely. It won't be shown again.
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a href="/admin/add-app" class="btn btn-primary">Add Another App</a>
+    <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+`}) %>
