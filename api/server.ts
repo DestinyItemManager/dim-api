@@ -24,6 +24,7 @@ export const app = express();
 // View engine setup for admin panel
 app.set('view engine', 'ejs');
 app.set('views', './api');
+app.set('trust proxy', 1); // trust first proxy
 
 app.use(expressStatsd({ client: metrics, prefix: 'http' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json

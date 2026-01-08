@@ -75,7 +75,7 @@ githubAuthRouter.get('/callback', async (req, res) => {
         'status' in error &&
         (error as { status: number }).status !== 404
       ) {
-        console.error('Error checking team membership:', error);
+        throw error;
       }
     }
 
@@ -83,8 +83,6 @@ githubAuthRouter.get('/callback', async (req, res) => {
     req.session.user = {
       id: user.id,
       login: user.login,
-      name: user.name,
-      avatarUrl: user.avatar_url,
       isTeamMember,
     };
 
@@ -92,7 +90,7 @@ githubAuthRouter.get('/callback', async (req, res) => {
     req.session.save((err) => {
       if (err) {
         console.error('Error saving session:', err);
-        return res.status(500).send('Failed to create session');
+        return res.status(500).send(`Failed to create session: ${err.message}`);
       }
 
       // Redirect based on team membership
@@ -111,7 +109,9 @@ githubAuthRouter.get('/callback', async (req, res) => {
     });
   } catch (error) {
     console.error('OAuth callback error:', error);
-    res.status(500).send('Authentication failed');
+    res
+      .status(500)
+      .send(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });
 

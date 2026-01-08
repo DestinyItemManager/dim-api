@@ -10,8 +10,6 @@ declare module 'express-session' {
     user?: {
       id: number;
       login: string;
-      name: string | null;
-      avatarUrl: string;
       isTeamMember: boolean;
     };
   }
@@ -35,6 +33,7 @@ adminRouter.use(
     secret: process.env.ADMIN_SESSION_SECRET || 'default-secret-for-testing',
     resave: false,
     saveUninitialized: false,
+    proxy: true, // Trust the reverse proxy for secure connection detection
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
