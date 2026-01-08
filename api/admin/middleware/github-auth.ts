@@ -8,7 +8,7 @@ import { NextFunction, Request, Response, Router } from 'express';
 
 // GitHub organization and team to verify
 const GITHUB_ORG = 'DestinyItemManager';
-const GITHUB_TEAM = 'developers';
+const GITHUB_TEAM = 'apiadmins';
 
 // Initialize OAuth App
 const oauthApp = new OAuthApp({
