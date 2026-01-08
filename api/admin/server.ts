@@ -3,6 +3,7 @@ import express, { Router } from 'express';
 import session from 'express-session';
 import { pool } from '../db/index.js';
 import { githubAuthRouter, requireAuth } from './middleware/github-auth.js';
+import { addAppHandler } from './routes/add-app.js';
 
 declare module 'express-session' {
   interface SessionData {
@@ -61,12 +62,7 @@ adminRouter.get('/', requireAuth, (req, res) => {
 adminRouter.get('/add-app', requireAuth, (req, res) => {
   res.render('admin/views/add-app', {
     user: req.session.user,
-    error: req.query.error,
-    success: req.query.success,
   });
 });
 
-adminRouter.post('/add-app', requireAuth, (_req, res) => {
-  // TODO: Implement add app logic
-  res.redirect('/admin/add-app?success=1');
-});
+adminRouter.post('/add-app', requireAuth, addAppHandler);
