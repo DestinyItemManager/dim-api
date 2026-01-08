@@ -19,6 +19,7 @@ testApp.set('views', '/Users/brh/Documents/oss/dim-api/api');
 
 // Mock req.session.user for all requests
 testApp.use((req, _res, next) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   req.session = {
     user: {
       id: 12345,
@@ -77,7 +78,10 @@ async function expectAppInDatabase(
   appId: string,
   expectedData: { bungieApiKey: string; origin: string },
 ) {
-  const result = await pool.query('SELECT * FROM apps WHERE id = $1', [appId]);
+  const result = await pool.query<{ bungie_api_key: string; origin: string }>(
+    'SELECT * FROM apps WHERE id = $1',
+    [appId],
+  );
   expect(result.rows.length).toBe(1);
   expect(result.rows[0].bungie_api_key).toBe(expectedData.bungieApiKey);
   expect(result.rows[0].origin).toBe(expectedData.origin);
