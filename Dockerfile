@@ -15,6 +15,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY --chown=node:node run.sh .
 COPY --chown=node:node dist .
 COPY --chown=node:node api/dim-gg/views api/dim-gg/views
+COPY --chown=node:node api/admin/views api/admin/views
 COPY --chown=node:node dim-gg-static dim-gg-static
 
 EXPOSE 3000
