@@ -61,12 +61,15 @@ githubAuthRouter.get('/callback', async (req, res) => {
     // Verify team membership
     let isTeamMember = false;
     try {
-      await octokit.teams.getMembershipForUserInOrg({
+      const { data: membership } = await octokit.teams.getMembershipForUserInOrg({
         org: GITHUB_ORG,
         team_slug: GITHUB_TEAM,
         username: user.login,
       });
-      isTeamMember = true;
+
+      if (membership.state === 'active') {
+        isTeamMember = true;
+      }
     } catch (error) {
       // 404 means user is not a team member
       if (
