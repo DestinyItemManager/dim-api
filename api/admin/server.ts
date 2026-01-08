@@ -31,7 +31,7 @@ adminRouter.use(
       createTableIfMissing: false,
       pruneSessionInterval: 60 * 15, // Auto-cleanup every 15 minutes
     }),
-    secret: process.env.ADMIN_SESSION_SECRET!,
+    secret: process.env.ADMIN_SESSION_SECRET || 'default-secret-for-testing',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -53,7 +53,6 @@ adminRouter.use('/auth', githubAuthRouter);
 // Home/Dashboard - protected route
 adminRouter.get('/', requireAuth, (req, res) => {
   res.render('admin/views/index', {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     user: req.session.user,
   });
 });
@@ -61,7 +60,6 @@ adminRouter.get('/', requireAuth, (req, res) => {
 // Add App tool routes - protected routes
 adminRouter.get('/add-app', requireAuth, (req, res) => {
   res.render('admin/views/add-app', {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     user: req.session.user,
     error: req.query.error,
     success: req.query.success,

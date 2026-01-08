@@ -13,8 +13,8 @@ const GITHUB_TEAM = 'developers';
 // Initialize OAuth App
 const oauthApp = new OAuthApp({
   clientType: 'oauth-app',
-  clientId: process.env.GITHUB_CLIENT_ID!,
-  clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+  clientId: process.env.GITHUB_CLIENT_ID || 'test-client-id',
+  clientSecret: process.env.GITHUB_CLIENT_SECRET || 'test-client-secret',
 });
 
 // OAuth Routes
