@@ -64,6 +64,16 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: stately_access_key
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: github_client_secret
+            - name: ADMIN_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: admin_session_secret
           envFrom:
             - configMapRef:
                 name: dim-api-config
