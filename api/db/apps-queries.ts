@@ -14,6 +14,8 @@ export async function getAllApps(client: ClientBase): Promise<ApiApp[]> {
   return results.rows.map((row) => camelize(row));
 }
 
+// TODO: Add a last modified column to apps and use that for more efficient syncing. This will require us to be able to disable apps rather than deleting them. And we need an index on that column.
+
 export async function addAllApps(apps: ApiApp[]): Promise<void> {
   await transaction(async (client) => {
     for (const app of apps) {

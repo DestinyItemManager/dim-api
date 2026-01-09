@@ -1,11 +1,10 @@
 import * as Sentry from '@sentry/node';
 import { keyBy } from 'es-toolkit';
 import { RequestHandler } from 'express';
-import { addAllApps, getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
-import { pool } from '../db/index.js';
+import { getAllApps as getAllAppsPostgres } from '../db/apps-queries.js';
+import { readTransaction } from '../db/index.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
-import { getAllApps as getAllAppsStately } from '../stately/apps-queries.js';
 
 /**
  * Express middleware that requires an API key be provided in a header
@@ -70,29 +69,9 @@ export async function refreshApps(): Promise<void> {
   stopAppsRefresh();
 
   try {
-    if (apps.length === 0) {
-      // Start off with a copy from StatelyDB, just in case postgres is having
-      // problems.
-      const [appsFromStately] = await getAllAppsStately();
-      if (appsFromStately.length > 0) {
-        apps = appsFromStately;
-        digestApps();
-      }
-    }
-
-    const appsFromPostgres = await fetchAppsFromPostgres();
-
-    if (appsFromPostgres.length > 0) {
-      apps = appsFromPostgres;
-      digestApps();
-    } else {
-      // import them into Postgres
-      try {
-        await addAllApps(apps);
-      } catch (e) {
-        console.error('Error importing apps into Postgres', e);
-      }
-    }
+    const appsFromPostgres = await readTransaction((client) => getAllAppsPostgres(client));
+    apps = appsFromPostgres;
+    digestApps();
     metrics.increment('apps.refresh.success.count');
   } catch (e) {
     metrics.increment('apps.refresh.error.count');
@@ -104,16 +83,6 @@ export async function refreshApps(): Promise<void> {
     if (!appsInterval) {
       appsInterval = setTimeout(refreshApps, 60000 + Math.random() * 10000);
     }
-  }
-}
-
-async function fetchAppsFromPostgres() {
-  const client = await pool.connect();
-  try {
-    const appsFromPostgres = await getAllAppsPostgres(client);
-    return appsFromPostgres;
-  } finally {
-    client.release();
   }
 }
 
