@@ -3,7 +3,6 @@ import { v4 as uuid } from 'uuid';
 import { insertApp as insertAppPostgres } from '../../db/apps-queries.js';
 import { transaction } from '../../db/index.js';
 import { ApiApp } from '../../shapes/app.js';
-import { insertApp as insertAppStately } from '../../stately/apps-queries.js';
 
 interface AddAppFormData {
   appId: string;
@@ -62,7 +61,7 @@ export const addAppHandler = asyncHandler(async (req, res) => {
   }
 
   // Create the app object
-  let app: ApiApp = {
+  const app: ApiApp = {
     id: formData.appId,
     bungieApiKey: formData.bungieApiKey.trim(),
     origin: originUrl.origin,
@@ -70,13 +69,8 @@ export const addAppHandler = asyncHandler(async (req, res) => {
   };
 
   try {
-    // Put it in StatelyDB
-    app = await insertAppStately(app);
-
     // Put it in Postgres
-    await transaction(async (client) => {
-      await insertAppPostgres(client, app);
-    });
+    await transaction(async (client) => insertAppPostgres(client, app));
 
     // Render success page with app details
     res.render('admin/views/add-app-success', {

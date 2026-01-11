@@ -4,7 +4,6 @@ import { v4 as uuid } from 'uuid';
 import { getAppById, insertApp as insertAppPostgres } from '../db/apps-queries.js';
 import { transaction } from '../db/index.js';
 import { ApiApp, CreateAppRequest } from '../shapes/app.js';
-import { insertApp as insertAppStately } from '../stately/apps-queries.js';
 import { badRequest } from '../utils.js';
 
 const localHosts =
@@ -48,9 +47,6 @@ export const createAppHandler = asyncHandler(async (req, res) => {
     origin: originUrl.origin,
     dimApiKey: uuid(),
   };
-
-  // Put it in StatelyDB
-  app = await insertAppStately(app);
 
   // Put it in Postgres
   await transaction(async (client) => {

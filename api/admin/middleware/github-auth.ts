@@ -93,7 +93,11 @@ githubAuthRouter.get('/callback', async (req, res) => {
     req.session.save((err) => {
       if (err) {
         console.error('Error saving session:', err);
-        return res.status(500).send(`Failed to create session: ${err.message}`);
+        return res
+          .status(500)
+          .send(
+            `Failed to create session: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          );
       }
 
       // Redirect based on team membership
