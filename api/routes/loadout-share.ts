@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 import asyncHandler from 'express-async-handler';
 import base32 from 'hi-base32';
+import { DatabaseError } from 'pg-protocol';
+import { transaction } from '../db/index.js';
+import { addLoadoutShare, recordAccess } from '../db/loadout-share-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import {
@@ -11,7 +14,6 @@ import {
 import { Loadout } from '../shapes/loadouts.js';
 import { UserInfo } from '../shapes/user.js';
 import {
-  addLoadoutShare as addLoadoutShareStately,
   getLoadoutShare as getLoadoutShareStately,
   LoadoutShareCollision,
   recordAccess as recordAccessStately,
@@ -31,7 +33,7 @@ const getShareURL = (loadout: Loadout, shareId: string) => {
  * Save a loadout to be shared via a dim.gg link.
  */
 export const loadoutShareHandler = asyncHandler(async (req, res) => {
-  const { profileIds } = req.user as UserInfo;
+  const { profileIds, bungieMembershipId } = req.user as UserInfo;
   const { id: appId } = req.dimApp as ApiApp;
   metrics.increment(`loadout_share.app.${appId}`, 1);
   const request = req.body as LoadoutShareRequest;
@@ -60,21 +62,29 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
 
   let shareId = '';
   let attempts = 0;
+  let success = false;
+
   // We'll make three attempts to guess a random non-colliding number
-  while (attempts < 4) {
+  while (attempts < 4 && !success) {
     shareId = generateRandomShareId();
-    try {
-      await addLoadoutShareStately(platformMembershipId, shareId, loadout);
-      break;
-    } catch (e) {
-      // This is a unique constraint violation, generate another random share ID
-      if (e instanceof LoadoutShareCollision) {
-        // try again!
-      } else {
-        throw e;
+    await transaction(async (client) => {
+      try {
+        await addLoadoutShare(client, bungieMembershipId, platformMembershipId, shareId, loadout);
+        success = true;
+      } catch (e) {
+        // This is a unique constraint violation, so just get the app!
+        if (e instanceof DatabaseError && e.code === '23505') {
+          await client.query('ROLLBACK');
+          // This is a unique constraint violation, generate another random share ID
+          if (e instanceof LoadoutShareCollision) {
+            // try again!
+          } else {
+            throw e;
+          }
+        }
+        attempts++;
       }
-    }
-    attempts++;
+    });
   }
 
   const result: LoadoutShareResponse = {
@@ -127,13 +137,11 @@ export async function loadLoadoutShare(shareId: string) {
     console.error('Failed to load loadout share from Stately', e);
   }
 
-  // // Fall back to Postgres
-  // return transaction(async (client) => {
-  //   const loadout = await getLoadoutShare(client, shareId);
-  //   if (loadout) {
-  //     // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
-  //     await recordAccess(client, shareId);
-  //   }
-  //   return loadout;
-  // });
+  // Fall back to Postgres
+  return transaction(async (client) =>
+    // Record when this was viewed and increment the view counter. Not using it
+    // much for now (besides deleting unused shares) but I'd like to know. This
+    // returns the share if it exists.
+    recordAccess(client, shareId),
+  );
 }
