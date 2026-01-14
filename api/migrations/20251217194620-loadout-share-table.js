@@ -14,7 +14,7 @@ exports.setup = function (options, seedLink) {
   seed = seedLink;
 };
 
-// TODO: Index on platform_membership_id to allow us to quickly find all loadouts for a given user.
+// TODO: Index on platform_membership_id to allow us to quickly find all loadouts for a given user (with view counts??).
 exports.up = function (db, callback) {
   db.runSql(
     `CREATE TABLE loadout_shares (

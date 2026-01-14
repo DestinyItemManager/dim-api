@@ -63,6 +63,7 @@ it('can record visits', async () => {
   await transaction(async (client) => {
     await addLoadoutShare(client, bungieMembershipId, platformMembershipId, shareID, loadout);
 
-    await recordAccess(client, shareID);
+    const loadoutIncremented = await recordAccess(client, shareID);
+    expect(loadoutIncremented).toBeDefined();
   });
 });

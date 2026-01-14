@@ -61,20 +61,21 @@ values ($1, $2, $3, $4, $5, $6, $7, $8)`,
 }
 
 /**
- * Touch the last_accessed_at and visits fields to keep track of access.
+ * Touch the last_accessed_at and visits fields to keep track of access. This returns the loadout, if it exists.
  */
-export async function recordAccess(client: ClientBase, shareId: string): Promise<QueryResult> {
-  const response = await client.query({
+export async function recordAccess(
+  client: ClientBase,
+  shareId: string,
+): Promise<Loadout | undefined> {
+  const results = await client.query<LoadoutRow>({
     name: 'loadout_share_record_access',
-    text: `update loadout_shares set last_accessed_at = current_timestamp, view_count = view_count + 1 where id = $1`,
+    text: `update loadout_shares set last_accessed_at = current_timestamp, view_count = view_count + 1 where id = $1 returning id, name, notes, class_type, items, parameters, created_at`,
     values: [shareId],
   });
 
-  if (response.rowCount! < 1) {
-    // This should never happen!
-    metrics.increment('db.loadoutShares.noRowUpdated.count', 1);
-    throw new Error('loadout share - No row was updated');
+  if (results.rowCount === 1) {
+    return convertLoadout(results.rows[0]);
+  } else {
+    return undefined;
   }
-
-  return response;
 }
