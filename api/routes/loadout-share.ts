@@ -16,7 +16,6 @@ import { UserInfo } from '../shapes/user.js';
 import {
   deleteLoadoutShare,
   getLoadoutShare as getLoadoutShareStately,
-  LoadoutShareCollision,
 } from '../stately/loadout-share-queries.js';
 import slugify from './slugify.js';
 import { validateLoadout } from './update.js';
@@ -76,11 +75,9 @@ export const loadoutShareHandler = asyncHandler(async (req, res) => {
         if (e instanceof DatabaseError && e.code === '23505') {
           await client.query('ROLLBACK');
           // This is a unique constraint violation, generate another random share ID
-          if (e instanceof LoadoutShareCollision) {
-            // try again!
-          } else {
-            throw e;
-          }
+          // try again!
+        } else {
+          throw e;
         }
         attempts++;
       }
@@ -158,11 +155,9 @@ export async function loadLoadoutShare(shareId: string) {
       // This is a unique constraint violation, give up
       if (e instanceof DatabaseError && e.code === '23505') {
         await client.query('ROLLBACK');
-        if (e instanceof LoadoutShareCollision) {
-          return false;
-        } else {
-          throw e;
-        }
+        return false;
+      } else {
+        throw e;
       }
     }
   });
