@@ -36,7 +36,7 @@ export async function addLoadoutShare(
   const response = await client.query({
     name: 'add_loadout_share',
     text: `insert into loadout_shares (id, membership_id, platform_membership_id, name, notes, class_type, items, parameters, view_count)
-values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     values: [
       shareId,
       bungieMembershipId,
