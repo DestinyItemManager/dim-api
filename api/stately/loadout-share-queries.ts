@@ -15,9 +15,17 @@ function keyFor(shareId: string) {
 /**
  * Get a specific loadout share by its share ID.
  */
-export async function getLoadoutShare(shareId: string): Promise<Loadout | undefined> {
+export async function getLoadoutShare(
+  shareId: string,
+): Promise<{ loadout: Loadout; viewCount: number; platformMembershipId: string } | undefined> {
   const result = await client.get('LoadoutShare', keyFor(shareId));
-  return result ? convertLoadoutFromStately(result) : undefined;
+  return result
+    ? {
+        loadout: convertLoadoutFromStately(result),
+        viewCount: result.viewCount,
+        platformMembershipId: result.profileId.toString(),
+      }
+    : undefined;
 }
 
 function convertLoadoutShareToStately(

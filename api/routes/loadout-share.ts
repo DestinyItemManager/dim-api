@@ -14,9 +14,9 @@ import {
 import { Loadout } from '../shapes/loadouts.js';
 import { UserInfo } from '../shapes/user.js';
 import {
+  deleteLoadoutShare,
   getLoadoutShare as getLoadoutShareStately,
   LoadoutShareCollision,
-  recordAccess as recordAccessStately,
 } from '../stately/loadout-share-queries.js';
 import slugify from './slugify.js';
 import { validateLoadout } from './update.js';
@@ -125,23 +125,52 @@ export const getLoadoutShareHandler = asyncHandler(async (req, res) => {
 });
 
 export async function loadLoadoutShare(shareId: string) {
-  // First look in Stately
-  try {
-    const loadout = await getLoadoutShareStately(shareId);
-    if (loadout) {
-      // Record when this was viewed and increment the view counter. Not using it much for now but I'd like to know.
-      await recordAccessStately(shareId);
-      return loadout;
-    }
-  } catch (e) {
-    console.error('Failed to load loadout share from Stately', e);
-  }
-
-  // Fall back to Postgres
-  return transaction(async (client) =>
+  const loadout = await transaction(async (client) =>
     // Record when this was viewed and increment the view counter. Not using it
     // much for now (besides deleting unused shares) but I'd like to know. This
     // returns the share if it exists.
     recordAccess(client, shareId),
   );
+
+  if (loadout) {
+    return loadout;
+  }
+
+  // Fall back to Stately, and backfill into Postgres if found
+  const result = await getLoadoutShareStately(shareId);
+  if (!result) {
+    return undefined;
+  }
+
+  // Backfill in Postgres
+  const backfilled = await transaction(async (client) => {
+    try {
+      await addLoadoutShare(
+        client,
+        undefined,
+        result.platformMembershipId,
+        shareId,
+        result.loadout,
+        result.viewCount,
+      );
+      return true;
+    } catch (e) {
+      // This is a unique constraint violation, give up
+      if (e instanceof DatabaseError && e.code === '23505') {
+        await client.query('ROLLBACK');
+        if (e instanceof LoadoutShareCollision) {
+          return false;
+        } else {
+          throw e;
+        }
+      }
+    }
+  });
+
+  if (backfilled) {
+    // Remove from Stately only if we successfully backfilled
+    await deleteLoadoutShare(shareId);
+  }
+
+  return result.loadout;
 }

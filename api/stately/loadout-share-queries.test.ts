@@ -38,7 +38,7 @@ it('can record a shared loadout', async () => {
 
   const sharedLoadout = await getLoadoutShare(shareID);
 
-  expect(sharedLoadout?.name).toBe(loadout.name);
+  expect(sharedLoadout?.loadout.name).toBe(loadout.name);
 });
 
 it('rejects multiple shares with the same ID', async () => {
