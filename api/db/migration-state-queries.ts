@@ -29,6 +29,20 @@ interface MigrationStateRow {
   last_error: string | null;
 }
 
+// This is a blind backfill that only adds missing rows - it doesn't update existing ones
+export async function backfillMigrationState(
+  client: ClientBase,
+  platformMembershipId: string,
+  bungieMembershipId: number,
+): Promise<void> {
+  await client.query({
+    name: 'backfill_migration_state',
+    text: `insert into migration_state (platform_membership_id, membership_id, state) VALUES ($1, $2, $3)
+on conflict (platform_membership_id) do nothing`,
+    values: [platformMembershipId, bungieMembershipId, MigrationState.Stately],
+  });
+}
+
 export async function getUsersToMigrate(client: ClientBase): Promise<number[]> {
   const results = await client.query<MigrationStateRow>({
     name: 'get_users_to_migrate',
