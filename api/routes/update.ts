@@ -2,6 +2,8 @@ import { captureMessage } from '@sentry/node';
 import { chunk, groupBy, partition, sortBy } from 'es-toolkit';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
+import { transaction } from '../db/index.js';
+import { backfillMigrationState } from '../db/migration-state-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -86,6 +88,16 @@ export const updateHandler = asyncHandler(async (req, res) => {
   if (!Array.isArray(updates)) {
     badRequest(res, `updates must be an array`);
     return;
+  }
+
+  // Do a conditional update of the migration state table in Postgres to mark
+  // that we've seen this user and they are in the Stately migration state. This
+  // makes sure new users get put into the migration table while we're
+  // backfilling.
+  if (platformMembershipId) {
+    await transaction(async (client) => {
+      backfillMigrationState(client, platformMembershipId ?? profileIds[0], bungieMembershipId);
+    });
   }
 
   // const migrationState = await readTransaction(async (client) =>
