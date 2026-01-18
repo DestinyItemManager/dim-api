@@ -33,7 +33,7 @@ interface MigrationStateRow {
 export async function backfillMigrationState(
   client: ClientBase,
   platformMembershipId: string,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
 ): Promise<void> {
   await client.query({
     name: 'backfill_migration_state',

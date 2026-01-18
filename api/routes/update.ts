@@ -96,7 +96,11 @@ export const updateHandler = asyncHandler(async (req, res) => {
   // backfilling.
   if (platformMembershipId) {
     await transaction(async (client) => {
-      backfillMigrationState(client, platformMembershipId ?? profileIds[0], bungieMembershipId);
+      await backfillMigrationState(
+        client,
+        platformMembershipId ?? profileIds[0],
+        bungieMembershipId,
+      );
     });
   }
 
