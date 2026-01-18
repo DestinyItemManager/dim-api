@@ -33,7 +33,7 @@ it('can insert settings where none exist before', async () => {
   });
 
   const settings = await getSettings(bungieMembershipId);
-  expect(settings.showNewItems).toBe(true);
+  expect(settings?.showNewItems).toBe(true);
 });
 
 it('can update settings', async () => {
@@ -44,7 +44,7 @@ it('can update settings', async () => {
   });
 
   const settings = await getSettings(bungieMembershipId);
-  expect(settings.showNewItems).toBe(true);
+  expect(settings?.showNewItems).toBe(true);
 
   await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
@@ -53,7 +53,7 @@ it('can update settings', async () => {
   });
 
   const settings2 = await getSettings(bungieMembershipId);
-  expect(settings2.showNewItems).toBe(false);
+  expect(settings2?.showNewItems).toBe(false);
 });
 
 it('can partially update settings', async () => {
@@ -64,7 +64,7 @@ it('can partially update settings', async () => {
   });
 
   const settings = await getSettings(bungieMembershipId);
-  expect(settings.showNewItems).toBe(true);
+  expect(settings?.showNewItems).toBe(true);
 
   await client.transaction(async (txn) => {
     await setSetting(txn, bungieMembershipId, {
@@ -73,5 +73,5 @@ it('can partially update settings', async () => {
   });
 
   const settings2 = await getSettings(bungieMembershipId);
-  expect(settings2.showNewItems).toBe(true);
+  expect(settings2?.showNewItems).toBe(true);
 });

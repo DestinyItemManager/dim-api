@@ -4,6 +4,7 @@ import express from 'express';
 import asyncHandler from 'express-async-handler';
 import { transaction } from '../db/index.js';
 import { backfillMigrationState } from '../db/migration-state-queries.js';
+import { replaceSettings, setSetting as setSettingInPostgres } from '../db/settings-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -25,7 +26,7 @@ import {
   UsedSearchUpdate,
 } from '../shapes/profile.js';
 import { SearchType } from '../shapes/search.js';
-import { Settings } from '../shapes/settings.js';
+import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { client } from '../stately/client.js';
 import {
@@ -42,7 +43,11 @@ import {
   UpdateSearch,
   updateSearches,
 } from '../stately/searches-queries.js';
-import { setSetting as setSettingInStately } from '../stately/settings-queries.js';
+import {
+  deleteSettings as deleteSettingsInStately,
+  getSettingsForUpdate,
+  setSetting as setSettingInStately,
+} from '../stately/settings-queries.js';
 import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
   badRequest,
@@ -50,6 +55,7 @@ import {
   delay,
   isValidItemId,
   isValidPlatformMembershipId,
+  subtractObject,
 } from '../utils.js';
 
 /**
@@ -213,12 +219,15 @@ function validateUpdates(
     }
 
     switch (update.action) {
-      case 'setting':
       case 'tag_cleanup':
       case 'delete_loadout':
       case 'track_triumph':
       case 'delete_search':
         // no special validation
+        break;
+
+      case 'setting':
+        result = validateUpdateSettings(update.payload);
         break;
 
       case 'loadout':
@@ -303,7 +312,28 @@ async function statelyUpdate(
             for (const update of group as SettingUpdate[]) {
               mergedSettings = { ...mergedSettings, ...update.payload };
             }
-            await setSettingInStately(txn, bungieMembershipId, mergedSettings);
+
+            if (bungieMembershipId === 7094) {
+              const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
+
+              if (statelySettings) {
+                mergedSettings = { ...statelySettings, ...mergedSettings };
+                await transaction(async (pgClient) => {
+                  await replaceSettings(
+                    pgClient,
+                    bungieMembershipId,
+                    subtractObject(mergedSettings, defaultSettings),
+                  );
+                });
+                await deleteSettingsInStately(bungieMembershipId);
+              } else {
+                await transaction(async (pgClient) => {
+                  await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
+                });
+              }
+            } else {
+              await setSettingInStately(txn, bungieMembershipId, mergedSettings);
+            }
             break;
           }
 
@@ -505,6 +535,42 @@ async function statelyUpdate(
 //   );
 //   metrics.timing('update.loadout', start);
 // }
+
+/** Helper function to validate integer ranges */
+function validateIntRange(
+  value: unknown,
+  fieldName: string,
+  min: number,
+  max: number,
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    metrics.increment(`update.validation.${fieldName}OutOfRange.count`);
+    return `${fieldName} must be an integer between ${min} and ${max}`;
+  }
+  return undefined;
+}
+
+function validateUpdateSettings(settings: Partial<Settings>): ProfileUpdateResult {
+  const errors = [
+    // Validate numeric ranges
+    validateIntRange(settings.charCol, 'charCol', 2, 5),
+    validateIntRange(settings.charColMobile, 'charColMobile', 2, 5),
+    validateIntRange(settings.itemSize, 'itemSize', 0, 66),
+    validateIntRange(settings.inventoryClearSpaces, 'inventoryClearSpaces', 0, 9),
+  ].filter((e) => e !== undefined);
+
+  if (errors.length > 0) {
+    return {
+      status: 'InvalidArgument',
+      message: errors.join('; '),
+    };
+  }
+
+  return { status: 'Success' };
+}
 
 function validateUpdateLoadout(loadout: Loadout): ProfileUpdateResult {
   return validateLoadout('update', loadout) ?? { status: 'Success' };
