@@ -43,9 +43,9 @@ export function keyFor(bungieMembershipId: number) {
 /**
  * Get settings for a particular account.
  */
-export async function getSettings(bungieMembershipId: number): Promise<Settings> {
+export async function getSettings(bungieMembershipId: number): Promise<Settings | undefined> {
   const results = await client.get('Settings', keyFor(bungieMembershipId));
-  return results ? convertToDimSettings(results) : defaultSettings;
+  return results ? convertToDimSettings(results) : undefined;
 }
 
 /**

@@ -80,7 +80,7 @@ describe('deleteAllDataForUser', () => {
       ),
     ).toEqual([]);
     expect((await getTrackedTriumphsForProfile(platformMembershipId)).triumphs).toEqual([]);
-    expect((await getSettings(bungieMembershipId)).showNewItems).toBe(false);
+    expect((await getSettings(bungieMembershipId))?.showNewItems).toBe(false);
   });
 });
 

@@ -1,7 +1,7 @@
 import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
-import { transaction } from '../db/index.js';
-import { deleteSettings } from '../db/settings-queries.js';
+import { readTransaction, transaction } from '../db/index.js';
+import { deleteSettings, getSettings as getSettingsFromPostgres } from '../db/settings-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -115,11 +115,16 @@ export async function exportDataForUser(
   bungieMembershipId: number,
   platformMembershipIds: string[],
 ): Promise<ExportResponse> {
-  // TODO: get settings from Postgres first, then fall back to Stately
-  const settingsPromise = getSettings(bungieMembershipId);
+  let settings = await getSettings(bungieMembershipId);
+  if (!settings) {
+    const pgSettings = await readTransaction((client) =>
+      getSettingsFromPostgres(client, bungieMembershipId),
+    );
+    settings = { ...defaultSettings, ...pgSettings?.settings };
+  }
+
   const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));
 
-  const settings = await settingsPromise;
   const initialResponse: ExportResponse = {
     settings: subtractObject(settings, defaultSettings),
     loadouts: [],
