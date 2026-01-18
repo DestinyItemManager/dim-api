@@ -46,7 +46,6 @@ import {
 import {
   deleteSettings as deleteSettingsInStately,
   getSettingsForUpdate,
-  setSetting as setSettingInStately,
 } from '../stately/settings-queries.js';
 import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
@@ -313,26 +312,22 @@ async function statelyUpdate(
               mergedSettings = { ...mergedSettings, ...update.payload };
             }
 
-            if (bungieMembershipId === 7094) {
-              const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
+            const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
 
-              if (statelySettings) {
-                mergedSettings = { ...statelySettings, ...mergedSettings };
-                await transaction(async (pgClient) => {
-                  await replaceSettings(
-                    pgClient,
-                    bungieMembershipId,
-                    subtractObject(mergedSettings, defaultSettings),
-                  );
-                });
-                await deleteSettingsInStately(bungieMembershipId);
-              } else {
-                await transaction(async (pgClient) => {
-                  await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
-                });
-              }
+            if (statelySettings) {
+              mergedSettings = { ...statelySettings, ...mergedSettings };
+              await transaction(async (pgClient) => {
+                await replaceSettings(
+                  pgClient,
+                  bungieMembershipId,
+                  subtractObject(mergedSettings, defaultSettings),
+                );
+              });
+              await deleteSettingsInStately(bungieMembershipId);
             } else {
-              await setSettingInStately(txn, bungieMembershipId, mergedSettings);
+              await transaction(async (pgClient) => {
+                await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
+              });
             }
             break;
           }
