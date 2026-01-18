@@ -1,5 +1,7 @@
 import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
+import { transaction } from '../db/index.js';
+import { deleteSettings } from '../db/settings-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -12,7 +14,7 @@ import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-q
 import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-queries.js';
 import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
 import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
-import { deleteSettings, getSettings } from './settings-queries.js';
+import { deleteSettings as deleteSettingsInStately, getSettings } from './settings-queries.js';
 import { batches, fromStatelyUUID, parseKeyPath } from './stately-utils.js';
 import { keyFor as triumphKeyFor } from './triumphs-queries.js';
 
@@ -26,7 +28,9 @@ export async function deleteAllDataForUser(
   const responses = await Promise.all(platformMembershipIds.map((p) => deleteAllDataForProfile(p)));
 
   // Also delete settings, which are stored by membershipId
-  await deleteSettings(bungieMembershipId);
+  await deleteSettingsInStately(bungieMembershipId);
+  // And delete from Postgres too
+  await transaction(async (pgClient) => deleteSettings(pgClient, bungieMembershipId));
 
   const response = responses.reduce<DeleteAllResponse['deleted']>(
     (acc, r) => {
@@ -111,6 +115,7 @@ export async function exportDataForUser(
   bungieMembershipId: number,
   platformMembershipIds: string[],
 ): Promise<ExportResponse> {
+  // TODO: get settings from Postgres first, then fall back to Stately
   const settingsPromise = getSettings(bungieMembershipId);
   const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));
 

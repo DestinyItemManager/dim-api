@@ -53,7 +53,7 @@ export async function getSettings(bungieMembershipId: number): Promise<Settings>
  */
 export async function querySettings(
   bungieMembershipId: number,
-): Promise<{ settings: Settings; token: ListToken }> {
+): Promise<{ settings: Settings | undefined; token: ListToken }> {
   const iter = client.beginList(keyFor(bungieMembershipId));
   let settingsItem: StatelySettings | undefined;
   for await (const item of iter) {
@@ -63,7 +63,7 @@ export async function querySettings(
   }
   const token = iter.token!;
   return {
-    settings: settingsItem ? convertToDimSettings(settingsItem) : defaultSettings,
+    settings: settingsItem ? convertToDimSettings(settingsItem) : undefined,
     token,
   };
 }
@@ -316,6 +316,28 @@ export function convertToStatelyItem(
 }
 
 /**
+ * Get existing settings for update purposes.
+ */
+export async function getSettingsForUpdate(
+  txn: Transaction,
+  bungieMembershipId: number,
+): Promise<Settings | undefined> {
+  const storedSettings = await txn.get('Settings', keyFor(bungieMembershipId));
+  return storedSettings ? convertToDimSettings(storedSettings) : undefined;
+}
+
+/**
+ * Update settings by putting the full settings object.
+ */
+export async function updateSettings(
+  txn: Transaction,
+  bungieMembershipId: number,
+  settings: Settings,
+): Promise<void> {
+  await txn.put(convertToStatelyItem(settings, bungieMembershipId));
+}
+
+/**
  * Update specific key/value pairs within settings, leaving the rest alone. Creates the settings row if it doesn't exist.
  */
 export async function setSetting(
@@ -323,17 +345,12 @@ export async function setSetting(
   bungieMembershipId: number,
   settings: Partial<Settings>,
 ): Promise<void> {
-  const storedSettings = await txn.get('Settings', keyFor(bungieMembershipId));
-  await txn.put(
-    convertToStatelyItem(
-      // Merge in the partial settings
-      {
-        ...(storedSettings ? convertToDimSettings(storedSettings) : defaultSettings),
-        ...settings,
-      },
-      bungieMembershipId,
-    ),
-  );
+  const existingSettings = await getSettingsForUpdate(txn, bungieMembershipId);
+  await updateSettings(txn, bungieMembershipId, {
+    ...defaultSettings,
+    ...existingSettings,
+    ...settings,
+  });
 }
 
 /**

@@ -7,13 +7,23 @@ import { Settings } from '../shapes/settings.js';
 export async function getSettings(
   client: ClientBase,
   bungieMembershipId: number,
-): Promise<Partial<Settings>> {
-  const results = await client.query<{ settings: Settings }>({
+): Promise<{ settings: Partial<Settings>; deleted: boolean; lastModifiedAt: number } | undefined> {
+  const results = await client.query<{
+    settings: Settings;
+    deleted_at: Date | null;
+    last_updated_at: Date;
+  }>({
     name: 'get_settings',
-    text: 'SELECT settings FROM settings WHERE membership_id = $1 and deleted_at IS NULL',
+    text: 'SELECT settings, deleted_at, last_updated_at FROM settings WHERE membership_id = $1',
     values: [bungieMembershipId],
   });
-  return results.rows.length > 0 ? results.rows[0].settings : {};
+  return results.rows.length > 0
+    ? {
+        settings: results.rows[0].settings,
+        deleted: Boolean(results.rows[0].deleted_at),
+        lastModifiedAt: results.rows[0].last_updated_at.getTime(),
+      }
+    : undefined;
 }
 
 /**

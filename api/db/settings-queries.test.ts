@@ -11,7 +11,7 @@ it('can insert settings where none exist before', async () => {
       showNewItems: true,
     });
 
-    const settings = await getSettings(client, bungieMembershipId);
+    const settings = (await getSettings(client, bungieMembershipId))!.settings;
     expect(settings.showNewItems).toBe(true);
   });
 });
@@ -22,14 +22,14 @@ it('can update settings', async () => {
       showNewItems: true,
     });
 
-    const settings = await getSettings(client, bungieMembershipId);
+    const settings = (await getSettings(client, bungieMembershipId))!.settings;
     expect(settings.showNewItems).toBe(true);
 
     await setSetting(client, bungieMembershipId, {
       showNewItems: false,
     });
 
-    const settings2 = await getSettings(client, bungieMembershipId);
+    const settings2 = (await getSettings(client, bungieMembershipId))!.settings;
     expect(settings2.showNewItems).toBe(false);
   });
 });
@@ -40,14 +40,14 @@ it('can partially update settings', async () => {
       showNewItems: true,
     });
 
-    const settings = await getSettings(client, bungieMembershipId);
+    const settings = (await getSettings(client, bungieMembershipId))!.settings;
     expect(settings.showNewItems).toBe(true);
 
     await setSetting(client, bungieMembershipId, {
       singleCharacter: true,
     });
 
-    const settings2 = await getSettings(client, bungieMembershipId);
+    const settings2 = (await getSettings(client, bungieMembershipId))!.settings;
     expect(settings2.showNewItems).toBe(true);
   });
 });
