@@ -202,28 +202,24 @@ async function statelyProfile(
         // Load settings from Stately. If they're there, you're done. Otherwise load from Postgres.
         const start = new Date();
 
-        const statelySettings = await querySettings(bungieMembershipId);
-        if (statelySettings.settings) {
+        const now = Date.now();
+        // TODO: Should add the token to the query to avoid fetching if unchanged
+        const pgSettings = await readTransaction(async (pgClient) =>
+          getSettings(pgClient, bungieMembershipId),
+        );
+        if (pgSettings) {
+          const tokenData = getSyncToken<number>('s');
+          if (tokenData === undefined || pgSettings.lastModifiedAt > Number(tokenData)) {
+            response.settings = { ...defaultSettings, ...pgSettings.settings };
+          }
+          addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
+        } else {
           const tokenData = getSyncToken<Buffer>('settings');
           const { settings: storedSettings, token: settingsToken } = tokenData
             ? await syncSettings(tokenData)
-            : statelySettings;
+            : await querySettings(bungieMembershipId);
           response.settings = storedSettings;
           addSyncToken('settings', settingsToken);
-        } else {
-          const now = Date.now();
-          const pgSettings = await readTransaction(async (pgClient) =>
-            getSettings(pgClient, bungieMembershipId),
-          );
-          if (pgSettings) {
-            const tokenData = getSyncToken<number>('s');
-            if (tokenData === undefined || pgSettings.lastModifiedAt > Number(tokenData)) {
-              response.settings = { ...defaultSettings, ...pgSettings.settings };
-            }
-          } else {
-            response.settings = defaultSettings;
-          }
-          addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
         }
 
         metrics.timing(`${timerPrefix}.settings`, start);
