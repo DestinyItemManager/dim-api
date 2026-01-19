@@ -2,9 +2,13 @@ import { captureMessage } from '@sentry/node';
 import { chunk, groupBy, partition, sortBy } from 'es-toolkit';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
-import { transaction } from '../db/index.js';
+import { readTransaction, transaction } from '../db/index.js';
 import { backfillMigrationState } from '../db/migration-state-queries.js';
-import { replaceSettings, setSetting as setSettingInPostgres } from '../db/settings-queries.js';
+import {
+  getSettings,
+  replaceSettings,
+  setSetting as setSettingInPostgres,
+} from '../db/settings-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -309,22 +313,31 @@ async function statelyUpdate(
               mergedSettings = { ...mergedSettings, ...update.payload };
             }
 
-            const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
-
-            if (statelySettings) {
-              mergedSettings = { ...statelySettings, ...mergedSettings };
-              await transaction(async (pgClient) => {
-                await replaceSettings(
-                  pgClient,
-                  bungieMembershipId,
-                  subtractObject(mergedSettings, defaultSettings),
-                );
-              });
-              await txn.del(keyFor(bungieMembershipId));
-            } else {
+            // TODO: Remove the check for settings in Postgres once we're fully migrated off Stately
+            const pgSettings = await readTransaction((client) =>
+              getSettings(client, bungieMembershipId),
+            );
+            if (pgSettings) {
               await transaction(async (pgClient) => {
                 await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
               });
+            } else {
+              const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
+              if (statelySettings) {
+                mergedSettings = { ...statelySettings, ...mergedSettings };
+                await transaction(async (pgClient) => {
+                  await replaceSettings(
+                    pgClient,
+                    bungieMembershipId,
+                    subtractObject(mergedSettings, defaultSettings),
+                  );
+                });
+                await txn.del(keyFor(bungieMembershipId));
+              } else {
+                await transaction(async (pgClient) => {
+                  await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
+                });
+              }
             }
             break;
           }
