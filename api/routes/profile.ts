@@ -186,9 +186,9 @@ async function statelyProfile(
   };
   const getSyncToken = <T extends number | Buffer>(name: string) => {
     const tokenData = incomingSyncTokens?.[name];
-    if (incomingSyncTokens && !tokenData) {
-      throw new Error(`Missing sync token: ${name}`);
-    }
+    // if (incomingSyncTokens && !tokenData) {
+    //   throw new Error(`Missing sync token: ${name}`);
+    // }
     return tokenData as T | undefined;
   };
 
