@@ -43,10 +43,7 @@ import {
   UpdateSearch,
   updateSearches,
 } from '../stately/searches-queries.js';
-import {
-  deleteSettings as deleteSettingsInStately,
-  getSettingsForUpdate,
-} from '../stately/settings-queries.js';
+import { getSettingsForUpdate, keyFor } from '../stately/settings-queries.js';
 import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
   badRequest,
@@ -323,7 +320,7 @@ async function statelyUpdate(
                   subtractObject(mergedSettings, defaultSettings),
                 );
               });
-              await deleteSettingsInStately(bungieMembershipId);
+              await txn.del(keyFor(bungieMembershipId));
             } else {
               await transaction(async (pgClient) => {
                 await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);

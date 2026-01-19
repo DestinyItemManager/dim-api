@@ -172,7 +172,7 @@ async function statelyProfile(
   };
   const timerPrefix = response.sync ? 'profileSync' : 'profileStately';
   const counterPrefix = response.sync ? 'sync' : 'stately';
-  const syncTokens: { [component: string]: string } = {};
+  const syncTokens: { [component: string]: string | number } = {};
   const addSyncToken = (
     name: string,
     token: ListToken | { canSync: boolean; tokenData: number },
@@ -181,7 +181,7 @@ async function statelyProfile(
       syncTokens[name] =
         token.tokenData instanceof Uint8Array
           ? Buffer.from(token.tokenData).toString('base64')
-          : token.tokenData.toString();
+          : token.tokenData;
     }
   };
   const getSyncToken = <T extends number | Buffer>(name: string) => {
@@ -203,30 +203,27 @@ async function statelyProfile(
         const start = new Date();
 
         const statelySettings = await querySettings(bungieMembershipId);
-        if (!statelySettings.settings) {
+        if (statelySettings.settings) {
+          const tokenData = getSyncToken<Buffer>('settings');
+          const { settings: storedSettings, token: settingsToken } = tokenData
+            ? await syncSettings(tokenData)
+            : statelySettings;
+          response.settings = storedSettings;
+          addSyncToken('settings', settingsToken);
+        } else {
           const now = Date.now();
           const pgSettings = await readTransaction(async (pgClient) =>
             getSettings(pgClient, bungieMembershipId),
           );
           if (pgSettings) {
             const tokenData = getSyncToken<number>('s');
-            if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
+            if (tokenData === undefined || pgSettings.lastModifiedAt > Number(tokenData)) {
               response.settings = { ...defaultSettings, ...pgSettings.settings };
             }
           } else {
             response.settings = defaultSettings;
           }
           addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
-        } else {
-          const tokenData = getSyncToken<Buffer>('settings');
-          const { settings: storedSettings, token: settingsToken } = tokenData
-            ? await syncSettings(tokenData)
-            : {
-                settings: statelySettings.settings ?? defaultSettings,
-                token: statelySettings.token,
-              };
-          response.settings = storedSettings;
-          addSyncToken('settings', settingsToken);
         }
 
         metrics.timing(`${timerPrefix}.settings`, start);
