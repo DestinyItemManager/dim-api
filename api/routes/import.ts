@@ -1,6 +1,8 @@
 import { uniqBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
+import { transaction } from '../db/index.js';
+import { replaceSettings } from '../db/settings-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
@@ -15,7 +17,6 @@ import { importTags } from '../stately/item-annotations-queries.js';
 import { importHashTags } from '../stately/item-hash-tags-queries.js';
 import { importLoadouts } from '../stately/loadouts-queries.js';
 import { importSearches } from '../stately/searches-queries.js';
-import { convertToStatelyItem } from '../stately/settings-queries.js';
 import { batches } from '../stately/stately-utils.js';
 import { importTriumphs } from '../stately/triumphs-queries.js';
 import { badRequest, delay, subtractObject } from '../utils.js';
@@ -119,11 +120,6 @@ export async function statelyImport(
   let numTriumphs = 0;
   await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
 
-  const settingsItem = convertToStatelyItem(
-    { ...defaultSettings, ...settings },
-    bungieMembershipId,
-  );
-
   // The export will have duplicates because import saved to each profile
   // instead of the one that was exported.
   itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
@@ -152,10 +148,9 @@ export async function statelyImport(
     items.push(...importSearches(platformMembershipId, searches));
   }
 
-  // Put the settings in first since it's in a different group
-  await client.put({
-    item: settingsItem,
-  });
+  // Settings live in Postgres now
+  await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
     // We shouldn't have any existing items...

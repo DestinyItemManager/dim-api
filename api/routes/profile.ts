@@ -147,7 +147,10 @@ function extractSyncToken(syncTokenParam: string | undefined) {
       const tokenMap = JSON.parse(syncTokenParam) as { [component: string]: string | number };
       return Object.entries(tokenMap).reduce<{ [component: string]: Buffer | number }>(
         (acc, [component, token]) => {
-          acc[component] = typeof token === 'string' ? Buffer.from(token, 'base64') : token;
+          acc[component] =
+            typeof token === 'string' && !/^\d+$/.exec(token)
+              ? Buffer.from(token, 'base64')
+              : Number(token);
           return acc;
         },
         {},
@@ -172,7 +175,7 @@ async function statelyProfile(
   };
   const timerPrefix = response.sync ? 'profileSync' : 'profileStately';
   const counterPrefix = response.sync ? 'sync' : 'stately';
-  const syncTokens: { [component: string]: string } = {};
+  const syncTokens: { [component: string]: string | number } = {};
   const addSyncToken = (
     name: string,
     token: ListToken | { canSync: boolean; tokenData: number },
@@ -181,14 +184,14 @@ async function statelyProfile(
       syncTokens[name] =
         token.tokenData instanceof Uint8Array
           ? Buffer.from(token.tokenData).toString('base64')
-          : token.tokenData.toString();
+          : token.tokenData;
     }
   };
   const getSyncToken = <T extends number | Buffer>(name: string) => {
     const tokenData = incomingSyncTokens?.[name];
-    if (incomingSyncTokens && !tokenData) {
-      throw new Error(`Missing sync token: ${name}`);
-    }
+    // if (incomingSyncTokens && !tokenData) {
+    //   throw new Error(`Missing sync token: ${name}`);
+    // }
     return tokenData as T | undefined;
   };
 
@@ -202,29 +205,22 @@ async function statelyProfile(
         // Load settings from Stately. If they're there, you're done. Otherwise load from Postgres.
         const start = new Date();
 
-        const statelySettings = await querySettings(bungieMembershipId);
-        if (!statelySettings.settings) {
-          const now = Date.now();
-          const pgSettings = await readTransaction(async (pgClient) =>
-            getSettings(pgClient, bungieMembershipId),
-          );
-          if (pgSettings) {
-            const tokenData = getSyncToken<number>('s');
-            if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
-              response.settings = { ...defaultSettings, ...pgSettings.settings };
-            }
-          } else {
-            response.settings = defaultSettings;
+        const now = Date.now();
+        // TODO: Should add the token to the query to avoid fetching if unchanged
+        const pgSettings = await readTransaction(async (pgClient) =>
+          getSettings(pgClient, bungieMembershipId),
+        );
+        if (pgSettings) {
+          const tokenData = getSyncToken<number>('s');
+          if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
+            response.settings = { ...defaultSettings, ...pgSettings.settings };
           }
           addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
         } else {
           const tokenData = getSyncToken<Buffer>('settings');
           const { settings: storedSettings, token: settingsToken } = tokenData
             ? await syncSettings(tokenData)
-            : {
-                settings: statelySettings.settings ?? defaultSettings,
-                token: statelySettings.token,
-              };
+            : await querySettings(bungieMembershipId);
           response.settings = storedSettings;
           addSyncToken('settings', settingsToken);
         }
@@ -335,6 +331,6 @@ async function statelyProfile(
   return response;
 }
 
-function serializeSyncToken(syncTokens: { [component: string]: string }) {
+function serializeSyncToken(syncTokens: { [component: string]: string | number }) {
   return JSON.stringify(syncTokens);
 }

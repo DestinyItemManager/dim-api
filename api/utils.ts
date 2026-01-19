@@ -1,4 +1,4 @@
-import { camelCase, mapKeys } from 'es-toolkit';
+import { camelCase, isEqual, mapKeys } from 'es-toolkit';
 import { Response } from 'express';
 
 /**
@@ -141,7 +141,7 @@ export function subtractObject<T extends object>(obj: Partial<T>, defaults: T): 
   const result: Partial<T> = {};
   if (obj) {
     for (const key in defaults) {
-      if (obj[key] !== undefined && obj[key] !== defaults[key]) {
+      if (obj[key] !== undefined && !isEqual(obj[key], defaults[key])) {
         result[key] = obj[key];
       }
     }

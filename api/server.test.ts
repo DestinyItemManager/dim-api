@@ -210,11 +210,40 @@ describe('profile', () => {
 
     expect(profileSyncResponse.syncToken).toBeDefined();
     expect(profileSyncResponse.syncToken).not.toBe(profileResponse.syncToken);
+    expect(profileSyncResponse.syncToken).toContain('"s":');
     expect(profileSyncResponse.sync).toBe(true);
     expect(profileSyncResponse.settings?.showNewItems).toBe(true);
     expect(profileSyncResponse.tags?.length).toBe(1);
     expect(profileSyncResponse.tags?.[0].id).toBe('1234');
     expect(profileSyncResponse.deletedLoadoutIds?.length).toBe(1);
+
+    const request2: ProfileUpdateRequest = {
+      platformMembershipId,
+      destinyVersion: 2,
+      updates: [
+        {
+          action: 'setting',
+          payload: {
+            compareBaseStats: true,
+          },
+        },
+      ],
+    };
+    await postRequestAuthed('/profile', request2).expect(200);
+
+    const profileSyncResponse2 = (await getRequestAuthed(
+      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileSyncResponse.syncToken!)}`,
+    )
+      .expect(200)
+      .json()) as ProfileResponse;
+
+    expect(profileSyncResponse2.syncToken).toBeDefined();
+    expect(profileSyncResponse2.syncToken).not.toBe(profileSyncResponse.syncToken);
+    expect(profileSyncResponse2.syncToken).toContain('"s":');
+    expect(profileSyncResponse2.sync).toBe(true);
+    expect(profileSyncResponse2.settings).toBeDefined();
+    expect(profileSyncResponse.settings?.compareBaseStats).toBe(true);
+    expect(profileSyncResponse2.settings?.showNewItems).toBe(true);
   });
 
   it('can retrieve only settings, without needing a platform membership ID', async () => {

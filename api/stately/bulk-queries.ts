@@ -6,7 +6,7 @@ import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
-import { defaultSettings } from '../shapes/settings.js';
+import { defaultSettings, Settings } from '../shapes/settings.js';
 import { delay, subtractObject } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
@@ -115,12 +115,14 @@ export async function exportDataForUser(
   bungieMembershipId: number,
   platformMembershipIds: string[],
 ): Promise<ExportResponse> {
-  let settings = await getSettings(bungieMembershipId);
-  if (!settings) {
-    const pgSettings = await readTransaction((client) =>
-      getSettingsFromPostgres(client, bungieMembershipId),
-    );
-    settings = { ...defaultSettings, ...pgSettings?.settings };
+  let settings: Settings;
+  const pgSettings = await readTransaction((client) =>
+    getSettingsFromPostgres(client, bungieMembershipId),
+  );
+  if (pgSettings) {
+    settings = { ...defaultSettings, ...pgSettings.settings };
+  } else {
+    settings = (await getSettings(bungieMembershipId)) ?? defaultSettings;
   }
 
   const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));

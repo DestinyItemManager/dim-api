@@ -9,7 +9,7 @@ export async function getSettings(
   bungieMembershipId: number,
 ): Promise<{ settings: Partial<Settings>; deleted: boolean; lastModifiedAt: number } | undefined> {
   const results = await client.query<{
-    settings: Settings;
+    settings: Partial<Settings>;
     deleted_at: Date | null;
     last_updated_at: Date;
   }>({
