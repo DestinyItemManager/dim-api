@@ -328,6 +328,6 @@ async function statelyProfile(
   return response;
 }
 
-function serializeSyncToken(syncTokens: { [component: string]: string }) {
+function serializeSyncToken(syncTokens: { [component: string]: string | number }) {
   return JSON.stringify(syncTokens);
 }
