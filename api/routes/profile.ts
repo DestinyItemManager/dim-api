@@ -147,7 +147,10 @@ function extractSyncToken(syncTokenParam: string | undefined) {
       const tokenMap = JSON.parse(syncTokenParam) as { [component: string]: string | number };
       return Object.entries(tokenMap).reduce<{ [component: string]: Buffer | number }>(
         (acc, [component, token]) => {
-          acc[component] = typeof token === 'string' ? Buffer.from(token, 'base64') : token;
+          acc[component] =
+            typeof token === 'string' && !/^\d+$/.exec(token)
+              ? Buffer.from(token, 'base64')
+              : Number(token);
           return acc;
         },
         {},
@@ -209,7 +212,7 @@ async function statelyProfile(
         );
         if (pgSettings) {
           const tokenData = getSyncToken<number>('s');
-          if (tokenData === undefined || pgSettings.lastModifiedAt > Number(tokenData)) {
+          if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
             response.settings = { ...defaultSettings, ...pgSettings.settings };
           }
           addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
