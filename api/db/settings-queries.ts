@@ -46,6 +46,25 @@ do update set settings = $2, deleted_at = null`,
 }
 
 /**
+ * Insert or update (upsert) an entire settings tree, totally replacing whatever's there.
+ */
+export async function replaceSettingsIfNotPresent(
+  client: ClientBase,
+  bungieMembershipId: number,
+  settings: Partial<Settings>,
+): Promise<QueryResult> {
+  const result = await client.query({
+    name: 'upsert_settings',
+    text: `insert into settings (membership_id, settings)
+values ($1, $2)
+on conflict (membership_id)
+do nothing`,
+    values: [bungieMembershipId, settings],
+  });
+  return result;
+}
+
+/**
  * Update specific key/value pairs within settings, leaving the rest alone. Creates the settings row if it doesn't exist.
  */
 export async function setSetting(

@@ -2,13 +2,29 @@ import { captureMessage } from '@sentry/node';
 import { chunk, groupBy, partition, sortBy } from 'es-toolkit';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
+import { ClientBase } from 'pg';
 import { readTransaction, transaction } from '../db/index.js';
-import { backfillMigrationState } from '../db/migration-state-queries.js';
+import {
+  deleteItemAnnotationList,
+  updateItemAnnotation as updateItemAnnotationInDb,
+} from '../db/item-annotations-queries.js';
+import { updateItemHashTag as updateItemHashTagInDb } from '../db/item-hash-tags-queries.js';
+import {
+  deleteLoadout as deleteLoadoutInDb,
+  updateLoadout as updateLoadoutInDb,
+} from '../db/loadouts-queries.js';
+import { backfillMigrationState, MigrationState } from '../db/migration-state-queries.js';
+import {
+  deleteSearch as deleteSearchInDb,
+  saveSearch as saveSearchInDb,
+  updateUsedSearch,
+} from '../db/searches-queries.js';
 import {
   getSettings,
   replaceSettings,
   setSetting as setSettingInPostgres,
 } from '../db/settings-queries.js';
+import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -32,7 +48,7 @@ import {
 import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { client } from '../stately/client.js';
+import { client as statelyClient } from '../stately/client.js';
 import {
   deleteItemAnnotation as deleteItemAnnotationListStately,
   updateItemAnnotation as updateItemAnnotationInStately,
@@ -47,7 +63,12 @@ import {
   UpdateSearch,
   updateSearches,
 } from '../stately/searches-queries.js';
-import { getSettingsForUpdate, keyFor } from '../stately/settings-queries.js';
+import {
+  getSettingsForUpdate,
+  getSettings as getSettingsStately,
+  keyFor,
+} from '../stately/settings-queries.js';
+import { Transaction } from '../stately/stately-utils.js';
 import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
   badRequest,
@@ -100,93 +121,38 @@ export const updateHandler = asyncHandler(async (req, res) => {
   // that we've seen this user and they are in the Stately migration state. This
   // makes sure new users get put into the migration table while we're
   // backfilling.
+  let migrationState: MigrationState = MigrationState.Stately;
   if (platformMembershipId) {
-    await transaction(async (client) => {
-      await backfillMigrationState(
-        client,
-        platformMembershipId ?? profileIds[0],
-        bungieMembershipId,
-      );
-    });
+    migrationState = await transaction(async (client) =>
+      backfillMigrationState(client, platformMembershipId ?? profileIds[0], bungieMembershipId),
+    );
   }
 
-  // const migrationState = await readTransaction(async (client) =>
-  //   getMigrationState(client, bungieMembershipId),
-  // );
-
-  // const desiredMigrationState = await getDesiredMigrationState(migrationState);
-  // const shouldMigrateToStately =
-  //   desiredMigrationState === MigrationState.Stately &&
-  //   migrationState.state !== desiredMigrationState;
+  if (
+    migrationState === MigrationState.MigratingToPostgres &&
+    updates.some((u) => u.action !== 'setting')
+  ) {
+    res.status(503).header('Retry-After', '60').send({
+      error: 'MigrationInProgress',
+      message: `This account is being migrated. Try again in a little bit.`,
+    });
+    return;
+  }
 
   const results: ProfileUpdateResult[] = validateUpdates(req, updates, platformMembershipId, appId);
   // Only attempt updates that pass validation
   const updatesToApply = updates.filter((_, index) => results[index].status === 'Success');
 
-  await statelyUpdate(
-    updatesToApply,
-    bungieMembershipId,
-    platformMembershipId ?? profileIds[0],
-    destinyVersion,
-  );
-
-  // const importToStately = async () => {
-  //   // Export from Postgres
-  //   const exportResponse = await pgExport(bungieMembershipId);
-
-  //   const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
-  //     extractImportData(exportResponse);
-
-  //   if (
-  //     isEmpty(settings) &&
-  //     loadouts.length === 0 &&
-  //     itemAnnotations.length === 0 &&
-  //     triumphs.length === 0 &&
-  //     searches.length === 0
-  //   ) {
-  //     // Nothing to import!
-  //     return;
-  //   }
-  //   await statelyImport(
-  //     bungieMembershipId,
-  //     profileIds,
-  //     settings,
-  //     loadouts,
-  //     itemAnnotations,
-  //     triumphs,
-  //     searches,
-  //     itemHashTags,
-  //   );
-  // };
-
-  // switch (migrationState.state) {
-  //   case MigrationState.Postgres:
-  //     if (shouldMigrateToStately) {
-  //       // For now let's leave the old data in Postgres as a backup
-  //       await doMigration(bungieMembershipId, importToStately);
-  //       await statelyUpdate(
-  //         updatesToApply,
-  //         bungieMembershipId,
-  //         platformMembershipId ?? profileIds[0],
-  //         destinyVersion,
-  //       );
-  //     } else {
-  //       await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
-  //     }
-  //     break;
-  //   case MigrationState.Stately:
-  //     await statelyUpdate(
-  //       updatesToApply,
-  //       bungieMembershipId,
-  //       platformMembershipId ?? profileIds[0],
-  //       destinyVersion,
-  //     );
-  //     break;
-  //   default:
-  //     // in-progress migration
-  //     badRequest(res, `Unable to import data - please wait a bit and try again.`);
-  //     return;
-  // }
+  if (migrationState === MigrationState.Postgres) {
+    await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
+  } else {
+    await statelyUpdate(
+      updatesToApply,
+      bungieMembershipId,
+      platformMembershipId ?? profileIds[0],
+      destinyVersion,
+    );
+  }
 
   res.send({
     results,
@@ -303,42 +269,11 @@ async function statelyUpdate(
   }
 
   for (const updateChunk of chunk(sortedUpdates, 25)) {
-    await client.transaction(async (txn) => {
+    await statelyClient.transaction(async (txn) => {
       for (const [action, group] of Object.entries(groupBy(updateChunk, actionKey))) {
         switch (action) {
           case 'setting': {
-            // The DIM reducer already combines settings updates, but just in case...
-            let mergedSettings: Partial<Settings> = (group as SettingUpdate[]).shift()!.payload;
-            for (const update of group as SettingUpdate[]) {
-              mergedSettings = { ...mergedSettings, ...update.payload };
-            }
-
-            // TODO: Remove the check for settings in Postgres once we're fully migrated off Stately
-            const pgSettings = await readTransaction((client) =>
-              getSettings(client, bungieMembershipId),
-            );
-            if (pgSettings) {
-              await transaction(async (pgClient) => {
-                await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
-              });
-            } else {
-              const statelySettings = await getSettingsForUpdate(txn, bungieMembershipId);
-              if (statelySettings) {
-                mergedSettings = { ...statelySettings, ...mergedSettings };
-                await transaction(async (pgClient) => {
-                  await replaceSettings(
-                    pgClient,
-                    bungieMembershipId,
-                    subtractObject(mergedSettings, defaultSettings),
-                  );
-                });
-                await txn.del(keyFor(bungieMembershipId));
-              } else {
-                await transaction(async (pgClient) => {
-                  await setSettingInPostgres(pgClient, bungieMembershipId, mergedSettings);
-                });
-              }
-            }
+            await settingsUpdates(group as SettingUpdate[], bungieMembershipId, txn);
             break;
           }
 
@@ -429,117 +364,130 @@ async function statelyUpdate(
   }
 }
 
-// async function pgUpdate(
-//   updates: ProfileUpdate[],
-//   bungieMembershipId: number,
-//   platformMembershipId: string | undefined,
-//   destinyVersion: DestinyVersion,
-// ) {
-//   return transaction(async (client) => {
-//     for (const update of updates) {
-//       switch (update.action) {
-//         case 'setting':
-//           await updateSetting(client, bungieMembershipId, update.payload);
-//           break;
+async function pgUpdate(
+  updates: ProfileUpdate[],
+  bungieMembershipId: number,
+  platformMembershipId: string | undefined,
+  destinyVersion: DestinyVersion,
+) {
+  // We want to group save/delete search and search updates together
+  const actionKey = (u: ProfileUpdate) =>
+    u.action === 'save_search' || u.action === 'delete_search' ? 'search' : u.action;
 
-//         case 'loadout':
-//           await updateLoadout(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
+  const sortedUpdates = sortBy(updates, [actionKey]).flatMap((u): ProfileUpdate[] => {
+    // Separate out tag_cleanup updates into individual updates
+    if (u.action === 'tag_cleanup') {
+      return u.payload.map((p) => ({ action: 'tag_cleanup', payload: [p] }));
+    }
+    return [u];
+  });
 
-//         case 'delete_loadout':
-//           await deleteLoadout(client, platformMembershipId!, update.payload);
-//           break;
+  const tagIds = new Set<string>();
+  for (const update of sortedUpdates) {
+    if (update.action === 'tag') {
+      tagIds.add(update.payload.id);
+    }
+  }
 
-//         case 'tag':
-//           await updateItemAnnotation(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
+  return transaction(async (client) => {
+    for (const update of updates) {
+      switch (update.action) {
+        case 'setting':
+          await settingsUpdates([update], bungieMembershipId, undefined, client);
+          break;
 
-//         case 'tag_cleanup':
-//           await tagCleanup(client, platformMembershipId!, update.payload);
-//           break;
+        case 'loadout':
+          await updateLoadout(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
+          break;
 
-//         case 'item_hash_tag':
-//           await updateItemHashTag(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             update.payload,
-//           );
-//           break;
+        case 'delete_loadout':
+          await deleteLoadout(client, platformMembershipId!, update.payload);
+          break;
 
-//         case 'track_triumph':
-//           await trackTriumph(client, bungieMembershipId, platformMembershipId!, update.payload);
-//           break;
+        case 'tag':
+          await updateItemAnnotation(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
+          break;
 
-//         case 'search':
-//           await recordSearch(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
+        case 'tag_cleanup': {
+          const instanceIds = update.payload.filter(
+            (id) =>
+              // We've seen a problem where DIM sends a tag_cleanup and a tag for the same item in the same update
+              !tagIds.has(id) && isValidItemId(id),
+          );
+          await tagCleanup(client, platformMembershipId!, instanceIds);
+          break;
+        }
 
-//         case 'save_search':
-//           await saveSearch(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
+        case 'item_hash_tag':
+          await updateItemHashTag(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            update.payload,
+          );
+          break;
 
-//         case 'delete_search':
-//           await deleteSearch(client, platformMembershipId!, destinyVersion, update.payload);
-//           break;
-//       }
-//     }
-//   });
-// }
+        case 'track_triumph':
+          await trackTriumph(client, bungieMembershipId, platformMembershipId!, update.payload);
+          break;
 
-// async function updateSetting(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   settings: Partial<Settings>,
-// ): Promise<void> {
-//   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
+        case 'search':
+          await recordSearch(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
+          break;
 
-//   const start = new Date();
-//   await setSettingInDb(client, bungieMembershipId, settings);
-//   metrics.timing('update.setting', start);
-// }
+        case 'save_search':
+          await saveSearch(
+            client,
+            bungieMembershipId,
+            platformMembershipId!,
+            destinyVersion,
+            update.payload,
+          );
+          break;
 
-// async function updateLoadout(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   loadout: Loadout,
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateLoadoutInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     loadout,
-//   );
-//   metrics.timing('update.loadout', start);
-// }
+        case 'delete_search':
+          await deleteSearch(client, platformMembershipId!, destinyVersion, update.payload);
+          break;
+      }
+    }
+  });
+}
+
+async function updateLoadout(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  loadout: Loadout,
+): Promise<void> {
+  const start = new Date();
+  await updateLoadoutInDb(
+    client,
+    bungieMembershipId,
+    platformMembershipId,
+    destinyVersion,
+    loadout,
+  );
+  metrics.timing('update.loadout', start);
+}
 
 /** Helper function to validate integer ranges */
 function validateIntRange(
@@ -666,33 +614,33 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   return undefined;
 }
 
-// async function deleteLoadout(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   loadoutId: string,
-// ): Promise<void> {
-//   const start = new Date();
-//   await deleteLoadoutInDb(client, platformMembershipId, loadoutId);
-//   metrics.timing('update.deleteLoadout', start);
-// }
+async function deleteLoadout(
+  client: ClientBase,
+  platformMembershipId: string,
+  loadoutId: string,
+): Promise<void> {
+  const start = new Date();
+  await deleteLoadoutInDb(client, platformMembershipId, loadoutId);
+  metrics.timing('update.deleteLoadout', start);
+}
 
-// async function updateItemAnnotation(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   itemAnnotation: ItemAnnotation,
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateItemAnnotationInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     itemAnnotation,
-//   );
-//   metrics.timing('update.tag', start);
-// }
+async function updateItemAnnotation(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  itemAnnotation: ItemAnnotation,
+): Promise<void> {
+  const start = new Date();
+  await updateItemAnnotationInDb(
+    client,
+    bungieMembershipId,
+    platformMembershipId,
+    destinyVersion,
+    itemAnnotation,
+  );
+  metrics.timing('update.tag', start);
+}
 
 function validateUpdateItemAnnotation(itemAnnotation: ItemAnnotation): ProfileUpdateResult {
   if (!isValidItemId(itemAnnotation.id)) {
@@ -754,73 +702,73 @@ function validateUpdateItemHashTag(itemAnnotation: ItemHashTag): ProfileUpdateRe
   return { status: 'Success' };
 }
 
-// async function tagCleanup(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   inventoryItemIds: string[],
-// ): Promise<ProfileUpdateResult> {
-//   const start = new Date();
-//   await deleteItemAnnotationList(
-//     client,
-//     platformMembershipId,
-//     inventoryItemIds.filter(isValidItemId),
-//   );
-//   metrics.timing('update.tagCleanup', start);
+async function tagCleanup(
+  client: ClientBase,
+  platformMembershipId: string,
+  inventoryItemIds: string[],
+): Promise<ProfileUpdateResult> {
+  const start = new Date();
+  await deleteItemAnnotationList(
+    client,
+    platformMembershipId,
+    inventoryItemIds.filter(isValidItemId),
+  );
+  metrics.timing('update.tagCleanup', start);
 
-//   return { status: 'Success' };
-// }
+  return { status: 'Success' };
+}
 
-// async function trackTriumph(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   payload: TrackTriumphUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   payload.tracked
-//     ? await trackTriumphInDb(client, bungieMembershipId, platformMembershipId, payload.recordHash)
-//     : await unTrackTriumph(client, platformMembershipId, payload.recordHash);
-//   metrics.timing('update.trackTriumph', start);
-// }
+async function trackTriumph(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  payload: TrackTriumphUpdate['payload'],
+): Promise<void> {
+  const start = new Date();
+  payload.tracked
+    ? await trackTriumphInDb(client, bungieMembershipId, platformMembershipId, payload.recordHash)
+    : await unTrackTriumph(client, platformMembershipId, payload.recordHash);
+  metrics.timing('update.trackTriumph', start);
+}
 
-// async function recordSearch(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: UsedSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateUsedSearch(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//   );
-//   metrics.timing('update.recordSearch', start);
-// }
+async function recordSearch(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  payload: UsedSearchUpdate['payload'],
+): Promise<void> {
+  const start = new Date();
+  await updateUsedSearch(
+    client,
+    bungieMembershipId,
+    platformMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
+  metrics.timing('update.recordSearch', start);
+}
 
-// async function saveSearch(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: SavedSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await saveSearchInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//     payload.saved,
-//   );
-//   metrics.timing('update.saveSearch', start);
-// }
+async function saveSearch(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  payload: SavedSearchUpdate['payload'],
+): Promise<void> {
+  const start = new Date();
+  await saveSearchInDb(
+    client,
+    bungieMembershipId,
+    platformMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+    payload.saved,
+  );
+  metrics.timing('update.saveSearch', start);
+}
 
 function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResult {
   if (payload.query.length > 2048) {
@@ -839,33 +787,33 @@ function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResu
   return { status: 'Success' };
 }
 
-// async function deleteSearch(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: DeleteSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await deleteSearchInDb(
-//     client,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//   );
-//   metrics.timing('update.deleteSearch', start);
-// }
+async function deleteSearch(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  payload: DeleteSearchUpdate['payload'],
+): Promise<void> {
+  const start = new Date();
+  await deleteSearchInDb(
+    client,
+    platformMembershipId,
+    destinyVersion,
+    payload.query,
+    payload.type ?? SearchType.Item,
+  );
+  metrics.timing('update.deleteSearch', start);
+}
 
-// async function updateItemHashTag(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   payload: ItemHashTagUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateItemHashTagInDb(client, bungieMembershipId, platformMembershipId, payload);
-//   metrics.timing('update.updateItemHashTag', start);
-// }
+async function updateItemHashTag(
+  client: ClientBase,
+  bungieMembershipId: number,
+  platformMembershipId: string,
+  payload: ItemHashTagUpdate['payload'],
+): Promise<void> {
+  const start = new Date();
+  await updateItemHashTagInDb(client, bungieMembershipId, platformMembershipId, payload);
+  metrics.timing('update.updateItemHashTag', start);
+}
 
 function consolidateSearchUpdates(
   updates: (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],
@@ -892,4 +840,58 @@ function consolidateSearchUpdates(
     }
     return u;
   });
+}
+
+async function settingsUpdates(
+  group: SettingUpdate[],
+  bungieMembershipId: number,
+  txn?: Transaction,
+  client?: ClientBase,
+) {
+  // The DIM reducer already combines settings updates, but just in case...
+  let mergedSettings: Partial<Settings> = group.shift()!.payload;
+  for (const update of group) {
+    mergedSettings = { ...mergedSettings, ...update.payload };
+  }
+
+  // TODO: Remove the check for settings in Postgres once we're fully migrated off Stately
+  const pgSettings = await (client
+    ? getSettings(client, bungieMembershipId)
+    : readTransaction((client) => getSettings(client, bungieMembershipId)));
+  if (pgSettings) {
+    await (client
+      ? setSettingInPostgres(client, bungieMembershipId, mergedSettings)
+      : transaction(async (client) => {
+          await setSettingInPostgres(client, bungieMembershipId, mergedSettings);
+        }));
+  } else {
+    const statelySettings = await (txn
+      ? getSettingsForUpdate(txn, bungieMembershipId)
+      : getSettingsStately(bungieMembershipId));
+    if (statelySettings) {
+      mergedSettings = { ...statelySettings, ...mergedSettings };
+      await (client
+        ? replaceSettings(
+            client,
+            bungieMembershipId,
+            subtractObject(mergedSettings, defaultSettings),
+          )
+        : transaction(async (client) => {
+            replaceSettings(
+              client,
+              bungieMembershipId,
+              subtractObject(mergedSettings, defaultSettings),
+            );
+          }));
+      await (txn
+        ? txn.del(keyFor(bungieMembershipId))
+        : statelyClient.del(keyFor(bungieMembershipId)));
+    } else {
+      await (client
+        ? setSettingInPostgres(client, bungieMembershipId, mergedSettings)
+        : transaction(async (client) => {
+            await setSettingInPostgres(client, bungieMembershipId, mergedSettings);
+          }));
+    }
+  }
 }
