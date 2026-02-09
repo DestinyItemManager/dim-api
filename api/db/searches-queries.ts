@@ -1,4 +1,4 @@
-import { uniqBy } from 'es-toolkit';
+import { partition, uniqBy } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { ExportResponse } from '../shapes/export.js';
@@ -6,35 +6,11 @@ import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { KeysToSnakeCase } from '../utils.js';
 
-interface SearchRow extends KeysToSnakeCase<Omit<Search, 'lastUpdatedAt' | 'type'>> {
-  last_updated_at: Date;
+interface SearchRow extends KeysToSnakeCase<Omit<Search, 'lastUsage' | 'type'>> {
+  last_used: Date;
   search_type: SearchType;
 }
 
-/*
- * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
- */
-const cannedSearchesForD2: Search[] = [
-  'is:blue is:haspower -is:maxpower',
-  '-is:equipped is:haspower is:incurrentchar',
-  '-is:exotic -is:locked -is:maxpower -is:tagged stat:total:<55',
-].map((query) => ({
-  query,
-  saved: false,
-  usageCount: 0,
-  lastUsage: 0,
-  type: SearchType.Item,
-}));
-
-const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentchar'].map(
-  (query) => ({
-    query,
-    saved: false,
-    usageCount: 0,
-    lastUsage: 0,
-    type: SearchType.Item,
-  }),
-);
 /*
  * Searches are stored in a single table, scoped by Bungie.net account and destiny version (D1 searches are separate from D2 searches).
  * Favorites and recent searches are stored the same - there's just a favorite flag for saved searches. There is also a usage count
@@ -45,25 +21,42 @@ const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentcha
  */
 
 /**
- * Get all of the searches for a particular destiny_version.
+ * Get all of the searches for a particular platformMembershipId and destiny_version.
  */
 export async function getSearchesForProfile(
   client: ClientBase,
-  bungieMembershipId: number,
+  platformMembershipId: string,
   destinyVersion: DestinyVersion,
 ): Promise<Search[]> {
-  const results = await client.query({
+  const results = await client.query<SearchRow>({
     name: 'get_searches',
-    // TODO: order by frecency
-    text: 'SELECT query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1 and destiny_version = $2 order by last_updated_at DESC, usage_count DESC LIMIT 500',
-    values: [bungieMembershipId, destinyVersion],
+    text: 'SELECT query, saved, usage_count, search_type, last_used FROM searches WHERE platform_membership_id = $1 and destiny_version = $2 and deleted_at is null order by saved DESC, last_used DESC, usage_count DESC LIMIT 500',
+    values: [platformMembershipId, destinyVersion],
   });
-  return uniqBy(
-    results.rows
-      .map(convertSearch)
-      .concat(destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1),
-    (s) => s.query,
-  );
+  return uniqBy(results.rows.map(convertSearch), (s) => s.query);
+}
+
+/**
+ * Get all of the searches for a particular platformMembershipId and destiny_version that have changed since the token timestamp, including tombstone rows.
+ */
+export async function syncSearchesForProfile(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  syncTimestamp: number,
+): Promise<{ updated: Search[]; deletedSearchHashes: string[] }> {
+  const results = await client.query<SearchRow & { deleted_at: Date | null; qhash: string }>({
+    name: 'get_searches',
+    text: 'SELECT query, qhash, saved, usage_count, search_type, last_used, deleted_at FROM searches WHERE platform_membership_id = $1 and destiny_version = $2 and last_updated_at > $3',
+    values: [platformMembershipId, destinyVersion, new Date(syncTimestamp)],
+  });
+
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
+
+  return {
+    updated: updatedRows.map(convertSearch),
+    deletedSearchHashes: deletedRows.map((row) => row.qhash),
+  };
 }
 
 /**
@@ -76,7 +69,7 @@ export async function getSearchesForUser(
   // TODO: this isn't indexed!
   const results = await client.query<SearchRow & { destiny_version: DestinyVersion }>({
     name: 'get_all_searches',
-    text: 'SELECT destiny_version, query, saved, usage_count, search_type, last_updated_at FROM searches WHERE membership_id = $1',
+    text: 'SELECT destiny_version, query, saved, usage_count, search_type, last_used FROM searches WHERE membership_id = $1',
     values: [bungieMembershipId],
   });
   return results.rows.map((row) => ({
@@ -90,7 +83,7 @@ function convertSearch(row: SearchRow): Search {
     query: row.query,
     usageCount: row.usage_count,
     saved: row.saved,
-    lastUsage: row.last_updated_at.getTime(),
+    lastUsage: row.last_used.getTime(),
     type: row.search_type,
   };
 }
@@ -113,7 +106,7 @@ export async function updateUsedSearch(
     text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type)
 values ($1, $2, $3, $4, $5)
 on conflict (platform_membership_id, destiny_version, qhash)
-do update set (usage_count, last_used, deleted_at) = (searches.usage_count + 1, current_timestamp, null)`,
+do update set (usage_count, last_used, deleted_at) = (CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count + 1 END, current_timestamp, null)`,
     values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
   });
 
@@ -127,7 +120,7 @@ do update set (usage_count, last_used, deleted_at) = (searches.usage_count + 1, 
 }
 
 /**
- * Save/unsave a search. This assumes the search exists.
+ * Save/unsave a search.
  */
 export async function saveSearch(
   client: ClientBase,
@@ -137,26 +130,15 @@ export async function saveSearch(
   query: string,
   type: SearchType,
   saved?: boolean,
-): Promise<QueryResult> {
-  const response = await client.query({
+): Promise<void> {
+  await client.query({
     name: 'save_search',
-    text: `UPDATE searches SET saved = $4 WHERE platform_membership_id = $1 AND destiny_version = $2 AND qhash = decode(md5($3), 'hex') AND query = $3 and search_type = $5`,
-    values: [platformMembershipId, destinyVersion, query, saved, type],
+    text: `INSERT INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type, saved)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (platform_membership_id, destiny_version, qhash)
+DO UPDATE SET (saved, usage_count, deleted_at) = ($6, CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count END, null)`,
+    values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type, saved],
   });
-
-  if (response.rowCount! < 1) {
-    // Someone saved a search they haven't used!
-    metrics.increment('db.searches.noRowUpdated.count', 1);
-    const insertSavedResponse = await client.query({
-      name: 'insert_search_fallback',
-      text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type, saved)
-  values ($1, $2, $3, $4, $5, true)`,
-      values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
-    });
-    return insertSavedResponse;
-  }
-
-  return response;
 }
 /**
  * Insert a single search as part of an import.
@@ -171,11 +153,13 @@ export async function importSearch(
   lastUsage: number,
   usageCount: number,
   type: SearchType,
-): Promise<QueryResult> {
-  const response = await client.query({
+): Promise<void> {
+  await client.query({
     name: 'insert_search',
     text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, saved, search_type, usage_count, last_used)
-values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+values ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (platform_membership_id, destiny_version, qhash)
+DO UPDATE SET (saved, usage_count, last_used, deleted_at) = ($5, $7, $8, null)`,
     values: [
       bungieMembershipId,
       platformMembershipId,
@@ -187,14 +171,6 @@ values ($1, $2, $3, $4, $5, $6, $7, $8)`,
       new Date(lastUsage),
     ],
   });
-
-  if (response.rowCount! < 1) {
-    // This should never happen!
-    metrics.increment('db.searches.noRowUpdated.count', 1);
-    throw new Error('searches - No row was updated');
-  }
-
-  return response;
 }
 
 /**
@@ -209,7 +185,7 @@ export async function deleteSearch(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_search',
-    text: `update searches set deleted_at = now(), usage_count = 0, last_used = now() where platform_membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
+    text: `update searches set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
     values: [platformMembershipId, destinyVersion, query, type],
   });
 }

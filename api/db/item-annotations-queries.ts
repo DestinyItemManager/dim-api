@@ -1,3 +1,4 @@
+import { partition } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { DestinyVersion } from '../shapes/general.js';
@@ -7,6 +8,7 @@ interface ItemAnnotationRow {
   inventory_item_id: string;
   tag: TagValue | null;
   notes: string | null;
+  deleted_at: Date | null;
   crafted_date: Date | null;
 }
 
@@ -34,6 +36,29 @@ export async function getItemAnnotationsForProfile(
     values: [platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertItemAnnotation);
+}
+
+/**
+ * Get all of the item annotations for a particular platform_membership_id and destiny_version that have changed since the token timestamp, including all tombstones.
+ */
+export async function syncItemAnnotationsForProfile(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  syncTimestamp: number,
+): Promise<{ updated: ItemAnnotation[]; deletedItemIds: string[] }> {
+  const results = await client.query<ItemAnnotationRow>({
+    name: 'sync_item_annotations',
+    text: 'SELECT inventory_item_id, tag, notes, crafted_date, deleted_at FROM item_annotations WHERE platform_membership_id = $1 and destiny_version = $2 and last_updated_at > $3',
+    values: [platformMembershipId, destinyVersion, new Date(syncTimestamp)],
+  });
+
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
+
+  return {
+    updated: updatedRows.map(convertItemAnnotation),
+    deletedItemIds: deletedRows.map((row) => row.inventory_item_id),
+  };
 }
 
 /**
@@ -98,10 +123,46 @@ export async function updateItemAnnotation(
   }
   const response = await client.query({
     name: 'upsert_item_annotation',
-    text: `insert INTO item_annotations (membership_id, platform_membership_id, destiny_version, inventory_item_id, tag, notes, crafted_date)
-values ($1, $2, $3, $4, (CASE WHEN $5 = 0 THEN NULL ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END), $7)
-on conflict (platform_membership_id, inventory_item_id)
-do update set (tag, notes, crafted_date, deleted_at) = ((CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN item_annotations.tag ELSE $5 END), (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN item_annotations.notes ELSE $6 END), $7, null)`,
+    text: `
+      INSERT INTO item_annotations (
+        membership_id,
+        platform_membership_id,
+        destiny_version,
+        inventory_item_id,
+        tag,
+        notes,
+        crafted_date
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        (CASE WHEN $5 = 0 THEN NULL ELSE $5 END),
+        (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END),
+        $7
+      )
+      ON CONFLICT (platform_membership_id, inventory_item_id)
+      DO UPDATE SET (tag, notes, crafted_date, deleted_at) = (
+        (CASE
+          WHEN $5 = 0 THEN NULL
+          WHEN $5 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.tag ELSE NULL END)
+          ELSE $5
+        END),
+        (CASE
+          WHEN $6 = 'clear' THEN NULL
+          WHEN $6 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.notes ELSE NULL END)
+          ELSE $6
+        END),
+        $7,
+        (CASE
+          WHEN (CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.tag ELSE NULL END) ELSE $5 END) IS NULL
+            AND (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.notes ELSE NULL END) ELSE $6 END) IS NULL
+          THEN now()
+          ELSE NULL
+        END)
+      )
+    `,
     values: [
       bungieMembershipId, // $1
       platformMembershipId, // $2
@@ -147,7 +208,7 @@ export async function deleteItemAnnotation(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation',
-    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and inventory_item_id = $2`,
+    text: `update item_annotations set (deleted_at) = (now()) where platform_membership_id = $1 and inventory_item_id = $2`,
     values: [platformMembershipId, inventoryItemId],
   });
 }
@@ -162,7 +223,7 @@ export async function deleteItemAnnotationList(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation_list',
-    text: `update item_annotations set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
+    text: `update item_annotations set (deleted_at) = (now()) where platform_membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
     values: [platformMembershipId, inventoryItemIds],
   });
 }

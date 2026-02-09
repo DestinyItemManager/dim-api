@@ -1,15 +1,16 @@
+import { partition } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { isValidItemId, KeysToSnakeCase } from '../utils.js';
 
-export interface LoadoutRow
-  extends KeysToSnakeCase<
-    Omit<Loadout, 'equipped' | 'unequipped' | 'createdAt' | 'lastUpdatedAt'>
-  > {
+export interface LoadoutRow extends KeysToSnakeCase<
+  Omit<Loadout, 'equipped' | 'unequipped' | 'createdAt' | 'lastUpdatedAt'>
+> {
   created_at: Date;
   last_updated_at: Date | null;
+  deleted_at: Date | null;
   items: { equipped: LoadoutItem[]; unequipped: LoadoutItem[] };
 }
 
@@ -27,6 +28,31 @@ export async function getLoadoutsForProfile(
     values: [platformMembershipId, destinyVersion],
   });
   return results.rows.map(convertLoadout);
+}
+
+/**
+ * Get all of the loadouts for a particular platform_membership_id and
+ * destiny_version that have changed since a given timestamp, including
+ * tombstone rows.
+ */
+export async function syncLoadoutsForProfile(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+  syncTimestamp: number,
+): Promise<{ updated: Loadout[]; deletedLoadoutIds: string[] }> {
+  const results = await client.query<LoadoutRow>({
+    name: 'sync_loadouts_for_platform_membership_id',
+    text: 'SELECT id, name, notes, class_type, items, parameters, created_at, last_updated_at, deleted_at FROM loadouts WHERE platform_membership_id = $1 and destiny_version = $2 and last_updated_at > $3',
+    values: [platformMembershipId, destinyVersion, new Date(syncTimestamp)],
+  });
+
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
+
+  return {
+    updated: updatedRows.map(convertLoadout),
+    deletedLoadoutIds: deletedRows.map((row) => row.id),
+  };
 }
 
 /**
@@ -94,7 +120,7 @@ export async function updateLoadout(
     text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, items, parameters)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 on conflict (platform_membership_id, id)
-do update set (name, notes, class_type, items, parameters) = ($5, $6, $7, $8, $9)`,
+do update set (membership_id, destiny_version, name, notes, class_type, items, parameters, deleted_at, created_at) = ($2, $4, $5, $6, $7, $8, $9, null, CASE WHEN loadouts.deleted_at IS NOT NULL THEN now() ELSE loadouts.created_at END)`,
     values: [
       loadout.id,
       bungieMembershipId,

@@ -1,3 +1,4 @@
+import { partition } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 import { ItemHashTag, TagValue } from '../shapes/item-annotations.js';
@@ -7,21 +8,44 @@ interface ItemHashTagRow {
   item_hash: string;
   tag: TagValue | null;
   notes: string | null;
+  deleted_at: Date | null;
 }
 
 /**
- * Get all of the hash tags for a particular platform_membership_id and destiny_version.
+ * Get all of the hash tags for a particular platform_membership_id.
  */
 export async function getItemHashTagsForProfile(
   client: ClientBase,
   platformMembershipId: string,
 ): Promise<ItemHashTag[]> {
-  const results = await client.query({
+  const results = await client.query<ItemHashTagRow>({
     name: 'get_item_hash_tags',
     text: 'SELECT item_hash, tag, notes FROM item_hash_tags WHERE platform_membership_id = $1 and deleted_at IS NULL',
     values: [platformMembershipId],
   });
   return results.rows.map(convertItemHashTag);
+}
+
+/**
+ * Get all of the hash tags for a particular platform_membership_id that have changed since syncTimestamp, including tombstones.
+ */
+export async function syncItemHashTagsForProfile(
+  client: ClientBase,
+  platformMembershipId: string,
+  syncTimestamp: number,
+): Promise<{ updated: ItemHashTag[]; deletedItemHashes: number[] }> {
+  const results = await client.query<ItemHashTagRow>({
+    name: 'sync_item_hash_tags',
+    text: 'SELECT item_hash, tag, notes, deleted_at FROM item_hash_tags WHERE platform_membership_id = $1 and last_updated_at > $2',
+    values: [platformMembershipId, new Date(syncTimestamp)],
+  });
+
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
+
+  return {
+    updated: updatedRows.map(convertItemHashTag),
+    deletedItemHashes: deletedRows.map((row) => parseInt(row.item_hash, 10)),
+  };
 }
 
 function convertItemHashTag(row: ItemHashTagRow): ItemHashTag {
@@ -55,10 +79,41 @@ export async function updateItemHashTag(
 
   const response = await client.query({
     name: 'upsert_hash_tag',
-    text: `insert INTO item_hash_tags (membership_id, platform_membership_id, item_hash, tag, notes)
-values ($1, $2, $3, (CASE WHEN $4 = 0 THEN NULL ELSE $4 END), (CASE WHEN $5 = 'clear' THEN NULL ELSE $5 END))
-on conflict (platform_membership_id, item_hash)
-do update set (tag, notes, deleted_at) = ((CASE WHEN $4 = 0 THEN NULL WHEN $4 IS NULL THEN item_hash_tags.tag ELSE $4 END), (CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN item_hash_tags.notes ELSE $5 END), null)`,
+    text: `
+      INSERT INTO item_hash_tags (
+        membership_id,
+        platform_membership_id,
+        item_hash,
+        tag,
+        notes
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        (CASE WHEN $5 = 0 THEN NULL ELSE $5 END),
+        (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END)
+      )
+      ON CONFLICT (platform_membership_id, item_hash)
+      DO UPDATE SET (tag, notes, deleted_at) = (
+        (CASE
+          WHEN $5 = 0 THEN NULL
+          WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END)
+          ELSE $5
+        END),
+        (CASE
+          WHEN $6 = 'clear' THEN NULL
+          WHEN $6 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END)
+          ELSE $6
+        END),
+        (CASE
+          WHEN (CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END) ELSE $5 END) IS NULL
+            AND (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END) ELSE $6 END) IS NULL
+          THEN now()
+          ELSE NULL
+        END)
+      )
+    `,
     values: [
       bungieMembershipId,
       platformMembershipId,
@@ -102,7 +157,7 @@ export async function deleteItemHashTag(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_hash_tag',
-    text: `update item_hash_tags set (tag, notes, deleted_at) = (null, null, now()) where platform_membership_id = $1 and item_hash = $2`,
+    text: `update item_hash_tags set (deleted_at) = (now()) where platform_membership_id = $1 and item_hash = $2`,
     values: [platformMembershipId, itemHash],
   });
 }

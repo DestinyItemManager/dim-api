@@ -96,12 +96,6 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict (id) do nothing`,
     ],
   });
 
-  if (response.rowCount! < 1) {
-    // This should never happen!
-    metrics.increment('db.loadoutShares.noRowUpdated.count', 1);
-    throw new Error('loadout share - No row was updated');
-  }
-
   return response;
 }
 

@@ -1,3 +1,4 @@
+import { partition } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 
@@ -14,6 +15,28 @@ export async function getTrackedTriumphsForProfile(
     values: [platformMembershipId],
   });
   return results.rows.map((row) => parseInt(row.record_hash, 10));
+}
+
+/**
+ * Get all of the tracked triumphs for a particular platform_membership_id.
+ */
+export async function syncTrackedTriumphsForProfile(
+  client: ClientBase,
+  platformMembershipId: string,
+  syncTimestamp: number,
+): Promise<{ updated: number[]; deleted: number[] }> {
+  const results = await client.query<{ record_hash: string; deleted_at: Date | null }>({
+    name: 'sync_tracked_triumphs',
+    text: 'SELECT record_hash, deleted_at FROM tracked_triumphs WHERE platform_membership_id = $1 and last_updated_at > $2',
+    values: [platformMembershipId, new Date(syncTimestamp)],
+  });
+
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
+
+  return {
+    updated: updatedRows.map((row) => parseInt(row.record_hash, 10)),
+    deleted: deletedRows.map((row) => parseInt(row.record_hash, 10)),
+  };
 }
 
 /**
