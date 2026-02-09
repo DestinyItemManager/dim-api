@@ -175,6 +175,25 @@ export async function deleteMigrationState(
   });
 }
 
+/**
+ * Unconditionally set migration state for a test account. Unlike the other
+ * migration state functions, this doesn't validate state transitions.
+ */
+export async function setMigrationStateForTest(
+  client: ClientBase,
+  platformMembershipId: string,
+  bungieMembershipId: number,
+  state: MigrationState,
+): Promise<void> {
+  await client.query({
+    text: `INSERT INTO migration_state (platform_membership_id, membership_id, state)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (platform_membership_id)
+           DO UPDATE SET state = $3, last_state_change_at = NOW()`,
+    values: [platformMembershipId, bungieMembershipId, state],
+  });
+}
+
 // const forcePostgresMembershipIds = new Set([
 //   // Ben
 //   7094,
