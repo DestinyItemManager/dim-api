@@ -15,7 +15,14 @@ import { cannedSearches } from '../stately/searches-queries.js';
 import { querySettings, syncSettings } from '../stately/settings-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
-type ProfileComponent = 'settings' | 'loadouts' | 'tags' | 'hashtags' | 'triumphs' | 'searches';
+type ProfileComponent =
+  | 'settings'
+  | 'loadouts'
+  | 'tags'
+  | 'hashtags'
+  | 'triumphs'
+  | 'searches'
+  | 'wishlists';
 
 const validComponents = new Set<ProfileComponent>([
   'settings',
@@ -24,6 +31,7 @@ const validComponents = new Set<ProfileComponent>([
   'hashtags',
   'triumphs',
   'searches',
+  'wishlists',
 ]);
 
 export const profileHandler = asyncHandler(async (req, res) => {
@@ -197,6 +205,25 @@ async function statelyProfile(
 
   // We'll accumulate promises and await them all at the end
   const promises: Promise<void>[] = [];
+
+  if (components.includes('wishlists')) {
+    promises.push(
+      (async () => {
+        const start = new Date();
+        const { getWishlistRollsForUser, getWishlistsForUser } =
+          await import('../db/wishlist-queries.js');
+        const [wishlists, wishlistRolls] = await readTransaction(async (pgClient) =>
+          Promise.all([
+            getWishlistsForUser(pgClient, bungieMembershipId),
+            getWishlistRollsForUser(pgClient, bungieMembershipId),
+          ]),
+        );
+        response.wishlists = wishlists;
+        response.wishlistRolls = wishlistRolls;
+        metrics.timing(`${timerPrefix}.wishlists`, start);
+      })(),
+    );
+  }
 
   if (components.includes('settings')) {
     // TODO: should settings be stored under profile too?? maybe primary profile ID?

@@ -16,7 +16,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api
@@ -26,7 +26,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: grafana
@@ -41,7 +41,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: 'nginx'
     cert-manager.io/cluster-issuer: 'letsencrypt-prod'
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: 'true'
 spec:
   tls:
     - hosts:
@@ -57,7 +57,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api
@@ -67,7 +67,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api
@@ -77,7 +77,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api
@@ -87,7 +87,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api
@@ -97,7 +97,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/"
+            path: '/'
             backend:
               service:
                 name: dim-api

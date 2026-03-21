@@ -16,6 +16,7 @@ import { getLoadoutShareHandler, loadoutShareHandler } from './routes/loadout-sh
 import { platformInfoHandler } from './routes/platform-info.js';
 import { profileHandler } from './routes/profile.js';
 import { updateHandler } from './routes/update.js';
+import { wishlistShareHandler } from './routes/wishlist-share.js';
 import { ApiApp } from './shapes/app.js';
 import { UserInfo } from './shapes/user.js';
 
@@ -46,6 +47,8 @@ app.options('/new_app', permissiveCors);
 app.post('/new_app', permissiveCors, createAppHandler);
 // Get a shared loadout
 app.get('/loadout_share', permissiveCors, getLoadoutShareHandler);
+// Get a shared wishlist
+app.get('/wishlist_share/:wishlistId', permissiveCors, wishlistShareHandler);
 
 // Admin panel routes (before API key middleware)
 app.use('/admin', adminRouter);

@@ -3,6 +3,7 @@ import { ItemAnnotation, ItemHashTag } from './item-annotations.js';
 import { Loadout } from './loadouts.js';
 import { Search } from './search.js';
 import { Settings } from './settings.js';
+import { WishlistMetadata, WishlistRoll } from './wishlist.js';
 
 export interface ExportResponse {
   settings: Partial<Settings>;
@@ -24,5 +25,9 @@ export interface ExportResponse {
   searches: {
     destinyVersion: DestinyVersion;
     search: Search;
+  }[];
+  wishlists: {
+    wishlist: WishlistMetadata;
+    rolls: WishlistRoll[];
   }[];
 }

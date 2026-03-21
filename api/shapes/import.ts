@@ -4,4 +4,5 @@ export interface ImportResponse {
   itemHashTags: number;
   triumphs: number;
   searches: number;
+  wishlists: number;
 }

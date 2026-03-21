@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/version: 1.4.0
   finalizers:
-  - service.kubernetes.io/load-balancer-cleanup
+    - service.kubernetes.io/load-balancer-cleanup
 spec:
   externalTrafficPolicy: Local
   type: LoadBalancer
@@ -22,7 +22,7 @@ spec:
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
   ipFamilies:
-  - IPv4
+    - IPv4
   ipFamilyPolicy: SingleStack
   ports:
     - appProtocol: http

@@ -1,4 +1,4 @@
-/** 
+/**
  * Compatible superset of Little Light wishlist format for DIM.
  *
  * Note: This describes a future, theoretical wish list format that IS NOT IMPLEMENTED in DIM today.
@@ -31,7 +31,7 @@ export interface WishList {
    * URLs of other wish lists that are transitively included into this wishlist.
    * This allows wish lists to be composed of other wish lists, which are then
    * fetched individually. A wish list may specify multiple includes, and no
-   * rolls of its own. Wish lists may be in this format, in Little Light's 
+   * rolls of its own. Wish lists may be in this format, in Little Light's
    * format, or in the legacy DIM wish list format.
    */
   include?: string[];
@@ -117,18 +117,18 @@ interface Roll {
    * the good and bad parts of this weapon.
    */
   description?: string; // e.g. notes
-  
+
   /**
    * Describe a combination of perks, which are really plugs for sockets.
    *
-   * ItemHash is the `DestinyInventoryItem` hash for a socket plug. You do not 
-   * need to, and should not, include "enhanced" versions of plugs - they will 
+   * ItemHash is the `DestinyInventoryItem` hash for a socket plug. You do not
+   * need to, and should not, include "enhanced" versions of plugs - they will
    * automatically be matched when you use the hash for the unenhanced version.
    *
-   * Each element in the top-level array represents a "group" of perks. The 
-   * weapon must have one or more of the perks in each group. In general it is 
+   * Each element in the top-level array represents a "group" of perks. The
+   * weapon must have one or more of the perks in each group. In general it is
    * intended that groups correspond to sockets, but they don't need to.
-   * The order of perks in groups, or between groups, is not meaningful. Do not 
+   * The order of perks in groups, or between groups, is not meaningful. Do not
    * include empty groups.
    *
    * For a hash in the same group, their relation is OR. For different groups,
@@ -146,7 +146,7 @@ interface Roll {
    * - `[[247725512], [2387244414]]` is a valid value meaning "the weapon must
    *   have plug 247725512 and 2387244414 available on it on different sockets".
    *
-   * Implementers must ignore any invalid combination they can't match either 
+   * Implementers must ignore any invalid combination they can't match either
    * because the hashes are invalid or the plug set does not include those plugs.
    */
   plugs: ItemHash[][];
@@ -193,4 +193,28 @@ interface Author {
   name: string;
   /** An optional URL to a public profile or home page for the author. */
   url?: string;
+}
+
+/** Metadata for a wish list stored in DIM Sync. */
+export interface WishlistMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  createdAt?: number;
+  lastUpdatedAt?: number;
+}
+
+/** A single roll within a wish list stored in DIM Sync. */
+export interface WishlistRoll {
+  id: string;
+  wishlistId: string;
+  itemHash: number;
+  /** [[1, 2], [3]] format (AND of ORs) */
+  recommendedPerks: number[][];
+  isExpertMode: boolean;
+  isUndesirable: boolean;
+  notes?: string;
+  createdAt?: number;
+  lastUpdatedAt?: number;
 }

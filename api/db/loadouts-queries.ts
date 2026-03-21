@@ -4,10 +4,9 @@ import { DestinyVersion } from '../shapes/general.js';
 import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { isValidItemId, KeysToSnakeCase } from '../utils.js';
 
-export interface LoadoutRow
-  extends KeysToSnakeCase<
-    Omit<Loadout, 'equipped' | 'unequipped' | 'createdAt' | 'lastUpdatedAt'>
-  > {
+export interface LoadoutRow extends KeysToSnakeCase<
+  Omit<Loadout, 'equipped' | 'unequipped' | 'createdAt' | 'lastUpdatedAt'>
+> {
   created_at: Date;
   last_updated_at: Date | null;
   items: { equipped: LoadoutItem[]; unequipped: LoadoutItem[] };

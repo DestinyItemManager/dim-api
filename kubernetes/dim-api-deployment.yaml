@@ -37,7 +37,7 @@ spec:
       labels:
         app: dim-api
       annotations:
-        "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
+        'cluster-autoscaler.kubernetes.io/safe-to-evict': 'true'
         kubernetes.io/change-cause: $COMMITHASH
     spec:
       containers:
@@ -46,8 +46,8 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: "150m"
-              memory: "50Mi"
+              cpu: '150m'
+              memory: '50Mi'
           env:
             - name: PGPASSWORD
               valueFrom:

@@ -134,6 +134,7 @@ export async function exportDataForUser(
     itemHashTags: [],
     triumphs: [],
     searches: [],
+    wishlists: [],
   };
 
   return responses.reduce<ExportResponse>((acc, r) => {
@@ -196,6 +197,7 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
         ]
       : [],
     searches,
+    wishlists: [],
   };
 }
 

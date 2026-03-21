@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 
 ---
-
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -57,7 +56,7 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - configmaps
       - endpoints
@@ -68,13 +67,13 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
+      - ''
     resources:
       - nodes
     verbs:
       - get
   - apiGroups:
-      - ""
+      - ''
     resources:
       - services
     verbs:
@@ -82,15 +81,15 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
+      - ''
     resources:
       - events
     verbs:
       - create
       - patch
   - apiGroups:
-      - "extensions"
-      - "networking.k8s.io"
+      - 'extensions'
+      - 'networking.k8s.io'
     resources:
       - ingresses
     verbs:
@@ -98,8 +97,8 @@ rules:
       - list
       - watch
   - apiGroups:
-      - "extensions"
-      - "networking.k8s.io"
+      - 'extensions'
+      - 'networking.k8s.io'
     resources:
       - ingresses/status
     verbs:
@@ -116,7 +115,7 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - configmaps
       - pods
@@ -125,7 +124,7 @@ rules:
     verbs:
       - get
   - apiGroups:
-      - ""
+      - ''
     resources:
       - configmaps
     resourceNames:
@@ -133,18 +132,18 @@ rules:
       # Here: "<ingress-controller-leader>-<nginx>"
       # This has to be adapted if you change either parameter
       # when launching the nginx-ingress-controller.
-      - "ingress-controller-leader-nginx"
+      - 'ingress-controller-leader-nginx'
     verbs:
       - get
       - update
   - apiGroups:
-      - ""
+      - ''
     resources:
       - configmaps
     verbs:
       - create
   - apiGroups:
-      - ""
+      - ''
     resources:
       - endpoints
     verbs:
@@ -186,7 +185,6 @@ subjects:
     namespace: ingress-nginx
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -207,8 +205,8 @@ spec:
         app.kubernetes.io/name: ingress-nginx
         app.kubernetes.io/part-of: ingress-nginx
       annotations:
-        prometheus.io/port: "10254"
-        prometheus.io/scrape: "true"
+        prometheus.io/port: '10254'
+        prometheus.io/scrape: 'true'
     spec:
       # wait up to five minutes for the drain of connections
       terminationGracePeriodSeconds: 300
@@ -276,7 +274,6 @@ spec:
                   - /wait-shutdown
 
 ---
-
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -287,7 +284,7 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 spec:
   limits:
-  - min:
-      memory: 90Mi
-      cpu: 100m
-    type: Container
+    - min:
+        memory: 90Mi
+        cpu: 100m
+      type: Container

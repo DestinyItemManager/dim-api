@@ -2,14 +2,14 @@
 
 This is an auto-generated README file to help you understand your schema!
 
-* SchemaID => `8030842688320564`
-* Schema Version => `9`
-* See schema on the [Stately Console](https://console.stately.cloud/6529794557127699/schemas/?schemaVersion=9).
+- SchemaID => `8030842688320564`
+- Schema Version => `9`
+- See schema on the [Stately Console](https://console.stately.cloud/6529794557127699/schemas/?schemaVersion=9).
 
 ### Key Path Layout
 
 | Group             | Key Path             | Item Type      | primary | required | syncable | txn type |
-|:------------------|:---------------------|:---------------|:--------|:---------|:---------|:---------|
+| :---------------- | :------------------- | :------------- | :------ | :------- | :------- | :------- |
 | `/apps-*`         | `/apps-*/app-*`      | ApiApp         | Yes     | Yes      | Yes      | group    |
 | `/gs-*`           | `/gs-*`              | GlobalSettings | Yes     | Yes      | Yes      | group    |
 | `/loadoutShare-*` | `/loadoutShare-*`    | LoadoutShare   | Yes     | Yes      | Yes      | group    |

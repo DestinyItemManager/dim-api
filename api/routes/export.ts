@@ -1,4 +1,6 @@
 import asyncHandler from 'express-async-handler';
+import { readTransaction } from '../db/index.js';
+import { getWishlistRollsForUser, getWishlistsForUser } from '../db/wishlist-queries.js';
 import { UserInfo } from '../shapes/user.js';
 import { exportDataForUser } from '../stately/bulk-queries.js';
 
@@ -24,7 +26,19 @@ export const exportHandler = asyncHandler(async (req, res) => {
   //     throw new Error(`Unable to export data - please wait a bit and try again.`);
   // }
 
-  // Instruct CF not to cache this
+  // Wishlists live in Postgres
+  const [wishlists, wishlistRolls] = await readTransaction(async (pgClient) =>
+    Promise.all([
+      getWishlistsForUser(pgClient, bungieMembershipId),
+      getWishlistRollsForUser(pgClient, bungieMembershipId),
+    ]),
+  );
+
+  response.wishlists = wishlists.map((wishlist) => ({
+    wishlist,
+    rolls: wishlistRolls.filter((roll) => roll.wishlistId === wishlist.id),
+  }));
+
   res.set('Cache-Control', 'no-cache, no-store, max-age=0');
   res.send(response);
 });

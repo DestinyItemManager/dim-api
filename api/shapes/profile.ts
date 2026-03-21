@@ -3,6 +3,7 @@ import { ItemAnnotation, ItemHashTag } from './item-annotations.js';
 import { Loadout } from './loadouts.js';
 import { Search, SearchType } from './search.js';
 import { Settings } from './settings.js';
+import { WishlistMetadata, WishlistRoll } from './wishlist.js';
 
 export interface ProfileResponse {
   settings?: Settings;
@@ -13,6 +14,8 @@ export interface ProfileResponse {
   /** Hashes of tracked triumphs */
   triumphs?: number[];
   searches?: Search[];
+  wishlists?: WishlistMetadata[];
+  wishlistRolls?: WishlistRoll[];
 
   /** If the response is a sync, this will include loadout IDs of deleted loadouts. */
   deletedLoadoutIds?: string[];
@@ -24,6 +27,10 @@ export interface ProfileResponse {
   deletedTagsIds?: string[];
   /** If the response is a sync, this will include hashes of deleted item hash tags. */
   deletedItemHashTagHashes?: number[];
+  /** If the response is a sync, this will include IDs of deleted wishlists. */
+  deletedWishlistIds?: string[];
+  /** If the response is a sync, this will include IDs of deleted wishlist rolls. */
+  deletedWishlistRollIds?: string[];
 
   /** Set to true if this response only contains new/changed/deleted items. */
   sync?: boolean;
@@ -59,7 +66,11 @@ export type ProfileUpdate =
   | TrackTriumphUpdate
   | UsedSearchUpdate
   | SavedSearchUpdate
-  | DeleteSearchUpdate;
+  | DeleteSearchUpdate
+  | WishlistUpdate
+  | DeleteWishlistUpdate
+  | WishlistRollUpdate
+  | DeleteWishlistRollUpdate;
 
 export interface TagUpdate {
   action: 'tag';
@@ -136,6 +147,26 @@ export interface DeleteSearchUpdate {
     query: string;
     type: SearchType;
   };
+}
+
+export interface WishlistUpdate {
+  action: 'wishlist';
+  payload: WishlistMetadata;
+}
+
+export interface DeleteWishlistUpdate {
+  action: 'delete_wishlist';
+  payload: string; // Wishlist ID
+}
+
+export interface WishlistRollUpdate {
+  action: 'wishlist_roll';
+  payload: WishlistRoll & { wishlistId: string };
+}
+
+export interface DeleteWishlistRollUpdate {
+  action: 'delete_wishlist_roll';
+  payload: string; // Roll ID
 }
 
 export interface ProfileUpdateResponse {

@@ -46,8 +46,8 @@ spec:
           image: grafana/grafana
           resources:
             requests:
-              cpu: "10m"
-              memory: "30Mi"
+              cpu: '10m'
+              memory: '30Mi'
           env:
             - name: GF_SECURITY_ADMIN_PASSWORD
               valueFrom:
@@ -80,7 +80,7 @@ spec:
         # https://www.digitalocean.com/docs/kubernetes/how-to/add-volumes/
         - name: grafana-data-permission-fix
           image: busybox
-          command: ["/bin/chmod", "-R", "777", "/var/lib/grafana"]
+          command: ['/bin/chmod', '-R', '777', '/var/lib/grafana']
           volumeMounts:
             - mountPath: /var/lib/grafana
               name: grafana-storage

@@ -17,6 +17,8 @@ import { Loadout } from '../shapes/loadouts.js';
 import {
   DeleteLoadoutUpdate,
   DeleteSearchUpdate,
+  DeleteWishlistRollUpdate,
+  DeleteWishlistUpdate,
   ItemHashTagUpdate,
   LoadoutUpdate,
   ProfileUpdate,
@@ -28,10 +30,13 @@ import {
   TagUpdate,
   TrackTriumphUpdate,
   UsedSearchUpdate,
+  WishlistRollUpdate,
+  WishlistUpdate,
 } from '../shapes/profile.js';
 import { SearchType } from '../shapes/search.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
+import { WishlistMetadata, WishlistRoll } from '../shapes/wishlist.js';
 import { client } from '../stately/client.js';
 import {
   deleteItemAnnotation as deleteItemAnnotationListStately,
@@ -242,6 +247,22 @@ function validateUpdates(
         result = validateUpdateItemHashTag(update.payload);
         break;
 
+      case 'wishlist':
+        result = validateWishlist(update.payload);
+        break;
+
+      case 'delete_wishlist':
+        // no special validation
+        break;
+
+      case 'wishlist_roll':
+        result = validateWishlistRoll(update.payload);
+        break;
+
+      case 'delete_wishlist_roll':
+        // no special validation
+        break;
+
       case 'search':
       case 'save_search':
         result = validateSearch(update.payload);
@@ -403,6 +424,47 @@ async function statelyUpdate(
             );
             break;
 
+          case 'wishlist':
+            await transaction(async (pgClient) => {
+              const { updateWishlist } = await import('../db/wishlist-queries.js');
+              for (const update of group as WishlistUpdate[]) {
+                await updateWishlist(pgClient, bungieMembershipId, update.payload);
+              }
+            });
+            break;
+
+          case 'delete_wishlist':
+            await transaction(async (pgClient) => {
+              const { deleteWishlist } = await import('../db/wishlist-queries.js');
+              for (const update of group as DeleteWishlistUpdate[]) {
+                await deleteWishlist(pgClient, bungieMembershipId, update.payload);
+              }
+            });
+            break;
+
+          case 'wishlist_roll':
+            await transaction(async (pgClient) => {
+              const { updateWishlistRoll } = await import('../db/wishlist-queries.js');
+              for (const update of group as WishlistRollUpdate[]) {
+                await updateWishlistRoll(
+                  pgClient,
+                  bungieMembershipId,
+                  update.payload.wishlistId,
+                  update.payload,
+                );
+              }
+            });
+            break;
+
+          case 'delete_wishlist_roll':
+            await transaction(async (pgClient) => {
+              const { deleteWishlistRoll } = await import('../db/wishlist-queries.js');
+              for (const update of group as DeleteWishlistRollUpdate[]) {
+                await deleteWishlistRoll(pgClient, bungieMembershipId, update.payload);
+              }
+            });
+            break;
+
           // saved searches and used searches are collectively "searches"
           case 'search': {
             const searchUpdates = consolidateSearchUpdates(
@@ -429,133 +491,44 @@ async function statelyUpdate(
   }
 }
 
-// async function pgUpdate(
-//   updates: ProfileUpdate[],
-//   bungieMembershipId: number,
-//   platformMembershipId: string | undefined,
-//   destinyVersion: DestinyVersion,
-// ) {
-//   return transaction(async (client) => {
-//     for (const update of updates) {
-//       switch (update.action) {
-//         case 'setting':
-//           await updateSetting(client, bungieMembershipId, update.payload);
-//           break;
-
-//         case 'loadout':
-//           await updateLoadout(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
-
-//         case 'delete_loadout':
-//           await deleteLoadout(client, platformMembershipId!, update.payload);
-//           break;
-
-//         case 'tag':
-//           await updateItemAnnotation(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
-
-//         case 'tag_cleanup':
-//           await tagCleanup(client, platformMembershipId!, update.payload);
-//           break;
-
-//         case 'item_hash_tag':
-//           await updateItemHashTag(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             update.payload,
-//           );
-//           break;
-
-//         case 'track_triumph':
-//           await trackTriumph(client, bungieMembershipId, platformMembershipId!, update.payload);
-//           break;
-
-//         case 'search':
-//           await recordSearch(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
-
-//         case 'save_search':
-//           await saveSearch(
-//             client,
-//             bungieMembershipId,
-//             platformMembershipId!,
-//             destinyVersion,
-//             update.payload,
-//           );
-//           break;
-
-//         case 'delete_search':
-//           await deleteSearch(client, platformMembershipId!, destinyVersion, update.payload);
-//           break;
-//       }
-//     }
-//   });
-// }
-
-// async function updateSetting(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   settings: Partial<Settings>,
-// ): Promise<void> {
-//   // TODO: how do we set settings back to the default? Maybe just load and replace the whole settings object.
-
-//   const start = new Date();
-//   await setSettingInDb(client, bungieMembershipId, settings);
-//   metrics.timing('update.setting', start);
-// }
-
-// async function updateLoadout(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   loadout: Loadout,
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateLoadoutInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     loadout,
-//   );
-//   metrics.timing('update.loadout', start);
-// }
-
-/** Helper function to validate integer ranges */
-function validateIntRange(
-  value: unknown,
-  fieldName: string,
-  min: number,
-  max: number,
-): string | undefined {
-  if (value === undefined) {
-    return undefined;
+function validateWishlist(wishlist: WishlistMetadata): ProfileUpdateResult {
+  if (!wishlist.name) {
+    return { status: 'InvalidArgument', message: 'Wishlist name missing' };
   }
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
-    metrics.increment(`update.validation.${fieldName}OutOfRange.count`);
-    return `${fieldName} must be an integer between ${min} and ${max}`;
+  if (wishlist.name.length > 120) {
+    return { status: 'InvalidArgument', message: 'Wishlist name too long' };
   }
-  return undefined;
+  return { status: 'Success' };
+}
+
+function validateWishlistRoll(roll: WishlistRoll): ProfileUpdateResult {
+  if (!roll.itemHash) {
+    return { status: 'InvalidArgument', message: 'Wishlist roll item hash missing' };
+  }
+  if (!Array.isArray(roll.recommendedPerks)) {
+    return {
+      status: 'InvalidArgument',
+      message: 'Wishlist roll recommended perks missing or not an array',
+    };
+  }
+  return { status: 'Success' };
+}
+
+function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResult {
+  if (payload.query.length > 2048) {
+    metrics.increment('update.validation.searchTooLong.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must be under 2048 characters',
+    };
+  } else if (payload.query.length === 0) {
+    metrics.increment('update.validation.searchEmpty.count');
+    return {
+      status: 'InvalidArgument',
+      message: 'Search query must not be empty',
+    };
+  }
+  return { status: 'Success' };
 }
 
 function validateUpdateSettings(settings: Partial<Settings>): ProfileUpdateResult {
@@ -666,34 +639,6 @@ export function validateLoadout(metricPrefix: string, loadout: Loadout) {
   return undefined;
 }
 
-// async function deleteLoadout(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   loadoutId: string,
-// ): Promise<void> {
-//   const start = new Date();
-//   await deleteLoadoutInDb(client, platformMembershipId, loadoutId);
-//   metrics.timing('update.deleteLoadout', start);
-// }
-
-// async function updateItemAnnotation(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   itemAnnotation: ItemAnnotation,
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateItemAnnotationInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     itemAnnotation,
-//   );
-//   metrics.timing('update.tag', start);
-// }
-
 function validateUpdateItemAnnotation(itemAnnotation: ItemAnnotation): ProfileUpdateResult {
   if (!isValidItemId(itemAnnotation.id)) {
     metrics.increment('update.validation.badItemId.count');
@@ -754,118 +699,22 @@ function validateUpdateItemHashTag(itemAnnotation: ItemHashTag): ProfileUpdateRe
   return { status: 'Success' };
 }
 
-// async function tagCleanup(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   inventoryItemIds: string[],
-// ): Promise<ProfileUpdateResult> {
-//   const start = new Date();
-//   await deleteItemAnnotationList(
-//     client,
-//     platformMembershipId,
-//     inventoryItemIds.filter(isValidItemId),
-//   );
-//   metrics.timing('update.tagCleanup', start);
-
-//   return { status: 'Success' };
-// }
-
-// async function trackTriumph(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   payload: TrackTriumphUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   payload.tracked
-//     ? await trackTriumphInDb(client, bungieMembershipId, platformMembershipId, payload.recordHash)
-//     : await unTrackTriumph(client, platformMembershipId, payload.recordHash);
-//   metrics.timing('update.trackTriumph', start);
-// }
-
-// async function recordSearch(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: UsedSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateUsedSearch(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//   );
-//   metrics.timing('update.recordSearch', start);
-// }
-
-// async function saveSearch(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: SavedSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await saveSearchInDb(
-//     client,
-//     bungieMembershipId,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//     payload.saved,
-//   );
-//   metrics.timing('update.saveSearch', start);
-// }
-
-function validateSearch(payload: UsedSearchUpdate['payload']): ProfileUpdateResult {
-  if (payload.query.length > 2048) {
-    metrics.increment('update.validation.searchTooLong.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Search query must be under 2048 characters',
-    };
-  } else if (payload.query.length === 0) {
-    metrics.increment('update.validation.searchEmpty.count');
-    return {
-      status: 'InvalidArgument',
-      message: 'Search query must not be empty',
-    };
+/** Helper function to validate integer ranges */
+function validateIntRange(
+  value: unknown,
+  fieldName: string,
+  min: number,
+  max: number,
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
   }
-  return { status: 'Success' };
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    metrics.increment(`update.validation.${fieldName}OutOfRange.count`);
+    return `${fieldName} must be an integer between ${min} and ${max}`;
+  }
+  return undefined;
 }
-
-// async function deleteSearch(
-//   client: ClientBase,
-//   platformMembershipId: string,
-//   destinyVersion: DestinyVersion,
-//   payload: DeleteSearchUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await deleteSearchInDb(
-//     client,
-//     platformMembershipId,
-//     destinyVersion,
-//     payload.query,
-//     payload.type ?? SearchType.Item,
-//   );
-//   metrics.timing('update.deleteSearch', start);
-// }
-
-// async function updateItemHashTag(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-//   platformMembershipId: string,
-//   payload: ItemHashTagUpdate['payload'],
-// ): Promise<void> {
-//   const start = new Date();
-//   await updateItemHashTagInDb(client, bungieMembershipId, platformMembershipId, payload);
-//   metrics.timing('update.updateItemHashTag', start);
-// }
 
 function consolidateSearchUpdates(
   updates: (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],

@@ -27,7 +27,7 @@ export const importHandler = asyncHandler(async (req, res) => {
   // Support only new API exports
   const importData = req.body as ExportResponse;
 
-  const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
+  const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags, wishlists } =
     extractImportData(importData);
 
   if (
@@ -35,7 +35,8 @@ export const importHandler = asyncHandler(async (req, res) => {
     loadouts.length === 0 &&
     itemAnnotations.length === 0 &&
     triumphs.length === 0 &&
-    searches.length === 0
+    searches.length === 0 &&
+    wishlists.length === 0
   ) {
     badRequest(res, "Won't import empty data");
     return;
@@ -56,6 +57,7 @@ export const importHandler = asyncHandler(async (req, res) => {
       triumphs,
       searches,
       itemHashTags,
+      wishlists,
     );
   };
 
@@ -80,6 +82,7 @@ export const importHandler = asyncHandler(async (req, res) => {
     triumphs: numTriumphs,
     searches: searches.length,
     itemHashTags: itemHashTags.length,
+    wishlists: wishlists.length,
   };
 
   // default 200 OK
@@ -93,6 +96,7 @@ export function extractImportData(importData: ExportResponse) {
   const triumphs = importData.triumphs || [];
   const searches = extractSearches(importData);
   const itemHashTags = importData.itemHashTags || [];
+  const wishlists = importData.wishlists || [];
 
   return {
     settings,
@@ -101,6 +105,7 @@ export function extractImportData(importData: ExportResponse) {
     triumphs,
     searches,
     itemHashTags,
+    wishlists,
   };
 }
 
@@ -113,6 +118,7 @@ export async function statelyImport(
   triumphs: ExportResponse['triumphs'],
   searches: ExportResponse['searches'],
   itemHashTags: ItemHashTag[],
+  wishlists: ExportResponse['wishlists'],
 ): Promise<number> {
   // TODO: what we should do, is map all these to items, and then we can just do
   // batch puts, 25 at a time.
@@ -150,6 +156,19 @@ export async function statelyImport(
 
   // Settings live in Postgres now
   await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+
+  // Wishlists also live in Postgres
+  if (wishlists.length > 0) {
+    await transaction(async (pgClient) => {
+      const { updateWishlist, updateWishlistRoll } = await import('../db/wishlist-queries.js');
+      for (const { wishlist, rolls } of wishlists) {
+        await updateWishlist(pgClient, bungieMembershipId, wishlist);
+        for (const roll of rolls) {
+          await updateWishlistRoll(pgClient, bungieMembershipId, wishlist.id, roll);
+        }
+      }
+    });
+  }
 
   // OK now put them in as fast as we can
   for (const batch of batches(items)) {
