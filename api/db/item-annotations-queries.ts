@@ -61,34 +61,6 @@ export async function syncItemAnnotationsForProfile(
   };
 }
 
-/**
- * Get ALL of the item annotations for a particular user across all platforms.
- */
-export async function getAllItemAnnotationsForUser(
-  client: ClientBase,
-  bungieMembershipId: number,
-): Promise<
-  {
-    platformMembershipId: string;
-    destinyVersion: DestinyVersion;
-    annotation: ItemAnnotation;
-  }[]
-> {
-  // TODO: this isn't indexed!
-  const results = await client.query<
-    ItemAnnotationRow & { platform_membership_id: string; destiny_version: DestinyVersion }
-  >({
-    name: 'get_all_item_annotations',
-    text: 'SELECT platform_membership_id, destiny_version, inventory_item_id, tag, notes, crafted_date FROM item_annotations WHERE inventory_item_id != 0 and platform_membership_id = $1 and deleted_at IS NULL',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => ({
-    platformMembershipId: row.platform_membership_id,
-    destinyVersion: row.destiny_version,
-    annotation: convertItemAnnotation(row),
-  }));
-}
-
 function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
   const result: ItemAnnotation = {
     id: row.inventory_item_id,
@@ -143,25 +115,24 @@ export async function updateItemAnnotation(
         $7
       )
       ON CONFLICT (platform_membership_id, inventory_item_id)
-      DO UPDATE SET (tag, notes, crafted_date, deleted_at) = (
-        (CASE
+      DO UPDATE SET
+        tag = (CASE
           WHEN $5 = 0 THEN NULL
           WHEN $5 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.tag ELSE NULL END)
           ELSE $5
         END),
-        (CASE
+        notes = (CASE
           WHEN $6 = 'clear' THEN NULL
           WHEN $6 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.notes ELSE NULL END)
           ELSE $6
         END),
-        $7,
-        (CASE
+        crafted_date = $7,
+        deleted_at = (CASE
           WHEN (CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.tag ELSE NULL END) ELSE $5 END) IS NULL
             AND (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN (CASE WHEN item_annotations.deleted_at IS NULL THEN item_annotations.notes ELSE NULL END) ELSE $6 END) IS NULL
           THEN now()
           ELSE NULL
         END)
-      )
     `,
     values: [
       bungieMembershipId, // $1
@@ -208,7 +179,7 @@ export async function deleteItemAnnotation(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation',
-    text: `update item_annotations set (deleted_at) = (now()) where platform_membership_id = $1 and inventory_item_id = $2`,
+    text: `update item_annotations set deleted_at = now() where platform_membership_id = $1 and inventory_item_id = $2 and deleted_at is null`,
     values: [platformMembershipId, inventoryItemId],
   });
 }
@@ -223,7 +194,7 @@ export async function deleteItemAnnotationList(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_annotation_list',
-    text: `update item_annotations set (deleted_at) = (now()) where platform_membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[])`,
+    text: `update item_annotations set deleted_at = now() where platform_membership_id = $1 and inventory_item_id::bigint = ANY($2::bigint[]) and deleted_at is null`,
     values: [platformMembershipId, inventoryItemIds],
   });
 }
@@ -240,5 +211,20 @@ export async function deleteAllItemAnnotations(
     name: 'delete_all_item_annotations',
     text: `delete from item_annotations where membership_id = $1`,
     values: [bungieMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all item annotations for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllItemAnnotations(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_item_annotations',
+    text: `update item_annotations set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and deleted_at is null`,
+    values: [platformMembershipId, destinyVersion],
   });
 }

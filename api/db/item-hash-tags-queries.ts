@@ -91,28 +91,27 @@ export async function updateItemHashTag(
         $1,
         $2,
         $3,
-        (CASE WHEN $5 = 0 THEN NULL ELSE $5 END),
-        (CASE WHEN $6 = 'clear' THEN NULL ELSE $6 END)
+        (CASE WHEN $4 = 0 THEN NULL ELSE $4 END),
+        (CASE WHEN $5 = 'clear' THEN NULL ELSE $5 END)
       )
       ON CONFLICT (platform_membership_id, item_hash)
-      DO UPDATE SET (tag, notes, deleted_at) = (
-        (CASE
-          WHEN $5 = 0 THEN NULL
-          WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END)
+      DO UPDATE SET
+        tag = (CASE
+          WHEN $4 = 0 THEN NULL
+          WHEN $4 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END)
+          ELSE $4
+        END),
+        notes = (CASE
+          WHEN $5 = 'clear' THEN NULL
+          WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END)
           ELSE $5
         END),
-        (CASE
-          WHEN $6 = 'clear' THEN NULL
-          WHEN $6 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END)
-          ELSE $6
-        END),
-        (CASE
-          WHEN (CASE WHEN $5 = 0 THEN NULL WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END) ELSE $5 END) IS NULL
-            AND (CASE WHEN $6 = 'clear' THEN NULL WHEN $6 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END) ELSE $6 END) IS NULL
+        deleted_at = (CASE
+          WHEN (CASE WHEN $4 = 0 THEN NULL WHEN $4 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.tag ELSE NULL END) ELSE $4 END) IS NULL
+            AND (CASE WHEN $5 = 'clear' THEN NULL WHEN $5 IS NULL THEN (CASE WHEN item_hash_tags.deleted_at IS NULL THEN item_hash_tags.notes ELSE NULL END) ELSE $5 END) IS NULL
           THEN now()
           ELSE NULL
         END)
-      )
     `,
     values: [
       bungieMembershipId,
@@ -157,7 +156,7 @@ export async function deleteItemHashTag(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_item_hash_tag',
-    text: `update item_hash_tags set (deleted_at) = (now()) where platform_membership_id = $1 and item_hash = $2`,
+    text: `update item_hash_tags set deleted_at = now() where platform_membership_id = $1 and item_hash = $2 and deleted_at is null`,
     values: [platformMembershipId, itemHash],
   });
 }
@@ -172,6 +171,20 @@ export async function deleteAllItemHashTags(
   return client.query({
     name: 'delete_all_item_hash_tags',
     text: `delete from item_hash_tags where platform_membership_id = $1`,
+    values: [platformMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all item hash tags for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllItemHashTags(
+  client: ClientBase,
+  platformMembershipId: string,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_item_hash_tags',
+    text: `update item_hash_tags set deleted_at = now() where platform_membership_id = $1 and deleted_at is null`,
     values: [platformMembershipId],
   });
 }

@@ -1,8 +1,8 @@
 import { closeDbPool, transaction } from './index.js';
 import {
   deleteAllTrackedTriumphs,
-  getAllTrackedTriumphsForUser,
   getTrackedTriumphsForProfile,
+  softDeleteAllTrackedTriumphs,
   trackTriumph,
   unTrackTriumph,
 } from './triumphs-queries.js';
@@ -49,14 +49,20 @@ it('can untrack a triumph', async () => {
   });
 });
 
-it('can get all tracked triumphs across profiles', async () => {
+it('handles soft delete correctly', async () => {
   await transaction(async (client) => {
     await trackTriumph(client, bungieMembershipId, platformMembershipId, 3851137658);
-    await trackTriumph(client, bungieMembershipId, '54321', 3851137658);
 
+    // Soft delete everything
+    await softDeleteAllTrackedTriumphs(client, platformMembershipId);
+
+    const triumphs = await getTrackedTriumphsForProfile(client, platformMembershipId);
+    expect(triumphs.length).toBe(0);
+
+    // Now re-track the same triumph - this should succeed and not create a duplicate
     await trackTriumph(client, bungieMembershipId, platformMembershipId, 3851137658);
 
-    const triumphs = await getAllTrackedTriumphsForUser(client, bungieMembershipId);
-    expect(triumphs.length).toEqual(2);
+    const triumphs2 = await getTrackedTriumphsForProfile(client, platformMembershipId);
+    expect(triumphs2[0]).toEqual(3851137658);
   });
 });

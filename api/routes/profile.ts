@@ -23,10 +23,10 @@ import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ProfileResponse } from '../shapes/profile.js';
+import { Search, SearchType } from '../shapes/search.js';
 import { defaultSettings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { getProfile, syncProfile } from '../stately/bulk-queries.js';
-import { cannedSearches } from '../stately/searches-queries.js';
 import { querySettings, syncSettings } from '../stately/settings-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
@@ -40,6 +40,35 @@ const validComponents = new Set<ProfileComponent>([
   'triumphs',
   'searches',
 ]);
+
+/*
+ * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
+ */
+const cannedSearchesForD2: Search[] = [
+  'is:blue is:haspower -is:maxpower',
+  '-is:equipped is:haspower is:incurrentchar',
+  '-is:exotic -is:locked -is:maxpower -is:tagged stat:total:<55',
+].map((query) => ({
+  query,
+  saved: false,
+  usageCount: 0,
+  lastUsage: 0,
+  type: SearchType.Item,
+}));
+
+const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentchar'].map(
+  (query) => ({
+    query,
+    saved: false,
+    usageCount: 0,
+    lastUsage: 0,
+    type: SearchType.Item,
+  }),
+);
+
+export function cannedSearches(destinyVersion: DestinyVersion) {
+  return destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1;
+}
 
 export const profileHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;

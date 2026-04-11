@@ -1,7 +1,6 @@
 import { partition, uniqBy } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
-import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { KeysToSnakeCase } from '../utils.js';
@@ -59,25 +58,6 @@ export async function syncSearchesForProfile(
   };
 }
 
-/**
- * Get ALL of the searches for a particular user across all destiny versions.
- */
-export async function getSearchesForUser(
-  client: ClientBase,
-  bungieMembershipId: number,
-): Promise<ExportResponse['searches']> {
-  // TODO: this isn't indexed!
-  const results = await client.query<SearchRow & { destiny_version: DestinyVersion }>({
-    name: 'get_all_searches',
-    text: 'SELECT destiny_version, query, saved, usage_count, search_type, last_used FROM searches WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => ({
-    destinyVersion: row.destiny_version,
-    search: convertSearch(row),
-  }));
-}
-
 function convertSearch(row: SearchRow): Search {
   return {
     query: row.query,
@@ -106,7 +86,10 @@ export async function updateUsedSearch(
     text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type)
 values ($1, $2, $3, $4, $5)
 on conflict (platform_membership_id, destiny_version, qhash)
-do update set (usage_count, last_used, deleted_at) = (CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count + 1 END, current_timestamp, null)`,
+do update set
+  usage_count = CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count + 1 END,
+  last_used = current_timestamp,
+  deleted_at = null`,
     values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
   });
 
@@ -136,10 +119,14 @@ export async function saveSearch(
     text: `INSERT INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type, saved)
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (platform_membership_id, destiny_version, qhash)
-DO UPDATE SET (saved, usage_count, deleted_at) = ($6, CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count END, null)`,
+DO UPDATE SET
+  saved = $6,
+  usage_count = CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count END,
+  deleted_at = null`,
     values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type, saved],
   });
 }
+
 /**
  * Insert a single search as part of an import.
  */
@@ -159,7 +146,7 @@ export async function importSearch(
     text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, saved, search_type, usage_count, last_used)
 values ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (platform_membership_id, destiny_version, qhash)
-DO UPDATE SET (saved, usage_count, last_used, deleted_at) = ($5, $7, $8, null)`,
+DO UPDATE SET saved = $5, usage_count = $7, last_used = $8, deleted_at = null`,
     values: [
       bungieMembershipId,
       platformMembershipId,
@@ -185,7 +172,7 @@ export async function deleteSearch(
 ): Promise<QueryResult> {
   return client.query({
     name: 'delete_search',
-    text: `update searches set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4`,
+    text: `update searches set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and qhash = decode(md5($3), 'hex') and query = $3 and search_type = $4 and deleted_at is null`,
     values: [platformMembershipId, destinyVersion, query, type],
   });
 }
@@ -201,5 +188,20 @@ export async function deleteAllSearches(
     name: 'delete_all_searches',
     text: `delete from searches where platform_membership_id = $1`,
     values: [platformMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all searches for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllSearches(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_searches',
+    text: `update searches set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and deleted_at is null`,
+    values: [platformMembershipId, destinyVersion],
   });
 }

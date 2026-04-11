@@ -40,38 +40,6 @@ export async function syncTrackedTriumphsForProfile(
 }
 
 /**
- * Get ALL of the tracked triumphs for a particular user across all platforms.
- * @deprecated
- */
-// TODO: get rid of this!
-export async function getAllTrackedTriumphsForUser(
-  client: ClientBase,
-  bungieMembershipId: number,
-): Promise<
-  {
-    platformMembershipId: string;
-    triumphs: number[];
-  }[]
-> {
-  const results = await client.query<{ platform_membership_id: string; record_hash: string }>({
-    name: 'get_all_tracked_triumphs',
-    text: 'SELECT platform_membership_id, record_hash FROM tracked_triumphs WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-
-  const triumphsByAccount: { [platformMembershipId: string]: number[] } = {};
-
-  for (const row of results.rows) {
-    (triumphsByAccount[row.platform_membership_id] ||= []).push(parseInt(row.record_hash, 10));
-  }
-
-  return Object.entries(triumphsByAccount).map(([platformMembershipId, triumphs]) => ({
-    platformMembershipId,
-    triumphs,
-  }));
-}
-
-/**
  * Add a tracked triumph.
  */
 export async function trackTriumph(
@@ -123,6 +91,20 @@ export async function deleteAllTrackedTriumphs(
   return client.query({
     name: 'delete_all_tracked_triumphs',
     text: `delete from tracked_triumphs where platform_membership_id = $1`,
+    values: [platformMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all tracked triumphs for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllTrackedTriumphs(
+  client: ClientBase,
+  platformMembershipId: string,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_tracked_triumphs',
+    text: `update tracked_triumphs set deleted_at = now() where platform_membership_id = $1 and deleted_at is null`,
     values: [platformMembershipId],
   });
 }

@@ -55,37 +55,6 @@ export async function syncLoadoutsForProfile(
   };
 }
 
-/**
- * Get ALL of loadouts for a particular user across all platforms.
- * @deprecated
- */
-export async function getAllLoadoutsForUser(
-  client: ClientBase,
-  bungieMembershipId: number,
-): Promise<
-  {
-    platformMembershipId: string;
-    destinyVersion: DestinyVersion;
-    loadout: Loadout;
-  }[]
-> {
-  const results = await client.query<
-    LoadoutRow & { platform_membership_id: string; destiny_version: DestinyVersion }
-  >({
-    name: 'get_all_loadouts_for_user',
-    text: 'SELECT membership_id, platform_membership_id, destiny_version, id, name, notes, class_type, items, parameters, created_at, last_updated_at FROM loadouts WHERE membership_id = $1',
-    values: [bungieMembershipId],
-  });
-  return results.rows.map((row) => {
-    const loadout = convertLoadout(row);
-    return {
-      platformMembershipId: row.platform_membership_id,
-      destinyVersion: row.destiny_version,
-      loadout,
-    };
-  });
-}
-
 export function convertLoadout(row: LoadoutRow): Loadout {
   const loadout: Loadout = {
     id: row.id,
@@ -120,7 +89,16 @@ export async function updateLoadout(
     text: `insert into loadouts (id, membership_id, platform_membership_id, destiny_version, name, notes, class_type, items, parameters)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 on conflict (platform_membership_id, id)
-do update set (membership_id, destiny_version, name, notes, class_type, items, parameters, deleted_at, created_at) = ($2, $4, $5, $6, $7, $8, $9, null, CASE WHEN loadouts.deleted_at IS NOT NULL THEN now() ELSE loadouts.created_at END)`,
+do update set
+  membership_id = $2,
+  destiny_version = $4,
+  name = $5,
+  notes = $6,
+  class_type = $7,
+  items = $8,
+  parameters = $9,
+  deleted_at = null,
+  created_at = CASE WHEN loadouts.deleted_at IS NOT NULL THEN now() ELSE loadouts.created_at END`,
     values: [
       loadout.id,
       bungieMembershipId,
@@ -191,7 +169,7 @@ export async function deleteLoadout(
 ): Promise<boolean> {
   const response = await client.query<LoadoutRow>({
     name: 'delete_loadout',
-    text: `update loadouts set deleted_at = now() where platform_membership_id = $1 and id = $2`,
+    text: `update loadouts set deleted_at = now() where platform_membership_id = $1 and id = $2 and deleted_at is null`,
     values: [platformMembershipId, loadoutId],
   });
 
@@ -209,5 +187,20 @@ export async function deleteAllLoadouts(
     name: 'delete_all_loadouts',
     text: `delete from loadouts where platform_membership_id = $1`,
     values: [platformMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all loadouts for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllLoadouts(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_loadouts',
+    text: `update loadouts set deleted_at = now() where platform_membership_id = $1 and destiny_version = $2 and deleted_at is null`,
+    values: [platformMembershipId, destinyVersion],
   });
 }

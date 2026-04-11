@@ -147,8 +147,12 @@ async function updateMigrationState(
     name: 'update_migration_state',
     text: `insert into migration_state (platform_membership_id, membership_id, state, last_state_change_at, attempt_count, last_error) VALUES ($1, $2, $3, current_timestamp, $4, $5)
 on conflict (platform_membership_id)
-do update set state = $2, last_state_change_at = current_timestamp, attempt_count = migration_state.attempt_count + $3, last_error = coalesce($4, migration_state.last_error)
-where migration_state.state = $5`,
+do update set
+  state = $3,
+  last_state_change_at = current_timestamp,
+  attempt_count = migration_state.attempt_count + $4,
+  last_error = $5
+where migration_state.state = $6`,
     values: [
       platformMembershipId,
       bungieMembershipId,

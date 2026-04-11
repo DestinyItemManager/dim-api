@@ -4,9 +4,9 @@ import {
   deleteAllSearches,
   deleteSearch,
   getSearchesForProfile,
-  getSearchesForUser,
   importSearch,
   saveSearch,
+  softDeleteAllSearches,
   updateUsedSearch,
 } from './searches-queries.js';
 
@@ -32,7 +32,7 @@ it('can record a used search where none was recorded before', async () => {
       SearchType.Item,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('tag:junk');
@@ -60,7 +60,7 @@ it('can track search multiple times', async () => {
       SearchType.Item,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('tag:junk');
@@ -89,7 +89,7 @@ it('can mark a search as favorite', async () => {
       true,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('tag:junk');
@@ -106,7 +106,7 @@ it('can mark a search as favorite', async () => {
       false,
     );
 
-    const searches2 = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches2 = await getSearchesForProfile(client, platformMembershipId, 2);
     expect(searches2[0].query).toBe('tag:junk');
     expect(searches2[0].saved).toBe(false);
     // Save/unsave doesn't modify usage count
@@ -126,7 +126,7 @@ it('can mark a search as favorite even when it hasnt been used', async () => {
       true,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('tag:junk');
@@ -135,33 +135,9 @@ it('can mark a search as favorite even when it hasnt been used', async () => {
   });
 });
 
-it('can get all searches across profiles', async () => {
-  await transaction(async (client) => {
-    await updateUsedSearch(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      2,
-      'tag:junk',
-      SearchType.Item,
-    );
-    await updateUsedSearch(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      1,
-      'is:tagged',
-      SearchType.Item,
-    );
-
-    const searches = await getSearchesForUser(client, bungieMembershipId);
-    expect(searches.length).toEqual(2);
-  });
-});
-
 it('can increment usage for one of the built-in searches', async () => {
   await transaction(async (client) => {
-    const searches = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches = await getSearchesForProfile(client, platformMembershipId, 2);
     const query = searches[searches.length - 1].query;
 
     await updateUsedSearch(
@@ -173,7 +149,7 @@ it('can increment usage for one of the built-in searches', async () => {
       SearchType.Item,
     );
 
-    const searches2 = await getSearchesForProfile(client, bungieMembershipId, 2);
+    const searches2 = await getSearchesForProfile(client, platformMembershipId, 2);
     const search = searches2.find((s) => s.query === query);
     expect(search?.usageCount).toBe(1);
     expect(searches2.length).toBe(searches.length);
@@ -192,7 +168,7 @@ it('can delete a search', async () => {
     );
     await deleteSearch(client, platformMembershipId, 2, 'tag:junk', SearchType.Item);
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches.length).toBe(0);
@@ -213,7 +189,7 @@ it('can import a search', async () => {
       SearchType.Item,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('tag:junk');
@@ -233,12 +209,50 @@ it('can record searches for loadouts', async () => {
       SearchType.Loadout,
     );
 
-    const searches = (await getSearchesForProfile(client, bungieMembershipId, 2)).filter(
+    const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
     expect(searches[0].query).toBe('subclass:void');
     expect(searches[0].saved).toBe(false);
     expect(searches[0].usageCount).toBe(1);
     expect(searches[0].type).toBe(SearchType.Loadout);
+  });
+});
+
+it('can soft delete all searches', async () => {
+  await transaction(async (client) => {
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'is:weapon',
+      SearchType.Item,
+    );
+
+    const searches = await getSearchesForProfile(client, platformMembershipId, 2);
+    expect(searches.length).toBe(1);
+
+    // Soft delete all searches
+    await softDeleteAllSearches(client, platformMembershipId, 2);
+
+    // Verify searches are soft deleted (usageCount = 0)
+    const searchesAfter = await getSearchesForProfile(client, platformMembershipId, 2);
+    expect(searchesAfter.length).toBe(0);
+
+    // Now re-use the same search - this should succeed and not create a duplicate
+    await updateUsedSearch(
+      client,
+      bungieMembershipId,
+      platformMembershipId,
+      2,
+      'is:weapon',
+      SearchType.Item,
+    );
+
+    const searchesAfter2 = await getSearchesForProfile(client, platformMembershipId, 2);
+    expect(searchesAfter2.length).toBe(1);
+    expect(searchesAfter2[0].query).toBe('is:weapon');
+    expect(searchesAfter2[0].usageCount).toBe(1);
   });
 });
