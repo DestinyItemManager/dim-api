@@ -122,6 +122,17 @@ function getRetryAfterMs(error: RetryableError): number | undefined {
 }
 
 function isRetryableError(error: unknown): boolean {
+  if (error instanceof StatelyError) {
+    return [
+      'StoreThroughputExceeded',
+      'StoreRequestLimitExceeded',
+      'StoreInUse',
+      'ConcurrentModification',
+      'CachedSchemaTooOld',
+      'BackupsUnavailable',
+    ].includes(error.statelyCode);
+  }
+
   if (error instanceof DatabaseError) {
     return error.code ? ['40001', '40P01', '53300', '57P03'].includes(error.code) : false;
   }
@@ -331,23 +342,48 @@ let scanComplete = false;
 
 try {
   while (true) {
-    for await (const item of list) {
-      if (client.isType(item, 'LoadoutShare')) {
-        shareQueue.push({
-          loadout: convertLoadoutFromStately(item),
-          viewCount: item.viewCount,
-          platformMembershipId: item.profileId.toString(),
-          shareId: item.id,
-        });
-      } else if (client.isType(item, 'Settings')) {
-        settingsQueue.push(item);
-      } else if ('profileId' in item) {
-        profileIds.add(item.profileId);
+    try {
+      for await (const item of list) {
+        if (client.isType(item, 'LoadoutShare')) {
+          shareQueue.push({
+            loadout: convertLoadoutFromStately(item),
+            viewCount: item.viewCount,
+            platformMembershipId: item.profileId.toString(),
+            shareId: item.id,
+          });
+        } else if (client.isType(item, 'Settings')) {
+          settingsQueue.push(item);
+        } else if ('profileId' in item) {
+          profileIds.add(item.profileId);
+        }
+
+        await flushProfileIds();
+        await flushSettingsQueue();
+        await flushShareQueue();
+      }
+    } catch (error) {
+      if (!isRetryableError(error)) {
+        throw error;
       }
 
-      await flushProfileIds();
-      await flushSettingsQueue();
-      await flushShareQueue();
+      const token = list.token;
+      if (!token) {
+        throw error;
+      }
+
+      await fs.writeFile(tokenPath, token.tokenData);
+      const waitMs = retryDelayMs(error, 1);
+      const message = error instanceof Error ? error.message : String(error);
+      console.log(
+        `Scan iteration failed with retryable error. Waiting ${waitMs}ms before continuing scan.`,
+        message,
+      );
+      await delay(waitMs);
+
+      list = await withRetry('Continue scan after retryable scan failure', () =>
+        client.continueScan(token),
+      );
+      continue;
     }
 
     const token = list.token;
