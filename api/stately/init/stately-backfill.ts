@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { keyPath } from '@stately-cloud/client';
+import { keyPath, StatelyError } from '@stately-cloud/client';
 import { DatabaseError } from 'pg-protocol';
 import { closeDbPool, transaction } from '../../db/index.js';
 import { addLoadoutShare } from '../../db/loadout-share-queries.js';
@@ -36,9 +36,11 @@ const continuationDelayMs = parseNumberEnv('BACKFILL_CONTINUATION_DELAY_MS', 100
 const retryMaxAttempts = parseNumberEnv('BACKFILL_RETRY_MAX_ATTEMPTS', 12);
 const retryBaseDelayMs = parseNumberEnv('BACKFILL_RETRY_BASE_DELAY_MS', 1000);
 const retryMaxDelayMs = parseNumberEnv('BACKFILL_RETRY_MAX_DELAY_MS', 30000);
+const statelyThrottleMinDelayMs = parseNumberEnv('BACKFILL_STATELY_THROTTLE_DELAY_MS', 15000);
 
 interface RetryableError {
   code?: string;
+  statelyCode?: string;
   status?: number;
   statusCode?: number;
   headers?: Record<string, string | number | undefined>;
@@ -48,6 +50,33 @@ interface RetryableError {
   };
   cause?: unknown;
   message?: string;
+}
+
+function isStatelyThroughputError(error: unknown): boolean {
+  if (error instanceof StatelyError) {
+    return (
+      error.statelyCode === 'StoreThroughputExceeded' ||
+      error.statelyCode === 'StoreRequestLimitExceeded'
+    );
+  }
+
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const retryable = error as RetryableError;
+  if (
+    retryable.statelyCode === 'StoreThroughputExceeded' ||
+    retryable.statelyCode === 'StoreRequestLimitExceeded'
+  ) {
+    return true;
+  }
+
+  if (retryable.cause) {
+    return isStatelyThroughputError(retryable.cause);
+  }
+
+  return false;
 }
 
 function parseNumberEnv(envName: string, defaultValue: number) {
@@ -142,7 +171,14 @@ function retryDelayMs(error: unknown, attempt: number) {
 
   const exponential = retryBaseDelayMs * 2 ** (attempt - 1);
   const jitter = Math.floor(Math.random() * retryBaseDelayMs);
-  return Math.min(retryMaxDelayMs, exponential + jitter);
+  const retryDelay = exponential + jitter;
+
+  if (isStatelyThroughputError(error)) {
+    // Give Stately autoscaling enough time to react to hot partitions and traffic bursts.
+    return Math.min(retryMaxDelayMs, Math.max(statelyThrottleMinDelayMs, retryDelay));
+  }
+
+  return Math.min(retryMaxDelayMs, retryDelay);
 }
 
 async function withRetry<T>(name: string, fn: () => T | Promise<T>): Promise<T> {

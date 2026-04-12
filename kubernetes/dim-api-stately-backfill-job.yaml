@@ -28,6 +28,11 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       restartPolicy: OnFailure
       containers:
         - name: stately-backfill
