@@ -26,14 +26,14 @@ spec:
       labels:
         app: dim-api-stately-backfill
       annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
     spec:
       restartPolicy: OnFailure
       containers:
         - name: stately-backfill
           image: destinyitemmanager/dim-api:$COMMITHASH
           imagePullPolicy: IfNotPresent
-          command: ["node"]
+          command: ['node']
           args:
             - --enable-source-maps
             - api/stately/init/stately-backfill.js
@@ -43,19 +43,19 @@ spec:
             - name: BACKFILL_TOKEN_PATH
               value: /var/lib/dim-api-backfill/backfill-token.bin
             - name: BACKFILL_RETRY_MAX_ATTEMPTS
-              value: "12"
+              value: '12'
             - name: BACKFILL_RETRY_BASE_DELAY_MS
-              value: "1000"
+              value: '1000'
             - name: BACKFILL_RETRY_MAX_DELAY_MS
-              value: "30000"
+              value: '30000'
             - name: BACKFILL_PROFILE_BATCH_SIZE
-              value: "1000"
+              value: '1000'
             - name: BACKFILL_SETTINGS_BATCH_SIZE
-              value: "50"
+              value: '50'
             - name: BACKFILL_SHARE_BATCH_SIZE
-              value: "50"
+              value: '50'
             - name: BACKFILL_CONTINUATION_DELAY_MS
-              value: "1000"
+              value: '1000'
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -66,11 +66,6 @@ spec:
                 secretKeyRef:
                   name: dim-api-secret
                   key: stately_access_key
-            - name: STATELY_STORE_ID
-              valueFrom:
-                secretKeyRef:
-                  name: dim-api-secret
-                  key: stately_store_id
           envFrom:
             - configMapRef:
                 name: dim-api-config
@@ -79,7 +74,7 @@ spec:
               cpu: 200m
               memory: 256Mi
             limits:
-              cpu: "1"
+              cpu: '1'
               memory: 1Gi
           volumeMounts:
             - name: token-state
