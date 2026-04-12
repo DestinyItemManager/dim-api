@@ -256,7 +256,7 @@ async function loadProfile(
     // TODO: should settings be stored under profile too?? maybe primary profile ID?
     promises.push(
       (async () => {
-        // Load settings from Stately. If they're there, you're done. Otherwise load from Postgres.
+        // Load settings from Postgres. If they're there, you're done. Otherwise load from Stately.
         const start = new Date();
 
         const now = Date.now();

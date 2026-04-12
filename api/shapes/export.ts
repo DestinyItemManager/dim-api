@@ -16,13 +16,19 @@ export interface ExportResponse {
     destinyVersion: DestinyVersion;
     annotation: ItemAnnotation;
   }[];
-  itemHashTags: ItemHashTag[];
+  itemHashTags:
+    | ItemHashTag[] // Old exports, missing platformMembershipId
+    | {
+        platformMembershipId: string;
+        itemHashTag: ItemHashTag;
+      }[];
   triumphs: {
     platformMembershipId: string;
     triumphs: number[];
   }[];
   searches: {
     destinyVersion: DestinyVersion;
+    platformMembershipId?: string;
     search: Search;
   }[];
 }

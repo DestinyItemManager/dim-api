@@ -1,20 +1,18 @@
 import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
-import { readTransaction, transaction } from '../db/index.js';
-import { deleteSettings, getSettings as getSettingsFromPostgres } from '../db/settings-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
+import { ItemHashTag } from '../shapes/item-annotations.js';
 import { ProfileResponse } from '../shapes/profile.js';
-import { defaultSettings, Settings } from '../shapes/settings.js';
-import { delay, subtractObject } from '../utils.js';
+import { delay } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
 import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
 import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-queries.js';
 import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
 import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
-import { deleteSettings as deleteSettingsInStately, getSettings } from './settings-queries.js';
+import { deleteSettings as deleteSettingsInStately } from './settings-queries.js';
 import { batches, fromStatelyUUID, parseKeyPath } from './stately-utils.js';
 import { keyFor as triumphKeyFor } from './triumphs-queries.js';
 
@@ -29,8 +27,6 @@ export async function deleteAllDataForUser(
 
   // Also delete settings, which are stored by membershipId
   await deleteSettingsInStately(bungieMembershipId);
-  // And delete from Postgres too
-  await transaction(async (pgClient) => deleteSettings(pgClient, bungieMembershipId));
 
   const response = responses.reduce<DeleteAllResponse['deleted']>(
     (acc, r) => {
@@ -108,50 +104,15 @@ function keyFor(item: AnyItem): [keyPath: string, responseKey: keyof DeleteAllRe
   return ['', 'settings'];
 }
 
-/**
- * Export all data for a given membership and profile.
- */
-export async function exportDataForUser(
-  bungieMembershipId: number,
-  platformMembershipIds: string[],
-): Promise<ExportResponse> {
-  let settings: Settings;
-  const pgSettings = await readTransaction((client) =>
-    getSettingsFromPostgres(client, bungieMembershipId),
-  );
-  if (pgSettings) {
-    settings = { ...defaultSettings, ...pgSettings.settings };
-  } else {
-    settings = (await getSettings(bungieMembershipId)) ?? defaultSettings;
-  }
-
-  const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));
-
-  const initialResponse: ExportResponse = {
-    settings: subtractObject(settings, defaultSettings),
-    loadouts: [],
-    tags: [],
-    itemHashTags: [],
-    triumphs: [],
-    searches: [],
-  };
-
-  return responses.reduce<ExportResponse>((acc, r) => {
-    acc.loadouts.push(...r.loadouts);
-    acc.tags.push(...r.tags);
-    acc.itemHashTags.push(...r.itemHashTags);
-    acc.triumphs.push(...r.triumphs);
-    acc.searches.push(...r.searches);
-    return acc;
-  }, initialResponse);
-}
-
-async function exportDataForProfile(platformMembershipId: string): Promise<ExportResponse> {
+export async function exportDataForProfile(platformMembershipId: string): Promise<ExportResponse> {
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}`;
 
   const loadouts: ExportResponse['loadouts'] = [];
   const itemAnnotations: ExportResponse['tags'] = [];
-  const itemHashTags: ExportResponse['itemHashTags'] = [];
+  const itemHashTags: {
+    platformMembershipId: string;
+    itemHashTag: ItemHashTag;
+  }[] = [];
   const searches: ExportResponse['searches'] = [];
   const triumphs: number[] = [];
 
@@ -167,7 +128,10 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
         annotation: convertItemAnnotation(item),
       });
     } else if (client.isType(item, 'ItemHashTag')) {
-      itemHashTags.push(convertItemHashTag(item));
+      itemHashTags.push({
+        platformMembershipId,
+        itemHashTag: convertItemHashTag(item),
+      });
     } else if (client.isType(item, 'Loadout')) {
       loadouts.push({
         platformMembershipId,

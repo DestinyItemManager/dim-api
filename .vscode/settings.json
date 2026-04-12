@@ -104,5 +104,6 @@
   ],
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": "file:///Users/brh/Documents/oss/dim-api/.github/workflows/deploy.yml"
-  }
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }
