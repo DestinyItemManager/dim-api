@@ -36,7 +36,7 @@ spec:
           command: ["node"]
           args:
             - --enable-source-maps
-            - api/stately/init/export-share-ids.js
+            - api/stately/init/stately-backfill.js
           env:
             - name: NODE_ENV
               value: production

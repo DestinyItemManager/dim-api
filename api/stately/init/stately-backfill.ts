@@ -1,17 +1,32 @@
 import fs from 'node:fs/promises';
+import { keyPath } from '@stately-cloud/client';
 import { DatabaseError } from 'pg-protocol';
 import { closeDbPool, transaction } from '../../db/index.js';
-import { addLoadoutShareIgnoring } from '../../db/loadout-share-queries.js';
+import { addLoadoutShare } from '../../db/loadout-share-queries.js';
 import { backfillMigrationState } from '../../db/migration-state-queries.js';
-import { replaceSettingsIfNotPresent } from '../../db/settings-queries.js';
+import { getSettings, replaceSettings } from '../../db/settings-queries.js';
 import { Loadout } from '../../shapes/loadouts.js';
 import { defaultSettings } from '../../shapes/settings.js';
 import { delay, subtractObject } from '../../utils.js';
 import { client } from '../client.js';
 import { Settings } from '../generated/stately_pb.js';
-import { keyFor as keyForLoadoutShare } from '../loadout-share-queries.js';
 import { convertLoadoutFromStately } from '../loadouts-queries.js';
 import { convertToDimSettings, keyFor as settingsKey } from '../settings-queries.js';
+
+function keyForLoadoutShare(shareId: string) {
+  return keyPath`/loadoutShare-${shareId}`;
+}
+
+async function replaceSettingsIfNotPresent(
+  pgClient: Parameters<typeof getSettings>[0],
+  bungieMembershipId: number,
+  settings: Partial<import('../../shapes/settings.js').Settings>,
+) {
+  const existing = await getSettings(pgClient, bungieMembershipId);
+  if (!existing || existing.deleted) {
+    await replaceSettings(pgClient, bungieMembershipId, settings);
+  }
+}
 
 const tokenPath = process.env.BACKFILL_TOKEN_PATH ?? 'backfill-token.bin';
 const profileBatchSize = parseNumberEnv('BACKFILL_PROFILE_BATCH_SIZE', 1000);
@@ -248,12 +263,13 @@ async function flushShareQueue(force = false) {
     await transaction(async (pgClient) => {
       for (const share of batch) {
         try {
-          await addLoadoutShareIgnoring(
+          await addLoadoutShare(
             pgClient,
             undefined,
             share.platformMembershipId,
             share.shareId,
             share.loadout,
+            share.viewCount,
           );
         } catch (error) {
           if (error instanceof DatabaseError && error.code === '23505') {
