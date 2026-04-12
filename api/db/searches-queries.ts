@@ -45,7 +45,7 @@ export async function syncSearchesForProfile(
   syncTimestamp: number,
 ): Promise<{ updated: Search[]; deletedSearchHashes: string[] }> {
   const results = await client.query<SearchRow & { deleted_at: Date | null; qhash: string }>({
-    name: 'get_searches',
+    name: 'sync_searches',
     text: 'SELECT query, qhash, saved, usage_count, search_type, last_used, deleted_at FROM searches WHERE platform_membership_id = $1 and destiny_version = $2 and last_updated_at > $3',
     values: [platformMembershipId, destinyVersion, new Date(syncTimestamp)],
   });

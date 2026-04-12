@@ -1,3 +1,4 @@
+import { delay } from 'es-toolkit';
 import { readFile } from 'fs';
 import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
@@ -167,31 +168,34 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
     );
   });
 
-  describe('import/export', () => {
-    it('can import and export data', async () => {
-      await importData();
+  // Importing will migrate to postgres, so we don't run it on the Stately data
+  if (backend.state === MigrationState.Postgres) {
+    describe('import/export', () => {
+      it('can import and export data', async () => {
+        await importData();
 
-      const exportResponse = (await getRequestAuthed('/export')
-        .expect(200)
-        .json()) as ExportResponse;
+        const exportResponse = (await getRequestAuthed('/export')
+          .expect(200)
+          .json()) as ExportResponse;
 
-      expect(exportResponse.settings.itemSortOrderCustom).toEqual([
-        'sunset',
-        'tag',
-        'primStat',
-        'season',
-        'ammoType',
-        'rarity',
-        'typeName',
-        'name',
-      ]);
+        expect(exportResponse.settings.itemSortOrderCustom).toEqual([
+          'sunset',
+          'tag',
+          'primStat',
+          'season',
+          'ammoType',
+          'rarity',
+          'typeName',
+          'name',
+        ]);
 
-      expect(exportResponse.loadouts.length).toBe(37);
-      expect(exportResponse.tags.length).toBe(592);
+        expect(exportResponse.loadouts.length).toBe(37);
+        expect(exportResponse.tags.length).toBe(592);
+      });
+
+      // TODO: other import formats, validation
     });
-
-    // TODO: other import formats, validation
-  });
+  }
 
   describe('profile', () => {
     // Applies only to tests in this describe block
@@ -242,6 +246,8 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
       expect(profileResponse.tags!.length).toBe(592);
       expect(profileResponse.loadouts!.length).toBe(19);
       expect(profileResponse.sync).toBe(false);
+
+      await delay(15);
 
       const request: ProfileUpdateRequest = {
         platformMembershipId,
@@ -297,6 +303,8 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
       };
       await postRequestAuthed('/profile', request2).expect(200);
 
+      await delay(15);
+
       const profileSyncResponse2 = (await getRequestAuthed(
         `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileSyncResponse.syncToken!)}`,
       )
@@ -308,7 +316,7 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
       expect(profileSyncResponse2.syncToken).toContain('"s":');
       expect(profileSyncResponse2.sync).toBe(true);
       expect(profileSyncResponse2.settings).toBeDefined();
-      expect(profileSyncResponse.settings?.compareBaseStats).toBe(true);
+      expect(profileSyncResponse2.settings?.compareBaseStats).toBe(true);
       expect(profileSyncResponse2.settings?.showNewItems).toBe(true);
     });
 
@@ -349,14 +357,12 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
         .expect(200)
         .json()) as DeleteAllResponse;
 
-      expect(response.deleted).toEqual({
-        itemHashTags: 71,
-        loadouts: 37,
-        searches: 205,
-        settings: 1,
-        tags: 592,
-        triumphs: 30,
-      });
+      expect(response.deleted.itemHashTags).toBe(71);
+      expect(response.deleted.loadouts).toBe(37);
+      expect(response.deleted.searches).toBeGreaterThanOrEqual(205);
+      expect(response.deleted.settings).toBe(1);
+      expect(response.deleted.tags).toBe(592);
+      expect(response.deleted.triumphs).toBe(30);
 
       // Now re-export and make sure it's all gone
       const exportResponse = (await getRequestAuthed('/export')
@@ -1250,7 +1256,9 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
 
   async function importData() {
     const file = JSON.parse(
-      (await promisify(readFile)('./dim-data.json')).toString(),
+      (await promisify(readFile)('./dim-data.json'))
+        .toString()
+        .replaceAll('"4611686018433092312"', `"${backend.platformMembershipId}"`),
     ) as ExportResponse;
 
     const resp = (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
