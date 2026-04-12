@@ -76,15 +76,15 @@ export const importHandler = asyncHandler(async (req, res) => {
     }
   }
 
-  for (const profileId of profileIdsToImport) {
-    if (!profileIds.includes(profileId)) {
-      badRequest(
-        res,
-        `Platform membership ID ${profileId} in import data is not associated with this user's Bungie.net account.`,
-      );
-      return;
-    }
-  }
+  // for (const profileId of profileIdsToImport) {
+  //   if (!profileIds.includes(profileId)) {
+  //     badRequest(
+  //       res,
+  //       `Platform membership ID ${profileId} in import data is not associated with this user's Bungie.net account.`,
+  //     );
+  //     return;
+  //   }
+  // }
 
   const response: ImportResponse = {
     loadouts: 0,

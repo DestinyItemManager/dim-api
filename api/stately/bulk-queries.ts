@@ -1,20 +1,110 @@
 import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
+import { uniqBy } from 'es-toolkit';
+import { transaction } from '../db/index.js';
+import { replaceSettings } from '../db/settings-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
-import { ItemHashTag } from '../shapes/item-annotations.js';
+import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
 import { ProfileResponse } from '../shapes/profile.js';
+import { Settings } from '../shapes/settings.js';
 import { delay } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
-import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
-import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-queries.js';
-import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
-import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
+import {
+  convertItemAnnotation,
+  importTags,
+  keyFor as tagKeyFor,
+} from './item-annotations-queries.js';
+import {
+  convertItemHashTag,
+  keyFor as hashTagKeyFor,
+  importHashTags,
+} from './item-hash-tags-queries.js';
+import {
+  convertLoadoutFromStately,
+  importLoadouts,
+  keyFor as loadoutKeyFor,
+} from './loadouts-queries.js';
+import {
+  convertSearchFromStately,
+  importSearches,
+  keyFor as searchKeyFor,
+} from './searches-queries.js';
 import { deleteSettings as deleteSettingsInStately } from './settings-queries.js';
 import { batches, fromStatelyUUID, parseKeyPath } from './stately-utils.js';
-import { keyFor as triumphKeyFor } from './triumphs-queries.js';
+import { importTriumphs, keyFor as triumphKeyFor } from './triumphs-queries.js';
+
+type PlatformLoadout = Loadout & {
+  platformMembershipId: string;
+  destinyVersion: DestinyVersion;
+};
+
+type PlatformItemAnnotation = ItemAnnotation & {
+  platformMembershipId: string;
+  destinyVersion: DestinyVersion;
+};
+
+export async function statelyImport(
+  bungieMembershipId: number,
+  platformMembershipIds: string[],
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  // TODO: what we should do, is map all these to items, and then we can just do
+  // batch puts, 25 at a time.
+
+  let numTriumphs = 0;
+  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+
+  // The export will have duplicates because import saved to each profile
+  // instead of the one that was exported.
+  itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
+  searches = uniqBy(searches, (s) => s.search.query);
+
+  const items: AnyItem[] = [];
+  items.push(...importLoadouts(loadouts));
+  items.push(...importTags(itemAnnotations));
+  // TODO: I guess save item hash tags to each platform? I should really
+  // refactor the import shape to have hashtags per platform, or merge/unique
+  // them.
+  for (const platformMembershipId of platformMembershipIds) {
+    items.push(...importHashTags(platformMembershipId, itemHashTags));
+  }
+  if (Array.isArray(triumphs)) {
+    for (const triumphData of triumphs) {
+      if (Array.isArray(triumphData?.triumphs)) {
+        items.push(...importTriumphs(triumphData.platformMembershipId, triumphData.triumphs));
+        numTriumphs += triumphData.triumphs.length;
+      }
+    }
+  }
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have searches per platform, or merge/unique them.
+    items.push(...importSearches(platformMembershipId, searches));
+  }
+
+  // Settings live in Postgres now
+  await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+
+  // OK now put them in as fast as we can
+  for (const batch of batches(items)) {
+    // We shouldn't have any existing items...
+    await client.putBatch(
+      ...batch.map((item) => ({ item, mustNotExist: true, overwriteMetadataTimestamps: true })),
+    );
+    await delay(100); // give it some time to flush
+  }
+
+  return numTriumphs;
+}
 
 /**
  * Delete all the data for a user+profile combo.

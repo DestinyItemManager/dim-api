@@ -8,6 +8,7 @@ import { setGlobalSettings } from './db/global-settings-queries.js';
 import { closeDbPool, transaction } from './db/index.js';
 import { MigrationState, setMigrationStateForTest } from './db/migration-state-queries.js';
 import { replaceSettings as replaceSettingsPostgres } from './db/settings-queries.js';
+import { extractImportData } from './routes/import.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
 import { DeleteAllResponse } from './shapes/delete-all.js';
@@ -19,6 +20,7 @@ import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest, ProfileUpdateResponse } from './shapes/profile.js';
 import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
+import { statelyImport } from './stately/bulk-queries.js';
 
 const fetch = makeFetch(app);
 
@@ -39,6 +41,24 @@ const backendConfigs = [
         );
         await replaceSettingsPostgres(client, this.bungieMembershipId, defaultSettings);
       });
+    },
+    importer: async () => {
+      const file = JSON.parse(
+        (await promisify(readFile)('./dim-data.json')).toString(),
+      ) as ExportResponse;
+
+      const data = extractImportData(file);
+
+      await statelyImport(
+        1234,
+        ['4611686018433092312'],
+        data.settings,
+        data.loadouts,
+        data.itemAnnotations,
+        data.triumphs,
+        data.searches,
+        data.itemHashTags,
+      );
     },
   },
   {
@@ -175,7 +195,7 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
 
   describe('profile', () => {
     // Applies only to tests in this describe block
-    beforeEach(importData);
+    beforeEach(backend.importer ?? importData);
 
     it('can retrieve all profile data', async () => {
       const profileResponse = (await getRequestAuthed(
