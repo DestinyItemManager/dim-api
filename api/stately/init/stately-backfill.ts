@@ -28,7 +28,7 @@ async function replaceSettingsIfNotPresent(
   }
 }
 
-const tokenPath = process.env.BACKFILL_TOKEN_PATH ?? 'backfill-token.bin';
+const configuredTokenPath = process.env.BACKFILL_TOKEN_PATH ?? 'backfill-token.bin';
 const profileBatchSize = parseNumberEnv('BACKFILL_PROFILE_BATCH_SIZE', 1000);
 const settingsBatchSize = parseNumberEnv('BACKFILL_SETTINGS_BATCH_SIZE', 50);
 const shareBatchSize = parseNumberEnv('BACKFILL_SHARE_BATCH_SIZE', 50);
@@ -37,6 +37,11 @@ const retryMaxAttempts = parseNumberEnv('BACKFILL_RETRY_MAX_ATTEMPTS', 12);
 const retryBaseDelayMs = parseNumberEnv('BACKFILL_RETRY_BASE_DELAY_MS', 1000);
 const retryMaxDelayMs = parseNumberEnv('BACKFILL_RETRY_MAX_DELAY_MS', 30000);
 const statelyThrottleMinDelayMs = parseNumberEnv('BACKFILL_STATELY_THROTTLE_DELAY_MS', 15000);
+const configuredParallelSegments = parseNumberEnv('BACKFILL_PARALLEL_SEGMENTS', 1);
+const configuredTotalSegments = process.env.BACKFILL_TOTAL_SEGMENTS
+  ? parseNumberEnv('BACKFILL_TOTAL_SEGMENTS', 1)
+  : undefined;
+const configuredSegmentIndex = parseNonNegativeIntEnv('BACKFILL_SEGMENT_INDEX');
 
 interface RetryableError {
   code?: string;
@@ -89,6 +94,34 @@ function parseNumberEnv(envName: string, defaultValue: number) {
     throw new Error(`${envName} must be a positive number`);
   }
   return parsed;
+}
+
+function parseNonNegativeIntEnv(envName: string): number | undefined {
+  const raw = process.env[envName];
+  if (raw === undefined || raw === '') {
+    return undefined;
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${envName} must be a non-negative integer`);
+  }
+
+  return parsed;
+}
+
+function tokenPathForSegment(basePath: string, segmentIndex: number, totalSegments: number): string {
+  if (totalSegments <= 1) {
+    return basePath;
+  }
+
+  const marker = `.segment-${segmentIndex + 1}-of-${totalSegments}`;
+  const dotIndex = basePath.lastIndexOf('.');
+  if (dotIndex <= 0) {
+    return `${basePath}${marker}`;
+  }
+
+  return `${basePath.slice(0, dotIndex)}${marker}${basePath.slice(dotIndex)}`;
 }
 
 function getNestedStatus(error: RetryableError): number | undefined {
@@ -214,127 +247,134 @@ async function withRetry<T>(name: string, fn: () => T | Promise<T>): Promise<T> 
   }
 }
 
-const tokenData = await fs.readFile(tokenPath).catch(() => null);
-
 type ScanList = ReturnType<typeof client.beginScan>;
 
-let list: ScanList = tokenData
-  ? await withRetry<ScanList>('Continue scan from token file', () => client.continueScan(tokenData))
-  : await withRetry('Begin scan', () =>
-      client.beginScan({
-        itemTypes: [
-          'LoadoutShare',
-          'ItemAnnotation',
-          'ItemHashTag',
-          'Loadout',
-          'Search',
-          'Triumph',
-          'Settings',
-        ],
-      }),
-    );
+async function runSegment(segmentIndex: number, totalSegments: number, workerCount: number) {
+  const tokenPath = tokenPathForSegment(configuredTokenPath, segmentIndex, totalSegments);
+  const logPrefix = `[segment ${segmentIndex + 1}/${totalSegments}]`;
+  const tokenData = await fs.readFile(tokenPath).catch(() => null);
 
-const profileIds = new Set<bigint>();
+  console.log(logPrefix, 'Starting scan using token file', tokenPath);
 
-const settingsQueue: Settings[] = [];
-const shareQueue: {
-  loadout: Loadout;
-  viewCount: number;
-  platformMembershipId: string;
-  shareId: string;
-}[] = [];
+  let list: ScanList = tokenData
+    ? await withRetry<ScanList>(`${logPrefix} Continue scan from token file`, () =>
+        client.continueScan(tokenData),
+      )
+    : await withRetry(`${logPrefix} Begin scan`, () =>
+        client.beginScan({
+          itemTypes: [
+            'LoadoutShare',
+            'ItemAnnotation',
+            'ItemHashTag',
+            'Loadout',
+            'Search',
+            'Triumph',
+            'Settings',
+          ],
+          totalSegments,
+          segmentIndex,
+        }),
+      );
 
-async function flushProfileIds(force = false) {
-  if (!force && profileIds.size < profileBatchSize) {
-    return;
-  }
-  if (profileIds.size === 0) {
-    return;
-  }
+  const profileIds = new Set<bigint>();
+  const settingsQueue: Settings[] = [];
+  const shareQueue: {
+    loadout: Loadout;
+    viewCount: number;
+    platformMembershipId: string;
+    shareId: string;
+  }[] = [];
 
-  console.log('Backfilling migration states for', profileIds.size, 'profiles...');
-  const items = [...profileIds];
-  await withRetry('Backfill migration states', async () => {
-    await transaction(async (pgClient) => {
-      for (const profileId of items) {
-        await backfillMigrationState(pgClient, profileId.toString(), undefined);
-      }
-    });
-  });
-  profileIds.clear();
-  console.log('Done');
-}
+  async function flushProfileIds(force = false) {
+    if (!force && profileIds.size < profileBatchSize) {
+      return;
+    }
+    if (profileIds.size === 0) {
+      return;
+    }
 
-async function flushSettingsQueue(force = false) {
-  if (!force && settingsQueue.length < settingsBatchSize) {
-    return;
-  }
-  if (settingsQueue.length === 0) {
-    return;
-  }
-
-  console.log('Backfilling settings for', settingsQueue.length, 'users...');
-  const batch = [...settingsQueue];
-  await withRetry('Backfill settings', async () => {
-    await transaction(async (pgClient) => {
-      for (const settings of batch) {
-        await replaceSettingsIfNotPresent(
-          pgClient,
-          Number(settings.memberId),
-          subtractObject(convertToDimSettings(settings), defaultSettings),
-        );
-      }
-    });
-  });
-
-  await withRetry('Delete migrated settings from Stately', async () => {
-    await client.del(...batch.map((s) => settingsKey(Number(s.memberId))));
-  });
-
-  settingsQueue.splice(0, batch.length);
-  console.log('Done');
-}
-
-async function flushShareQueue(force = false) {
-  if (!force && shareQueue.length < shareBatchSize) {
-    return;
-  }
-  if (shareQueue.length === 0) {
-    return;
-  }
-
-  console.log('Backfilling', shareQueue.length, 'loadout shares...');
-  const batch = [...shareQueue];
-
-  await withRetry('Backfill loadout shares', async () => {
-    await transaction(async (pgClient) => {
-      for (const share of batch) {
-        const inserted = await addLoadoutShareIfNotPresent(
-          pgClient,
-          undefined,
-          share.platformMembershipId,
-          share.shareId,
-          share.loadout,
-          share.viewCount,
-        );
-        if (!inserted) {
-          console.log('Loadout share collision ignoring', share.shareId);
+    console.log(logPrefix, 'Backfilling migration states for', profileIds.size, 'profiles...');
+    const items = [...profileIds];
+    await withRetry(`${logPrefix} Backfill migration states`, async () => {
+      await transaction(async (pgClient) => {
+        for (const profileId of items) {
+          await backfillMigrationState(pgClient, profileId.toString(), undefined);
         }
-      }
+      });
     });
-  });
+    profileIds.clear();
+    console.log(logPrefix, 'Done');
+  }
 
-  await withRetry('Delete migrated loadout shares from Stately', async () => {
-    await client.del(...batch.map((s) => keyForLoadoutShare(s.shareId)));
-  });
+  async function flushSettingsQueue(force = false) {
+    if (!force && settingsQueue.length < settingsBatchSize) {
+      return;
+    }
+    if (settingsQueue.length === 0) {
+      return;
+    }
 
-  shareQueue.splice(0, batch.length);
-  console.log('Done');
-}
+    console.log(logPrefix, 'Backfilling settings for', settingsQueue.length, 'users...');
+    const batch = [...settingsQueue];
+    await withRetry(`${logPrefix} Backfill settings`, async () => {
+      await transaction(async (pgClient) => {
+        for (const settings of batch) {
+          await replaceSettingsIfNotPresent(
+            pgClient,
+            Number(settings.memberId),
+            subtractObject(convertToDimSettings(settings), defaultSettings),
+          );
+        }
+      });
+    });
 
-let scanComplete = false;
+    await withRetry(`${logPrefix} Delete migrated settings from Stately`, async () => {
+      await client.del(...batch.map((s) => settingsKey(Number(s.memberId))));
+    });
 
-try {
+    settingsQueue.splice(0, batch.length);
+    console.log(logPrefix, 'Done');
+  }
+
+  async function flushShareQueue(force = false) {
+    if (!force && shareQueue.length < shareBatchSize) {
+      return;
+    }
+    if (shareQueue.length === 0) {
+      return;
+    }
+
+    console.log(logPrefix, 'Backfilling', shareQueue.length, 'loadout shares...');
+    const batch = [...shareQueue];
+
+    await withRetry(`${logPrefix} Backfill loadout shares`, async () => {
+      await transaction(async (pgClient) => {
+        for (const share of batch) {
+          const inserted = await addLoadoutShareIfNotPresent(
+            pgClient,
+            undefined,
+            share.platformMembershipId,
+            share.shareId,
+            share.loadout,
+            share.viewCount,
+          );
+          if (!inserted) {
+            console.log(logPrefix, 'Loadout share collision ignoring', share.shareId);
+          }
+        }
+      });
+    });
+
+    await withRetry(`${logPrefix} Delete migrated loadout shares from Stately`, async () => {
+      await client.del(...batch.map((s) => keyForLoadoutShare(s.shareId)));
+    });
+
+    shareQueue.splice(0, batch.length);
+    console.log(logPrefix, 'Done');
+  }
+
+  let scanComplete = false;
+
   while (true) {
     try {
       for await (const item of list) {
@@ -369,12 +409,12 @@ try {
       const waitMs = retryDelayMs(error, 1);
       const message = error instanceof Error ? error.message : String(error);
       console.log(
-        `Scan iteration failed with retryable error. Waiting ${waitMs}ms before continuing scan.`,
+        `${logPrefix} Scan iteration failed with retryable error. Waiting ${waitMs}ms before continuing scan.`,
         message,
       );
       await delay(waitMs);
 
-      list = await withRetry('Continue scan after retryable scan failure', () =>
+      list = await withRetry(`${logPrefix} Continue scan after retryable scan failure`, () =>
         client.continueScan(token),
       );
       continue;
@@ -382,20 +422,20 @@ try {
 
     const token = list.token;
     if (!token) {
-      console.log('Scan token missing, ending scan loop.');
+      console.log(logPrefix, 'Scan token missing, ending scan loop.');
       break;
     }
 
     await fs.writeFile(tokenPath, token.tokenData);
     if (!token.canContinue) {
-      console.log('Scan complete.');
+      console.log(logPrefix, 'Scan complete.');
       scanComplete = true;
       break;
     }
 
     await delay(continuationDelayMs);
-    console.log('Continuing scan...');
-    list = await withRetry('Continue scan', () => client.continueScan(token));
+    console.log(logPrefix, 'Continuing scan...');
+    list = await withRetry(`${logPrefix} Continue scan`, () => client.continueScan(token));
   }
 
   await flushProfileIds(true);
@@ -404,6 +444,31 @@ try {
 
   if (scanComplete) {
     await fs.unlink(tokenPath).catch(() => undefined);
+  }
+
+  if (workerCount > 1) {
+    console.log(logPrefix, 'Worker complete.');
+  }
+}
+
+try {
+  const totalSegments = configuredTotalSegments ?? configuredParallelSegments;
+
+  if (configuredSegmentIndex !== undefined) {
+    if (configuredTotalSegments === undefined) {
+      throw new Error('BACKFILL_TOTAL_SEGMENTS must be set when BACKFILL_SEGMENT_INDEX is set');
+    }
+    if (configuredSegmentIndex >= configuredTotalSegments) {
+      throw new Error('BACKFILL_SEGMENT_INDEX must be less than BACKFILL_TOTAL_SEGMENTS');
+    }
+    await runSegment(configuredSegmentIndex, configuredTotalSegments, 1);
+  } else if (totalSegments <= 1) {
+    await runSegment(0, 1, 1);
+  } else {
+    const workers = Array.from({ length: totalSegments }, (_, segmentIndex) =>
+      runSegment(segmentIndex, totalSegments, totalSegments),
+    );
+    await Promise.all(workers);
   }
 } finally {
   await closeDbPool();

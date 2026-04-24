@@ -45,6 +45,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: BACKFILL_PARALLEL_SEGMENTS
+              value: '4'
             - name: BACKFILL_TOKEN_PATH
               value: /var/lib/dim-api-backfill/backfill-token.bin
             - name: BACKFILL_RETRY_MAX_ATTEMPTS

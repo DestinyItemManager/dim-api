@@ -27,6 +27,17 @@ Run a one-time migration scan from StatelyDB into Postgres with
 
 The job is resumable across pod restarts by storing scan token state in a PVC.
 
+One-pod parallelization options:
+
+- `BACKFILL_PARALLEL_SEGMENTS`: Number of segment workers to run concurrently in one pod.
+- `BACKFILL_TOTAL_SEGMENTS`: Optional explicit total segment count (defaults to `BACKFILL_PARALLEL_SEGMENTS`).
+- `BACKFILL_SEGMENT_INDEX`: Optional explicit segment index for single-segment worker mode.
+
+For one-pod parallel mode, set only `BACKFILL_PARALLEL_SEGMENTS` to the desired worker count and leave
+`BACKFILL_SEGMENT_INDEX` unset.
+
+Segment workers automatically use segment-specific token files derived from `BACKFILL_TOKEN_PATH`.
+
 Required environment inputs:
 
 - `dim-api-config` ConfigMap (same values used by API deployment)
