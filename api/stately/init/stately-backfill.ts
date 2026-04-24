@@ -37,6 +37,7 @@ const retryMaxAttempts = parseNumberEnv('BACKFILL_RETRY_MAX_ATTEMPTS', 12);
 const retryBaseDelayMs = parseNumberEnv('BACKFILL_RETRY_BASE_DELAY_MS', 1000);
 const retryMaxDelayMs = parseNumberEnv('BACKFILL_RETRY_MAX_DELAY_MS', 30000);
 const statelyThrottleMinDelayMs = parseNumberEnv('BACKFILL_STATELY_THROTTLE_DELAY_MS', 15000);
+const retryThrottlingForever = (process.env.BACKFILL_RETRY_THROTTLING_FOREVER ?? 'true') !== 'false';
 const configuredParallelSegments = parseNumberEnv('BACKFILL_PARALLEL_SEGMENTS', 1);
 const configuredTotalSegments = process.env.BACKFILL_TOTAL_SEGMENTS
   ? parseNumberEnv('BACKFILL_TOTAL_SEGMENTS', 1)
@@ -232,14 +233,17 @@ async function withRetry<T>(name: string, fn: () => T | Promise<T>): Promise<T> 
     try {
       return await fn();
     } catch (error) {
-      if (!isRetryableError(error) || attempt >= retryMaxAttempts) {
+      const retryable = isRetryableError(error);
+      const throttleRetry = retryThrottlingForever && isStatelyThroughputError(error);
+      if (!retryable || (!throttleRetry && attempt >= retryMaxAttempts)) {
         throw error;
       }
 
       const waitMs = retryDelayMs(error, attempt);
       const message = error instanceof Error ? error.message : String(error);
+      const attemptLabel = throttleRetry ? `${attempt}/unbounded` : `${attempt}/${retryMaxAttempts}`;
       console.log(
-        `${name} failed with retryable error (attempt ${attempt}/${retryMaxAttempts}). Waiting ${waitMs}ms before retry.`,
+        `${name} failed with retryable error (attempt ${attemptLabel}). Waiting ${waitMs}ms before retry.`,
         message,
       );
       await delay(waitMs);
@@ -248,6 +252,15 @@ async function withRetry<T>(name: string, fn: () => T | Promise<T>): Promise<T> 
 }
 
 type ScanList = ReturnType<typeof client.beginScan>;
+const scanItemTypes: NonNullable<Parameters<typeof client.beginScan>[0]>['itemTypes'] = [
+  'LoadoutShare',
+  'ItemAnnotation',
+  'ItemHashTag',
+  'Loadout',
+  'Search',
+  'Triumph',
+  'Settings',
+];
 
 async function runSegment(segmentIndex: number, totalSegments: number, workerCount: number) {
   const tokenPath = tokenPathForSegment(configuredTokenPath, segmentIndex, totalSegments);
@@ -262,15 +275,7 @@ async function runSegment(segmentIndex: number, totalSegments: number, workerCou
       )
     : await withRetry(`${logPrefix} Begin scan`, () =>
         client.beginScan({
-          itemTypes: [
-            'LoadoutShare',
-            'ItemAnnotation',
-            'ItemHashTag',
-            'Loadout',
-            'Search',
-            'Triumph',
-            'Settings',
-          ],
+          itemTypes: scanItemTypes,
           totalSegments,
           segmentIndex,
         }),
@@ -400,22 +405,47 @@ async function runSegment(segmentIndex: number, totalSegments: number, workerCou
         throw error;
       }
 
-      const token = list.token;
-      if (!token) {
-        throw error;
-      }
-
-      await fs.writeFile(tokenPath, token.tokenData);
       const waitMs = retryDelayMs(error, 1);
       const message = error instanceof Error ? error.message : String(error);
+      const token = list.token;
+      if (token) {
+        await fs.writeFile(tokenPath, token.tokenData);
+        console.log(
+          `${logPrefix} Scan iteration failed with retryable error. Waiting ${waitMs}ms before continuing scan.`,
+          message,
+        );
+        await delay(waitMs);
+
+        list = await withRetry(`${logPrefix} Continue scan after retryable scan failure`, () =>
+          client.continueScan(token),
+        );
+        continue;
+      }
+
+      const persistedTokenData = await fs.readFile(tokenPath).catch(() => null);
+      if (persistedTokenData) {
+        console.log(
+          `${logPrefix} Retryable scan failure without in-memory token. Waiting ${waitMs}ms before resuming from persisted token.`,
+          message,
+        );
+        await delay(waitMs);
+        list = await withRetry(`${logPrefix} Continue scan from persisted token after retryable scan failure`, () =>
+          client.continueScan(persistedTokenData),
+        );
+        continue;
+      }
+
       console.log(
-        `${logPrefix} Scan iteration failed with retryable error. Waiting ${waitMs}ms before continuing scan.`,
+        `${logPrefix} Retryable scan failure without token. Waiting ${waitMs}ms before restarting segment scan.`,
         message,
       );
       await delay(waitMs);
-
-      list = await withRetry(`${logPrefix} Continue scan after retryable scan failure`, () =>
-        client.continueScan(token),
+      list = await withRetry(`${logPrefix} Restart segment scan after retryable scan failure`, () =>
+        client.beginScan({
+          itemTypes: scanItemTypes,
+          totalSegments,
+          segmentIndex,
+        }),
       );
       continue;
     }
