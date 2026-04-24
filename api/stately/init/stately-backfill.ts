@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { keyPath, StatelyError } from '@stately-cloud/client';
 import { DatabaseError } from 'pg-protocol';
 import { closeDbPool, transaction } from '../../db/index.js';
-import { addLoadoutShare } from '../../db/loadout-share-queries.js';
+import { addLoadoutShareIfNotPresent } from '../../db/loadout-share-queries.js';
 import { backfillMigrationState } from '../../db/migration-state-queries.js';
 import { getSettings, replaceSettings } from '../../db/settings-queries.js';
 import { Loadout } from '../../shapes/loadouts.js';
@@ -309,22 +309,16 @@ async function flushShareQueue(force = false) {
   await withRetry('Backfill loadout shares', async () => {
     await transaction(async (pgClient) => {
       for (const share of batch) {
-        try {
-          await addLoadoutShare(
-            pgClient,
-            undefined,
-            share.platformMembershipId,
-            share.shareId,
-            share.loadout,
-            share.viewCount,
-          );
-        } catch (error) {
-          if (error instanceof DatabaseError && error.code === '23505') {
-            // unique violation, delete the stately one
-            console.log('Loadout share collision ignoring', share.shareId);
-          } else {
-            throw error;
-          }
+        const inserted = await addLoadoutShareIfNotPresent(
+          pgClient,
+          undefined,
+          share.platformMembershipId,
+          share.shareId,
+          share.loadout,
+          share.viewCount,
+        );
+        if (!inserted) {
+          console.log('Loadout share collision ignoring', share.shareId);
         }
       }
     });
