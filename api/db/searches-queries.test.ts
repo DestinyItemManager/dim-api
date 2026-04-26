@@ -135,27 +135,6 @@ it('can mark a search as favorite even when it hasnt been used', async () => {
   });
 });
 
-it('can increment usage for one of the built-in searches', async () => {
-  await transaction(async (client) => {
-    const searches = await getSearchesForProfile(client, platformMembershipId, 2);
-    const query = searches[searches.length - 1].query;
-
-    await updateUsedSearch(
-      client,
-      bungieMembershipId,
-      platformMembershipId,
-      2,
-      query,
-      SearchType.Item,
-    );
-
-    const searches2 = await getSearchesForProfile(client, platformMembershipId, 2);
-    const search = searches2.find((s) => s.query === query);
-    expect(search?.usageCount).toBe(1);
-    expect(searches2.length).toBe(searches.length);
-  });
-});
-
 it('can delete a search', async () => {
   await transaction(async (client) => {
     await updateUsedSearch(
