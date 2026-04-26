@@ -1,8 +1,8 @@
-import fs from 'node:fs/promises';
 import { keyPath, StatelyError } from '@stately-cloud/client';
+import fs from 'node:fs/promises';
 import { DatabaseError } from 'pg-protocol';
 import { closeDbPool, transaction } from '../../db/index.js';
-import { addLoadoutShareIfNotPresent } from '../../db/loadout-share-queries.js';
+import { addLoadoutShareIgnoring } from '../../db/loadout-share-queries.js';
 import { backfillMigrationState } from '../../db/migration-state-queries.js';
 import { getSettings, replaceSettings } from '../../db/settings-queries.js';
 import { Loadout } from '../../shapes/loadouts.js';
@@ -37,7 +37,8 @@ const retryMaxAttempts = parseNumberEnv('BACKFILL_RETRY_MAX_ATTEMPTS', 12);
 const retryBaseDelayMs = parseNumberEnv('BACKFILL_RETRY_BASE_DELAY_MS', 1000);
 const retryMaxDelayMs = parseNumberEnv('BACKFILL_RETRY_MAX_DELAY_MS', 30000);
 const statelyThrottleMinDelayMs = parseNumberEnv('BACKFILL_STATELY_THROTTLE_DELAY_MS', 15000);
-const retryThrottlingForever = (process.env.BACKFILL_RETRY_THROTTLING_FOREVER ?? 'true') !== 'false';
+const retryThrottlingForever =
+  (process.env.BACKFILL_RETRY_THROTTLING_FOREVER ?? 'true') !== 'false';
 const configuredParallelSegments = parseNumberEnv('BACKFILL_PARALLEL_SEGMENTS', 1);
 const configuredTotalSegments = process.env.BACKFILL_TOTAL_SEGMENTS
   ? parseNumberEnv('BACKFILL_TOTAL_SEGMENTS', 1)
@@ -111,7 +112,11 @@ function parseNonNegativeIntEnv(envName: string): number | undefined {
   return parsed;
 }
 
-function tokenPathForSegment(basePath: string, segmentIndex: number, totalSegments: number): string {
+function tokenPathForSegment(
+  basePath: string,
+  segmentIndex: number,
+  totalSegments: number,
+): string {
   if (totalSegments <= 1) {
     return basePath;
   }
@@ -129,7 +134,9 @@ function getNestedStatus(error: RetryableError): number | undefined {
   return error.status ?? error.statusCode ?? error.response?.status;
 }
 
-function getHeaders(error: RetryableError): Record<string, string | number | undefined> | undefined {
+function getHeaders(
+  error: RetryableError,
+): Record<string, string | number | undefined> | undefined {
   return error.headers ?? error.response?.headers;
 }
 
@@ -241,7 +248,9 @@ async function withRetry<T>(name: string, fn: () => T | Promise<T>): Promise<T> 
 
       const waitMs = retryDelayMs(error, attempt);
       const message = error instanceof Error ? error.message : String(error);
-      const attemptLabel = throttleRetry ? `${attempt}/unbounded` : `${attempt}/${retryMaxAttempts}`;
+      const attemptLabel = throttleRetry
+        ? `${attempt}/unbounded`
+        : `${attempt}/${retryMaxAttempts}`;
       console.log(
         `${name} failed with retryable error (attempt ${attemptLabel}). Waiting ${waitMs}ms before retry.`,
         message,
@@ -355,7 +364,7 @@ async function runSegment(segmentIndex: number, totalSegments: number, workerCou
     await withRetry(`${logPrefix} Backfill loadout shares`, async () => {
       await transaction(async (pgClient) => {
         for (const share of batch) {
-          const inserted = await addLoadoutShareIfNotPresent(
+          const inserted = await addLoadoutShareIgnoring(
             pgClient,
             undefined,
             share.platformMembershipId,
@@ -429,8 +438,9 @@ async function runSegment(segmentIndex: number, totalSegments: number, workerCou
           message,
         );
         await delay(waitMs);
-        list = await withRetry(`${logPrefix} Continue scan from persisted token after retryable scan failure`, () =>
-          client.continueScan(persistedTokenData),
+        list = await withRetry(
+          `${logPrefix} Continue scan from persisted token after retryable scan failure`,
+          () => client.continueScan(persistedTokenData),
         );
         continue;
       }

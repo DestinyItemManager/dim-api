@@ -75,7 +75,7 @@ export async function addLoadoutShareIgnoring(
   shareId: string,
   loadout: Loadout,
   viewCount = 0,
-): Promise<QueryResult> {
+): Promise<boolean> {
   const response = await client.query({
     name: 'add_loadout_share_ignoring',
     text: `insert into loadout_shares (id, membership_id, platform_membership_id, name, notes, class_type, items, parameters, view_count)
@@ -96,7 +96,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict (id) do nothing`,
     ],
   });
 
-  return response;
+  return (response.rowCount ?? 0) > 1;
 }
 
 /**
