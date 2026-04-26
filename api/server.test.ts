@@ -1,10 +1,15 @@
+import { delay } from 'es-toolkit';
 import { readFile } from 'fs';
 import jwt from 'jsonwebtoken';
 import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
 import { refreshApps, stopAppsRefresh } from './apps/index.js';
-import { closeDbPool } from './db/index.js';
+import { setGlobalSettings } from './db/global-settings-queries.js';
+import { closeDbPool, transaction } from './db/index.js';
+import { MigrationState, setMigrationStateForTest } from './db/migration-state-queries.js';
+import { replaceSettings as replaceSettingsPostgres } from './db/settings-queries.js';
+import { extractImportData } from './routes/import.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
 import { DeleteAllResponse } from './shapes/delete-all.js';
@@ -16,14 +21,67 @@ import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest, ProfileUpdateResponse } from './shapes/profile.js';
 import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
-import { client } from './stately/client.js';
+import { statelyImport } from './stately/bulk-queries.js';
 
 const fetch = makeFetch(app);
 
-const bungieMembershipId = 1234;
-const platformMembershipId = '4611686018433092312';
+// Test backend configurations
+const backendConfigs = [
+  {
+    backend: 'Stately',
+    state: MigrationState.Stately,
+    bungieMembershipId: 1234,
+    platformMembershipId: '4611686018433092312',
+    async setup() {
+      await transaction(async (client) => {
+        await setMigrationStateForTest(
+          client,
+          this.platformMembershipId,
+          this.bungieMembershipId,
+          this.state,
+        );
+        await replaceSettingsPostgres(client, this.bungieMembershipId, defaultSettings);
+      });
+    },
+    importer: async () => {
+      const file = JSON.parse(
+        (await promisify(readFile)('./dim-data.json')).toString(),
+      ) as ExportResponse;
+
+      const data = extractImportData(file);
+
+      await statelyImport(
+        1234,
+        ['4611686018433092312'],
+        data.settings,
+        data.loadouts,
+        data.itemAnnotations,
+        data.triumphs,
+        data.searches,
+        data.itemHashTags,
+      );
+    },
+  },
+  {
+    backend: 'Postgres',
+    state: MigrationState.Postgres,
+    bungieMembershipId: 5678,
+    platformMembershipId: '4611686018433092313',
+    async setup() {
+      await transaction(async (client) => {
+        await setMigrationStateForTest(
+          client,
+          this.platformMembershipId,
+          this.bungieMembershipId,
+          this.state,
+        );
+      });
+    },
+  },
+];
+
+// Global test state
 let testApiKey: string;
-let testUserToken: string;
 
 beforeAll(async () => {
   const appResponse = await createApp();
@@ -31,32 +89,18 @@ beforeAll(async () => {
   expect(testApiKey).toBeDefined();
   await refreshApps();
 
-  testUserToken = jwt.sign(
-    {
-      profileIds: [platformMembershipId],
-    },
-    process.env.JWT_SECRET!,
-    {
-      subject: bungieMembershipId.toString(),
-      issuer: testApiKey,
-      expiresIn: 60 * 60,
-    },
-  );
-
-  // Make sure we have global settings
-  const globalSettings = ['dev', 'beta', 'app'].map((stage) =>
-    client.create('GlobalSettings', {
-      stage,
+  // Make sure we have global settings in Stately
+  for (const stage of ['dev', 'beta', 'app']) {
+    await setGlobalSettings(stage, {
       dimApiEnabled: true,
-      destinyProfileMinimumRefreshInterval: 15n,
-      destinyProfileRefreshInterval: 120n,
+      destinyProfileMinimumRefreshInterval: 15,
+      destinyProfileRefreshInterval: 120,
       autoRefresh: true,
       refreshProfileOnVisible: true,
-      dimProfileMinimumRefreshInterval: 600n,
+      dimProfileMinimumRefreshInterval: 600,
       showIssueBanner: false,
-    }),
-  );
-  await client.putBatch(...globalSettings);
+    });
+  }
 });
 
 afterAll(async () => {
@@ -103,1060 +147,1125 @@ it('can create new apps idempotently', async () => {
   expect(response.dimApiKey).toEqual(testApiKey);
 });
 
-describe('import/export', () => {
-  it('can import and export data', async () => {
-    await importData();
+describe.each(backendConfigs)('$backend backend', (backend) => {
+  let testUserToken: string;
+  const { platformMembershipId, bungieMembershipId } = backend;
 
-    const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
+  beforeAll(async () => {
+    await backend.setup();
 
-    expect(exportResponse.settings.itemSortOrderCustom).toEqual([
-      'sunset',
-      'tag',
-      'primStat',
-      'season',
-      'ammoType',
-      'rarity',
-      'typeName',
-      'name',
-    ]);
-
-    expect(exportResponse.loadouts.length).toBe(37);
-    expect(exportResponse.tags.length).toBe(592);
+    // Generate JWT token for this test user
+    testUserToken = jwt.sign(
+      {
+        profileIds: [platformMembershipId],
+      },
+      process.env.JWT_SECRET!,
+      {
+        subject: bungieMembershipId.toString(),
+        issuer: testApiKey,
+        expiresIn: 60 * 60,
+      },
+    );
   });
 
-  // TODO: other import formats, validation
-});
+  // Importing will migrate to postgres, so we don't run it on the Stately data
+  if (backend.state === MigrationState.Postgres) {
+    describe('import/export', () => {
+      it('can import and export data', async () => {
+        await importData();
 
-describe('profile', () => {
-  // Applies only to tests in this describe block
-  beforeEach(importData);
+        const exportResponse = (await getRequestAuthed('/export')
+          .expect(200)
+          .json()) as ExportResponse;
 
-  it('can retrieve all profile data', async () => {
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+        expect(exportResponse.settings.itemSortOrderCustom).toEqual([
+          'sunset',
+          'tag',
+          'primStat',
+          'season',
+          'ammoType',
+          'rarity',
+          'typeName',
+          'name',
+        ]);
 
-    expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
-      'sunset',
-      'tag',
-      'primStat',
-      'season',
-      'ammoType',
-      'rarity',
-      'typeName',
-      'name',
-    ]);
-    expect(profileResponse.loadouts!.length).toBe(19);
-    expect(profileResponse.tags!.length).toBe(592);
-    expect(profileResponse.triumphs!.length).toBe(30);
-    expect(profileResponse.searches!.length).toBe(208);
-    expect(profileResponse.itemHashTags!.length).toBe(71);
-    expect(profileResponse.syncToken).toBeDefined();
-  });
+        expect(exportResponse.loadouts.length).toBe(37);
+        expect(exportResponse.tags.length).toBe(592);
+      });
 
-  it('can sync profile data', async () => {
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      // TODO: other import formats, validation
+    });
+  }
 
-    expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
-      'sunset',
-      'tag',
-      'primStat',
-      'season',
-      'ammoType',
-      'rarity',
-      'typeName',
-      'name',
-    ]);
-    expect(profileResponse.tags!.length).toBe(592);
-    expect(profileResponse.loadouts!.length).toBe(19);
-    expect(profileResponse.sync).toBe(false);
+  describe('profile', () => {
+    // Applies only to tests in this describe block
+    beforeEach(backend.importer ?? importData);
 
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'setting',
-          payload: {
-            showNewItems: true,
-          },
-        },
-        {
-          action: 'tag',
-          payload: {
-            id: '1234',
-            tag: 'favorite',
-          },
-        },
-        {
-          action: 'delete_loadout',
-          payload: profileResponse.loadouts![0].id,
-        },
-      ],
-    };
-    await postRequestAuthed('/profile', request).expect(200);
+    it('can retrieve all profile data', async () => {
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    const profileSyncResponse = (await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileResponse.syncToken!)}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileSyncResponse.syncToken).toBeDefined();
-    expect(profileSyncResponse.syncToken).not.toBe(profileResponse.syncToken);
-    expect(profileSyncResponse.syncToken).toContain('"s":');
-    expect(profileSyncResponse.sync).toBe(true);
-    expect(profileSyncResponse.settings?.showNewItems).toBe(true);
-    expect(profileSyncResponse.tags?.length).toBe(1);
-    expect(profileSyncResponse.tags?.[0].id).toBe('1234');
-    expect(profileSyncResponse.deletedLoadoutIds?.length).toBe(1);
-
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'setting',
-          payload: {
-            compareBaseStats: true,
-          },
-        },
-      ],
-    };
-    await postRequestAuthed('/profile', request2).expect(200);
-
-    const profileSyncResponse2 = (await getRequestAuthed(
-      `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileSyncResponse.syncToken!)}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileSyncResponse2.syncToken).toBeDefined();
-    expect(profileSyncResponse2.syncToken).not.toBe(profileSyncResponse.syncToken);
-    expect(profileSyncResponse2.syncToken).toContain('"s":');
-    expect(profileSyncResponse2.sync).toBe(true);
-    expect(profileSyncResponse2.settings).toBeDefined();
-    expect(profileSyncResponse.settings?.compareBaseStats).toBe(true);
-    expect(profileSyncResponse2.settings?.showNewItems).toBe(true);
-  });
-
-  it('can retrieve only settings, without needing a platform membership ID', async () => {
-    const profileResponse = (await getRequestAuthed('/profile?components=settings')
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
-      'sunset',
-      'tag',
-      'primStat',
-      'season',
-      'ammoType',
-      'rarity',
-      'typeName',
-      'name',
-    ]);
-    expect(profileResponse.loadouts).toBeUndefined();
-    expect(profileResponse.tags).toBeUndefined();
-    expect(profileResponse.triumphs).toBeUndefined();
-  });
-
-  it('can retrieve only loadouts', async () => {
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.settings).toBeUndefined();
-    expect(profileResponse.loadouts!.length).toBe(19);
-    expect(profileResponse.tags).toBeUndefined();
-  });
-
-  it('can delete all data with /delete_all_data', async () => {
-    const response = (await postRequestAuthed('/delete_all_data')
-      .expect(200)
-      .json()) as DeleteAllResponse;
-
-    expect(response.deleted).toEqual({
-      itemHashTags: 71,
-      loadouts: 37,
-      searches: 205,
-      settings: 1,
-      tags: 592,
-      triumphs: 30,
+      expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+        'sunset',
+        'tag',
+        'primStat',
+        'season',
+        'ammoType',
+        'rarity',
+        'typeName',
+        'name',
+      ]);
+      expect(profileResponse.loadouts!.length).toBe(19);
+      expect(profileResponse.tags!.length).toBe(592);
+      expect(profileResponse.triumphs!.length).toBe(30);
+      expect(profileResponse.searches!.length).toBe(208);
+      expect(profileResponse.itemHashTags!.length).toBe(71);
+      expect(profileResponse.syncToken).toBeDefined();
     });
 
-    // Now re-export and make sure it's all gone
-    const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
+    it('can sync profile data', async () => {
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    expect(Object.keys(exportResponse.settings).length).toBe(0);
-    expect(exportResponse.loadouts.length).toBe(0);
-    expect(exportResponse.tags.length).toBe(0);
-  });
-});
+      expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+        'sunset',
+        'tag',
+        'primStat',
+        'season',
+        'ammoType',
+        'rarity',
+        'typeName',
+        'name',
+      ]);
+      expect(profileResponse.tags!.length).toBe(592);
+      expect(profileResponse.loadouts!.length).toBe(19);
+      expect(profileResponse.sync).toBe(false);
 
-describe('settings', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
+      await delay(15);
 
-  it('returns default settings', async () => {
-    const profileResponse = (await getRequestAuthed('/profile?components=settings')
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.settings).toEqual(defaultSettings);
-  });
-
-  it('can update a setting', async () => {
-    const request: ProfileUpdateRequest = {
-      updates: [
-        {
-          action: 'setting',
-          payload: {
-            showNewItems: true,
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'setting',
+            payload: {
+              showNewItems: true,
+            },
           },
-        },
-      ],
-    };
-
-    await postRequestAuthed('/profile', request).expect(200);
-
-    // Read settings back
-    const profileResponse = (await getRequestAuthed('/profile?components=settings')
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.settings?.showNewItems).toBe(true);
-  });
-});
-
-const loadout: Loadout = {
-  id: uuid(),
-  name: 'Test Loadout',
-  classType: 1,
-  equipped: [
-    {
-      hash: 100,
-      id: '1234',
-      socketOverrides: { 7: 9 },
-    },
-  ],
-  unequipped: [
-    // This item has an extra property which shouldn't be saved
-    {
-      hash: 200,
-      id: '5678',
-      amount: 10,
-      fizbuzz: 11,
-    } as any as LoadoutItem,
-  ],
-};
-
-describe('loadouts', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
-
-  it('can add a loadout', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'loadout',
-          payload: loadout,
-        },
-      ],
-    };
-
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult.results[0].status).toBe('Success');
-
-    // Read loadouts back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.loadouts?.length).toBe(1);
-    const resultLoadout = profileResponse.loadouts![0];
-    expect(resultLoadout.id).toBe(loadout.id);
-    expect(resultLoadout.name).toBe(loadout.name);
-    expect(resultLoadout.classType).toBe(loadout.classType);
-    expect(resultLoadout.equipped).toEqual(loadout.equipped);
-    // This property should have been stripped
-    expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
-  });
-
-  it('can update a loadout', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'loadout',
-          payload: loadout,
-        },
-      ],
-    };
-
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult.results[0].status).toBe('Success');
-
-    // Change name
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'loadout',
-          payload: { ...loadout, name: 'Updated Name' },
-        },
-      ],
-    };
-
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read loadouts back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.loadouts?.length).toBe(1);
-    expect(profileResponse.loadouts![0].name).toBe('Updated Name');
-  });
-
-  it('can delete a loadout', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'loadout',
-          payload: loadout,
-        },
-      ],
-    };
-
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult.results[0].status).toBe('Success');
-
-    // Delete the loadout
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'delete_loadout',
-          payload: loadout.id,
-        },
-      ],
-    };
-
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read loadouts back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.loadouts?.length).toBe(0);
-  });
-});
-
-describe('tags', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
-
-  it('can add a tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '1234',
-            tag: 'favorite',
+          {
+            action: 'tag',
+            payload: {
+              id: '1234',
+              tag: 'favorite',
+            },
           },
-        },
-      ],
-    };
+          {
+            action: 'delete_loadout',
+            payload: profileResponse.loadouts![0].id,
+          },
+        ],
+      };
+      await postRequestAuthed('/profile', request).expect(200);
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const profileSyncResponse = (await getRequestAuthed(
+        `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileResponse.syncToken!)}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(profileSyncResponse.syncToken).toBeDefined();
+      expect(profileSyncResponse.syncToken).not.toBe(profileResponse.syncToken);
+      expect(profileSyncResponse.syncToken).toContain('"s":');
+      expect(profileSyncResponse.sync).toBe(true);
+      expect(profileSyncResponse.settings?.showNewItems).toBe(true);
+      expect(profileSyncResponse.tags?.length).toBe(1);
+      expect(profileSyncResponse.tags?.[0].id).toBe('1234');
+      expect(profileSyncResponse.deletedLoadoutIds?.length).toBe(1);
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'setting',
+            payload: {
+              compareBaseStats: true,
+            },
+          },
+        ],
+      };
+      await postRequestAuthed('/profile', request2).expect(200);
 
-    expect(profileResponse.tags?.length).toBe(1);
-    const resultTag = profileResponse.tags![0];
-    expect(resultTag).toEqual({
-      id: '1234',
-      tag: 'favorite',
+      await delay(15);
+
+      const profileSyncResponse2 = (await getRequestAuthed(
+        `/profile?components=settings,loadouts,tags,triumphs,searches,hashtags&platformMembershipId=${platformMembershipId}&sync=${encodeURIComponent(profileSyncResponse.syncToken!)}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileSyncResponse2.syncToken).toBeDefined();
+      expect(profileSyncResponse2.syncToken).not.toBe(profileSyncResponse.syncToken);
+      expect(profileSyncResponse2.syncToken).toContain('"s":');
+      expect(profileSyncResponse2.sync).toBe(true);
+      expect(profileSyncResponse2.settings).toBeDefined();
+      expect(profileSyncResponse2.settings?.compareBaseStats).toBe(true);
+      expect(profileSyncResponse2.settings?.showNewItems).toBe(true);
+    });
+
+    it('can retrieve only settings, without needing a platform membership ID', async () => {
+      const profileResponse = (await getRequestAuthed('/profile?components=settings')
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.settings!.itemSortOrderCustom).toEqual([
+        'sunset',
+        'tag',
+        'primStat',
+        'season',
+        'ammoType',
+        'rarity',
+        'typeName',
+        'name',
+      ]);
+      expect(profileResponse.loadouts).toBeUndefined();
+      expect(profileResponse.tags).toBeUndefined();
+      expect(profileResponse.triumphs).toBeUndefined();
+    });
+
+    it('can retrieve only loadouts', async () => {
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.settings).toBeUndefined();
+      expect(profileResponse.loadouts!.length).toBe(19);
+      expect(profileResponse.tags).toBeUndefined();
+    });
+
+    it('can delete all data with /delete_all_data', async () => {
+      const response = (await postRequestAuthed('/delete_all_data')
+        .expect(200)
+        .json()) as DeleteAllResponse;
+
+      expect(response.deleted.itemHashTags).toBe(71);
+      expect(response.deleted.loadouts).toBe(37);
+      expect(response.deleted.searches).toBeGreaterThanOrEqual(205);
+      expect(response.deleted.settings).toBe(1);
+      expect(response.deleted.tags).toBe(592);
+      expect(response.deleted.triumphs).toBe(30);
+
+      // Now re-export and make sure it's all gone
+      const exportResponse = (await getRequestAuthed('/export')
+        .expect(200)
+        .json()) as ExportResponse;
+
+      expect(Object.keys(exportResponse.settings).length).toBe(0);
+      expect(exportResponse.loadouts.length).toBe(0);
+      expect(exportResponse.tags.length).toBe(0);
     });
   });
 
-  it('can update a tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '12345',
-            tag: 'favorite',
-          },
-        },
-      ],
-    };
+  describe('settings', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+    it('returns default settings', async () => {
+      const profileResponse = (await getRequestAuthed('/profile?components=settings')
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
-
-    // Change tag and notes
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '12345',
-            tag: 'junk',
-            notes: 'super junky',
-          },
-        },
-      ],
-    };
-
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.tags?.length).toBe(1);
-    const resultTag = profileResponse.tags![0];
-    expect(resultTag).toEqual({
-      id: '12345',
-      tag: 'junk',
-      notes: 'super junky',
+      expect(profileResponse.settings).toEqual(defaultSettings);
     });
 
-    // Delete tag
-    const request3: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '12345',
-            tag: null,
+    it('can update a setting', async () => {
+      const request: ProfileUpdateRequest = {
+        updates: [
+          {
+            action: 'setting',
+            payload: {
+              showNewItems: true,
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult3 = (await postRequestAuthed('/profile', request3)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      await postRequestAuthed('/profile', request).expect(200);
 
-    expect(updateResult3.results[0].status).toBe('Success');
+      // Read settings back
+      const profileResponse = (await getRequestAuthed('/profile?components=settings')
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    // Read tags back after deleting the tag
-    const profileResponse2 = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse2.tags?.length).toBe(1);
-    const resultTag2 = profileResponse2.tags![0];
-    expect(resultTag2).toEqual({
-      id: '12345',
-      notes: 'super junky',
+      expect(profileResponse.settings?.showNewItems).toBe(true);
     });
   });
 
-  it('can delete a tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '1234567',
-            tag: 'favorite',
-            notes: 'the best',
+  const loadout: Loadout = {
+    id: uuid(),
+    name: 'Test Loadout',
+    classType: 1,
+    equipped: [
+      {
+        hash: 100,
+        id: '1234',
+        socketOverrides: { 7: 9 },
+      },
+    ],
+    unequipped: [
+      // This item has an extra property which shouldn't be saved
+      {
+        hash: 200,
+        id: '5678',
+        amount: 10,
+        fizbuzz: 11,
+      } as any as LoadoutItem,
+    ],
+  };
+
+  describe('loadouts', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
+
+    it('can add a loadout', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'loadout',
+            payload: loadout,
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // delete tag and notes
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '1234567',
-            tag: null,
-            notes: '',
+      // Read loadouts back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.loadouts?.length).toBe(1);
+      const resultLoadout = profileResponse.loadouts![0];
+      expect(resultLoadout.id).toBe(loadout.id);
+      expect(resultLoadout.name).toBe(loadout.name);
+      expect(resultLoadout.classType).toBe(loadout.classType);
+      expect(resultLoadout.equipped).toEqual(loadout.equipped);
+      // This property should have been stripped
+      expect((resultLoadout.unequipped[0] as { fizbuzz?: string }).fizbuzz).toBeUndefined();
+    });
+
+    it('can update a loadout', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'loadout',
+            payload: loadout,
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.tags?.length).toBe(0);
-  });
-
-  it('can clear tags', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag',
-          payload: {
-            id: '1234567',
-            tag: 'favorite',
-            notes: 'the best',
+      // Change name
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'loadout',
+            payload: { ...loadout, name: 'Updated Name' },
           },
-        },
-        {
-          action: 'tag',
-          payload: {
-            id: '7654321',
-            tag: 'junk',
-            notes: 'the worst',
+        ],
+      };
+
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read loadouts back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.loadouts?.length).toBe(1);
+      expect(profileResponse.loadouts![0].name).toBe('Updated Name');
+    });
+
+    it('can delete a loadout', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'loadout',
+            payload: loadout,
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
-    expect(updateResult.results[1].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // cleanup tags by id
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'tag_cleanup',
-          payload: ['1234567', '7654321'],
-        },
-      ],
-    };
-
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.tags?.length).toBe(0);
-  });
-});
-
-describe('item hash tags', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
-
-  it('can add an item hash tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: 'favorite',
+      // Delete the loadout
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'delete_loadout',
+            payload: loadout.id,
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult2.results[0].status).toBe('Success');
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      // Read loadouts back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=loadouts&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    expect(profileResponse.itemHashTags?.length).toBe(1);
-    const resultTag = profileResponse.itemHashTags![0];
-    expect(resultTag).toEqual({
-      hash: 1234,
-      tag: 'favorite',
+      expect(profileResponse.loadouts?.length).toBe(0);
     });
   });
 
-  it('can update an item hash tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: 'favorite',
+  describe('tags', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
+
+    it('can add a tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '1234',
+              tag: 'favorite',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // Change tag and notes
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: 'junk',
-            notes: 'super junky',
-          },
-        },
-      ],
-    };
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.itemHashTags?.length).toBe(1);
-    const resultTag = profileResponse.itemHashTags![0];
-    expect(resultTag).toEqual({
-      hash: 1234,
-      tag: 'junk',
-      notes: 'super junky',
+      expect(profileResponse.tags?.length).toBe(1);
+      const resultTag = profileResponse.tags![0];
+      expect(resultTag).toEqual({
+        id: '1234',
+        tag: 'favorite',
+      });
     });
 
-    // Delete tag
-    const request3: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: null,
+    it('can update a tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '12345',
+              tag: 'favorite',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult3 = (await postRequestAuthed('/profile', request3)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult3.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // Read tags back after deleting the tag
-    const profileResponse2 = (await getRequestAuthed(
-      `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      // Change tag and notes
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '12345',
+              tag: 'junk',
+              notes: 'super junky',
+            },
+          },
+        ],
+      };
 
-    expect(profileResponse2.itemHashTags?.length).toBe(1);
-    const resultTag2 = profileResponse2.itemHashTags![0];
-    expect(resultTag2).toEqual({
-      hash: 1234,
-      notes: 'super junky',
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.tags?.length).toBe(1);
+      const resultTag = profileResponse.tags![0];
+      expect(resultTag).toEqual({
+        id: '12345',
+        tag: 'junk',
+        notes: 'super junky',
+      });
+
+      // Delete tag
+      const request3: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '12345',
+              tag: null,
+            },
+          },
+        ],
+      };
+
+      const updateResult3 = (await postRequestAuthed('/profile', request3)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult3.results[0].status).toBe('Success');
+
+      // Read tags back after deleting the tag
+      const profileResponse2 = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse2.tags?.length).toBe(1);
+      const resultTag2 = profileResponse2.tags![0];
+      expect(resultTag2).toEqual({
+        id: '12345',
+        notes: 'super junky',
+      });
+    });
+
+    it('can delete a tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '1234567',
+              tag: 'favorite',
+              notes: 'the best',
+            },
+          },
+        ],
+      };
+
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      // delete tag and notes
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '1234567',
+              tag: null,
+              notes: '',
+            },
+          },
+        ],
+      };
+
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.tags?.length).toBe(0);
+    });
+
+    it('can clear tags', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag',
+            payload: {
+              id: '1234567',
+              tag: 'favorite',
+              notes: 'the best',
+            },
+          },
+          {
+            action: 'tag',
+            payload: {
+              id: '7654321',
+              tag: 'junk',
+              notes: 'the worst',
+            },
+          },
+        ],
+      };
+
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[1].status).toBe('Success');
+
+      // cleanup tags by id
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'tag_cleanup',
+            payload: ['1234567', '7654321'],
+          },
+        ],
+      };
+
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.tags?.length).toBe(0);
     });
   });
 
-  it('can delete an item hash tag', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: 'favorite',
-            notes: 'the best',
+  describe('item hash tags', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
+
+    it('can add an item hash tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: 'favorite',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // delete tag and notes
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'item_hash_tag',
-          payload: {
-            hash: 1234,
-            tag: null,
-            notes: '',
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.itemHashTags?.length).toBe(1);
+      const resultTag = profileResponse.itemHashTags![0];
+      expect(resultTag).toEqual({
+        hash: 1234,
+        tag: 'favorite',
+      });
+    });
+
+    it('can update an item hash tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: 'favorite',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult2.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.tags?.length).toBe(0);
-  });
-});
-
-describe('triumphs', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
-
-  it('can add a tracked triumph', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'track_triumph',
-          payload: {
-            recordHash: 1234,
-            tracked: true,
+      // Change tag and notes
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: 'junk',
+              notes: 'super junky',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult2.results[0].status).toBe('Success');
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    expect(profileResponse.triumphs?.length).toBe(1);
-    expect(profileResponse.triumphs!).toEqual([1234]);
-  });
+      expect(profileResponse.itemHashTags?.length).toBe(1);
+      const resultTag = profileResponse.itemHashTags![0];
+      expect(resultTag).toEqual({
+        hash: 1234,
+        tag: 'junk',
+        notes: 'super junky',
+      });
 
-  it('can remove a tracked triumph', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'track_triumph',
-          payload: {
-            recordHash: 1234,
-            tracked: true,
+      // Delete tag
+      const request3: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: null,
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult3 = (await postRequestAuthed('/profile', request3)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult3.results[0].status).toBe('Success');
 
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'track_triumph',
-          payload: {
-            recordHash: 1234,
-            tracked: false,
+      // Read tags back after deleting the tag
+      const profileResponse2 = (await getRequestAuthed(
+        `/profile?components=hashtags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse2.itemHashTags?.length).toBe(1);
+      const resultTag2 = profileResponse2.itemHashTags![0];
+      expect(resultTag2).toEqual({
+        hash: 1234,
+        notes: 'super junky',
+      });
+    });
+
+    it('can delete an item hash tag', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: 'favorite',
+              notes: 'the best',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.triumphs?.length).toBe(0);
-  });
-
-  it('can set the same state twice', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'track_triumph',
-          payload: {
-            recordHash: 1234,
-            tracked: true,
+      // delete tag and notes
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'item_hash_tag',
+            payload: {
+              hash: 1234,
+              tag: null,
+              notes: '',
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult2.results[0].status).toBe('Success');
 
-    const request2: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'track_triumph',
-          payload: {
-            recordHash: 1234,
-            tracked: true,
-          },
-        },
-      ],
-    };
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=tags&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
 
-    const updateResult2 = (await postRequestAuthed('/profile', request2)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult2.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.triumphs?.length).toBe(1);
-    expect(profileResponse.triumphs!).toEqual([1234]);
-  });
-});
-
-describe('searches', () => {
-  beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
-
-  it('can add a recent search', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'search',
-          payload: {
-            query: 'tag:favorite',
-            type: SearchType.Item,
-          },
-        },
-      ],
-    };
-
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
-
-    expect(updateResult.results[0].status).toBe('Success');
-
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
-
-    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
-    expect(profileResponse.searches![0].query).toBe('tag:favorite');
-    expect(profileResponse.searches![0].usageCount).toBe(1);
+      expect(profileResponse.tags?.length).toBe(0);
+    });
   });
 
-  it('can save a search', async () => {
-    const request: ProfileUpdateRequest = {
-      platformMembershipId,
-      destinyVersion: 2,
-      updates: [
-        {
-          action: 'search',
-          payload: {
-            query: 'tag:favorite',
-            type: SearchType.Item,
+  describe('triumphs', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
+
+    it('can add a tracked triumph', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'track_triumph',
+            payload: {
+              recordHash: 1234,
+              tracked: true,
+            },
           },
-        },
-        {
-          action: 'save_search',
-          payload: {
-            query: 'tag:favorite',
-            type: SearchType.Item,
-            saved: true,
+        ],
+      };
+
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.triumphs?.length).toBe(1);
+      expect(profileResponse.triumphs!).toEqual([1234]);
+    });
+
+    it('can remove a tracked triumph', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'track_triumph',
+            payload: {
+              recordHash: 1234,
+              tracked: true,
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
 
-    const updateResult = (await postRequestAuthed('/profile', request)
-      .expect(200)
-      .json()) as ProfileUpdateResponse;
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
 
-    expect(updateResult.results[0].status).toBe('Success');
+      expect(updateResult.results[0].status).toBe('Success');
 
-    // Read tags back
-    const profileResponse = (await getRequestAuthed(
-      `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
-    )
-      .expect(200)
-      .json()) as ProfileResponse;
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'track_triumph',
+            payload: {
+              recordHash: 1234,
+              tracked: false,
+            },
+          },
+        ],
+      };
 
-    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
-    expect(profileResponse.searches![0].query).toBe('tag:favorite');
-    expect(profileResponse.searches![0].saved).toBe(true);
-    expect(profileResponse.searches![0].usageCount).toBe(1);
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.triumphs?.length).toBe(0);
+    });
+
+    it('can set the same state twice', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'track_triumph',
+            payload: {
+              recordHash: 1234,
+              tracked: true,
+            },
+          },
+        ],
+      };
+
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      const request2: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'track_triumph',
+            payload: {
+              recordHash: 1234,
+              tracked: true,
+            },
+          },
+        ],
+      };
+
+      const updateResult2 = (await postRequestAuthed('/profile', request2)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult2.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=triumphs&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.triumphs?.length).toBe(1);
+      expect(profileResponse.triumphs!).toEqual([1234]);
+    });
   });
-});
 
-describe('loadouts', () => {
-  it('can share a loadout', async () => {
-    const request: LoadoutShareRequest = {
-      platformMembershipId,
-      loadout,
-    };
+  describe('searches', () => {
+    beforeEach(async () => postRequestAuthed('/delete_all_data').expect(200));
 
-    const updateResult = (await postRequestAuthed('/loadout_share', request)
-      .expect(200)
-      .json()) as LoadoutShareResponse;
+    it('can add a recent search', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'search',
+            payload: {
+              query: 'tag:favorite',
+              type: SearchType.Item,
+            },
+          },
+        ],
+      };
 
-    expect(updateResult.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
+      expect(profileResponse.searches![0].query).toBe('tag:favorite');
+      expect(profileResponse.searches![0].usageCount).toBe(1);
+    });
+
+    it('can save a search', async () => {
+      const request: ProfileUpdateRequest = {
+        platformMembershipId,
+        destinyVersion: 2,
+        updates: [
+          {
+            action: 'search',
+            payload: {
+              query: 'tag:favorite',
+              type: SearchType.Item,
+            },
+          },
+          {
+            action: 'save_search',
+            payload: {
+              query: 'tag:favorite',
+              type: SearchType.Item,
+              saved: true,
+            },
+          },
+        ],
+      };
+
+      const updateResult = (await postRequestAuthed('/profile', request)
+        .expect(200)
+        .json()) as ProfileUpdateResponse;
+
+      expect(updateResult.results[0].status).toBe('Success');
+
+      // Read tags back
+      const profileResponse = (await getRequestAuthed(
+        `/profile?components=searches&platformMembershipId=${platformMembershipId}`,
+      )
+        .expect(200)
+        .json()) as ProfileResponse;
+
+      expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
+      expect(profileResponse.searches![0].query).toBe('tag:favorite');
+      expect(profileResponse.searches![0].saved).toBe(true);
+      expect(profileResponse.searches![0].usageCount).toBe(1);
+    });
   });
+
+  describe('loadouts', () => {
+    it('can share a loadout', async () => {
+      const request: LoadoutShareRequest = {
+        platformMembershipId,
+        loadout,
+      };
+
+      const updateResult = (await postRequestAuthed('/loadout_share', request)
+        .expect(200)
+        .json()) as LoadoutShareResponse;
+
+      expect(updateResult.shareUrl).toMatch(/https:\/\/dim.gg\/[a-z0-9]{7}\/Test-Loadout/);
+    });
+  });
+
+  function getRequestAuthed(url: string) {
+    return fetch(url, {
+      headers: {
+        'X-API-Key': testApiKey,
+        Authorization: `Bearer ${testUserToken}`,
+      },
+    }).expect('Content-Type', /json/);
+  }
+
+  function postRequestAuthed(url: string, body?: any) {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': testApiKey,
+        Authorization: `Bearer ${testUserToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
+    }).expect('Content-Type', /json/);
+  }
+
+  async function importData() {
+    const file = JSON.parse(
+      (await promisify(readFile)('./dim-data.json'))
+        .toString()
+        .replaceAll('"4611686018433092312"', `"${backend.platformMembershipId}"`),
+    ) as ExportResponse;
+
+    const resp = (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
+    expect(resp.tags).toBeGreaterThan(1);
+
+    return file;
+  }
 });
 
 async function createApp() {
@@ -1178,36 +1287,4 @@ async function createApp() {
   expect(response.app.dimApiKey).toBeDefined();
 
   return response.app;
-}
-
-async function importData() {
-  const file = JSON.parse(
-    (await promisify(readFile)('./dim-data.json')).toString(),
-  ) as ExportResponse;
-
-  const resp = (await postRequestAuthed('/import', file).expect(200).json()) as ImportResponse;
-  expect(resp.tags).toBeGreaterThan(1);
-
-  return file;
-}
-
-function getRequestAuthed(url: string) {
-  return fetch(url, {
-    headers: {
-      'X-API-Key': testApiKey,
-      Authorization: `Bearer ${testUserToken}`,
-    },
-  }).expect('Content-Type', /json/);
-}
-
-function postRequestAuthed(url: string, body?: any) {
-  return fetch(url, {
-    method: 'POST',
-    headers: {
-      'X-API-Key': testApiKey,
-      Authorization: `Bearer ${testUserToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
-  }).expect('Content-Type', /json/);
 }

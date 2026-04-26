@@ -1,8 +1,16 @@
-import { uniqBy } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import asyncHandler from 'express-async-handler';
 import { transaction } from '../db/index.js';
+import {
+  softDeleteAllItemAnnotations,
+  updateItemAnnotation,
+} from '../db/item-annotations-queries.js';
+import { softDeleteAllItemHashTags, updateItemHashTag } from '../db/item-hash-tags-queries.js';
+import { softDeleteAllLoadouts, updateLoadout } from '../db/loadouts-queries.js';
+import { doMigration, getMigrationState, MigrationState } from '../db/migration-state-queries.js';
+import { importSearch, softDeleteAllSearches } from '../db/searches-queries.js';
 import { replaceSettings } from '../db/settings-queries.js';
+import { softDeleteAllTrackedTriumphs, trackTriumph } from '../db/triumphs-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { ImportResponse } from '../shapes/import.js';
@@ -11,20 +19,11 @@ import { Loadout } from '../shapes/loadouts.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
-import { client } from '../stately/client.js';
-import { AnyItem } from '../stately/generated/index.js';
-import { importTags } from '../stately/item-annotations-queries.js';
-import { importHashTags } from '../stately/item-hash-tags-queries.js';
-import { importLoadouts } from '../stately/loadouts-queries.js';
-import { importSearches } from '../stately/searches-queries.js';
-import { batches } from '../stately/stately-utils.js';
-import { importTriumphs } from '../stately/triumphs-queries.js';
-import { badRequest, delay, subtractObject } from '../utils.js';
+import { badRequest, subtractObject } from '../utils.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
 
-  // Support only new API exports
   const importData = req.body as ExportResponse;
 
   const { settings, loadouts, itemAnnotations, triumphs, searches, itemHashTags } =
@@ -41,46 +40,106 @@ export const importHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  // const migrationState = await readTransaction(async (client) =>
-  //   getMigrationState(client, bungieMembershipId),
-  // );
+  // Imports now work on a per-profile basis, and we won't touch a profile that
+  // doesn't have any data in the incoming import. Note that settings are
+  // handled differently because they are per-bungie-membership, not
+  // per-profile. Importing will also always insert new records into postgres
+  // regardless of the original migration state.
 
-  let numTriumphs = 0;
-  const importToStately = async () => {
-    numTriumphs = await statelyImport(
-      bungieMembershipId,
-      profileIds,
-      settings,
-      loadouts,
-      itemAnnotations,
-      triumphs,
-      searches,
-      itemHashTags,
-    );
-  };
+  const profileIdsToImport = new Set<string>();
+  for (const loadout of loadouts) {
+    profileIdsToImport.add(loadout.platformMembershipId);
+  }
+  for (const annotation of itemAnnotations) {
+    profileIdsToImport.add(annotation.platformMembershipId);
+  }
+  for (const triumphData of triumphs) {
+    profileIdsToImport.add(triumphData.platformMembershipId);
+  }
+  for (const search of searches) {
+    if (search.platformMembershipId) {
+      profileIdsToImport.add(search.platformMembershipId);
+    }
+  }
+  for (const itemHashTag of itemHashTags) {
+    if (itemHashTag.platformMembershipId) {
+      profileIdsToImport.add(itemHashTag.platformMembershipId);
+    }
+  }
 
-  await importToStately();
+  // itemHashTag / searches have an old export format that doesn't include
+  // profile ID. If we've made it this far and don't know the profiles in the
+  // import, we have to assume we want to import to every profile.
+  if (profileIdsToImport.size === 0 && (searches.length > 0 || itemHashTags.length > 0)) {
+    for (const platformMembershipId of profileIds) {
+      profileIdsToImport.add(platformMembershipId);
+    }
+  }
 
-  // switch (migrationState.state) {
-  //   case MigrationState.Postgres:
-  //     await doMigration(bungieMembershipId, importToStately);
-  //     break;
-  //   case MigrationState.Stately:
-  //     await importToStately();
-  //     break;
-  //   default:
-  //     // in-progress migration
-  //     badRequest(res, `Unable to import data - please wait a bit and try again.`);
+  // for (const profileId of profileIdsToImport) {
+  //   if (!profileIds.includes(profileId)) {
+  //     badRequest(
+  //       res,
+  //       `Platform membership ID ${profileId} in import data is not associated with this user's Bungie.net account.`,
+  //     );
   //     return;
+  //   }
   // }
 
   const response: ImportResponse = {
-    loadouts: loadouts.length,
-    tags: itemAnnotations.length,
-    triumphs: numTriumphs,
-    searches: searches.length,
-    itemHashTags: itemHashTags.length,
+    loadouts: 0,
+    tags: 0,
+    triumphs: 0,
+    searches: 0,
+    itemHashTags: 0,
   };
+
+  // Import settings
+  await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+
+  // Import profiles one by one
+  for (const profileId of profileIdsToImport) {
+    const dataForProfile = {
+      loadouts: loadouts.filter((l) => l.platformMembershipId === profileId),
+      itemAnnotations: itemAnnotations.filter((a) => a.platformMembershipId === profileId),
+      triumphs: triumphs.filter((t) => t.platformMembershipId === profileId),
+      searches: searches.filter(
+        (s) => s.platformMembershipId === profileId || !s.platformMembershipId,
+      ),
+      itemHashTags: itemHashTags.filter(
+        (h) => h.platformMembershipId === profileId || !h.platformMembershipId,
+      ),
+    };
+
+    const doImport = async () => {
+      const importResp = await importProfileData(bungieMembershipId, profileId, dataForProfile);
+      response.loadouts += importResp.loadouts;
+      response.tags += importResp.tags;
+      response.triumphs += importResp.triumphs;
+      response.searches += importResp.searches;
+      response.itemHashTags += importResp.itemHashTags;
+    };
+
+    const migrationState = await transaction(async (client) =>
+      getMigrationState(client, profileId),
+    );
+
+    if (migrationState.state === MigrationState.MigratingToPostgres) {
+      badRequest(
+        res,
+        `Unable to import data for profile ${profileId} - migration in progress. Please wait a bit and try again.`,
+      );
+      return;
+    }
+
+    if (migrationState.state === MigrationState.Stately) {
+      await doMigration(bungieMembershipId, profileId, doImport, async () =>
+        deleteAllDataForUser(bungieMembershipId, [profileId]),
+      );
+    } else {
+      await doImport();
+    }
+  }
 
   // default 200 OK
   res.status(200).send(response);
@@ -92,7 +151,7 @@ export function extractImportData(importData: ExportResponse) {
   const itemAnnotations = extractItemAnnotations(importData);
   const triumphs = importData.triumphs || [];
   const searches = extractSearches(importData);
-  const itemHashTags = importData.itemHashTags || [];
+  const itemHashTags = extractHashTags(importData);
 
   return {
     settings,
@@ -104,63 +163,98 @@ export function extractImportData(importData: ExportResponse) {
   };
 }
 
-export async function statelyImport(
+export async function importProfileData(
   bungieMembershipId: number,
-  platformMembershipIds: string[],
-  settings: Partial<Settings>,
-  loadouts: PlatformLoadout[],
-  itemAnnotations: PlatformItemAnnotation[],
-  triumphs: ExportResponse['triumphs'],
-  searches: ExportResponse['searches'],
-  itemHashTags: ItemHashTag[],
-): Promise<number> {
-  // TODO: what we should do, is map all these to items, and then we can just do
-  // batch puts, 25 at a time.
+  platformMembershipId: string,
+  {
+    loadouts,
+    itemAnnotations,
+    triumphs,
+    searches,
+    itemHashTags,
+  }: {
+    loadouts: PlatformLoadout[];
+    itemAnnotations: PlatformItemAnnotation[];
+    triumphs: ExportResponse['triumphs'];
+    searches: ExportResponse['searches'];
+    itemHashTags: ItemHashTag[];
+  },
+): Promise<ImportResponse> {
+  const response: ImportResponse = {
+    loadouts: loadouts.length,
+    tags: itemAnnotations.length,
+    triumphs: triumphs.length,
+    searches: searches.length,
+    itemHashTags: itemHashTags.length,
+  };
 
-  let numTriumphs = 0;
-  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+  const tagsDestinyVersions = new Set(itemAnnotations.map((a) => a.destinyVersion));
+  const loadoutDestinyVersions = new Set(loadouts.map((l) => l.destinyVersion));
+  const searchesDestinyVersions = new Set(searches.map((s) => s.destinyVersion));
 
-  // The export will have duplicates because import saved to each profile
-  // instead of the one that was exported.
-  itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
-  searches = uniqBy(searches, (s) => s.search.query);
+  await transaction(async (client) => {
+    // tags
+    for (const destinyVersion of tagsDestinyVersions) {
+      await softDeleteAllItemAnnotations(client, platformMembershipId, destinyVersion);
+    }
+    for (const annotation of itemAnnotations) {
+      await updateItemAnnotation(
+        client,
+        bungieMembershipId,
+        platformMembershipId,
+        annotation.destinyVersion,
+        annotation,
+      );
+    }
 
-  const items: AnyItem[] = [];
-  items.push(...importLoadouts(loadouts));
-  items.push(...importTags(itemAnnotations));
-  // TODO: I guess save item hash tags to each platform? I should really
-  // refactor the import shape to have hashtags per platform, or merge/unique
-  // them.
-  for (const platformMembershipId of platformMembershipIds) {
-    items.push(...importHashTags(platformMembershipId, itemHashTags));
-  }
-  if (Array.isArray(triumphs)) {
+    // loadouts
+    for (const destinyVersion of loadoutDestinyVersions) {
+      await softDeleteAllLoadouts(client, platformMembershipId, destinyVersion);
+    }
+    for (const loadout of loadouts) {
+      await updateLoadout(
+        client,
+        bungieMembershipId,
+        platformMembershipId,
+        loadout.destinyVersion,
+        loadout,
+      );
+    }
+
+    // triumphs
     for (const triumphData of triumphs) {
-      if (Array.isArray(triumphData?.triumphs)) {
-        items.push(...importTriumphs(triumphData.platformMembershipId, triumphData.triumphs));
-        numTriumphs += triumphData.triumphs.length;
+      await softDeleteAllTrackedTriumphs(client, platformMembershipId);
+      for (const triumphHash of triumphData.triumphs) {
+        await trackTriumph(client, bungieMembershipId, platformMembershipId, triumphHash);
       }
     }
-  }
-  for (const platformMembershipId of platformMembershipIds) {
-    // TODO: I guess save them to each platform? I should really refactor the
-    // import shape to have searches per platform, or merge/unique them.
-    items.push(...importSearches(platformMembershipId, searches));
-  }
 
-  // Settings live in Postgres now
-  await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+    // searches
+    for (const destinyVersion of searchesDestinyVersions) {
+      await softDeleteAllSearches(client, platformMembershipId, destinyVersion);
+    }
+    for (const search of searches) {
+      await importSearch(
+        client,
+        bungieMembershipId,
+        platformMembershipId,
+        search.destinyVersion,
+        search.search.query,
+        search.search.saved,
+        search.search.lastUsage,
+        search.search.usageCount,
+        search.search.type,
+      );
+    }
 
-  // OK now put them in as fast as we can
-  for (const batch of batches(items)) {
-    // We shouldn't have any existing items...
-    await client.putBatch(
-      ...batch.map((item) => ({ item, mustNotExist: true, overwriteMetadataTimestamps: true })),
-    );
-    await delay(100); // give it some time to flush
-  }
+    // item hash tags
+    softDeleteAllItemHashTags(client, platformMembershipId);
+    for (const itemHashTag of itemHashTags) {
+      await updateItemHashTag(client, bungieMembershipId, platformMembershipId, itemHashTag);
+    }
+  });
 
-  return numTriumphs;
+  return response;
 }
 
 function extractSettings(importData: ExportResponse): Partial<Settings> {
@@ -202,4 +296,18 @@ function extractSearches(importData: ExportResponse): ExportResponse['searches']
     // Filter out pre-filled searches that were never used
     (s) => s.search.usageCount > 0,
   );
+}
+
+type PlatformItemHashTag = ItemHashTag & {
+  // For old exports, ItemHashTags won't have platformMembershipId
+  platformMembershipId?: string;
+};
+
+function extractHashTags(importData: ExportResponse): PlatformItemHashTag[] {
+  return (importData.itemHashTags || []).map((t) => {
+    if (!('platformMembershipId' in t)) {
+      return t;
+    }
+    return { ...t.itemHashTag, platformMembershipId: t.platformMembershipId };
+  });
 }

@@ -8,35 +8,6 @@ import { client } from './client.js';
 import { Search as StatelySearch, SearchType as StatelySearchType } from './generated/index.js';
 import { batches, Transaction } from './stately-utils.js';
 
-/*
- * These "canned searches" get sent to everyone as a "starter pack" of example searches that'll show up in the recent search dropdown and autocomplete.
- */
-const cannedSearchesForD2: Search[] = [
-  'is:blue is:haspower -is:maxpower',
-  '-is:equipped is:haspower is:incurrentchar',
-  '-is:exotic -is:locked -is:maxpower -is:tagged stat:total:<55',
-].map((query) => ({
-  query,
-  saved: false,
-  usageCount: 0,
-  lastUsage: 0,
-  type: SearchType.Item,
-}));
-
-const cannedSearchesForD1: Search[] = ['-is:equipped is:haslight is:incurrentchar'].map(
-  (query) => ({
-    query,
-    saved: false,
-    usageCount: 0,
-    lastUsage: 0,
-    type: SearchType.Item,
-  }),
-);
-
-export function cannedSearches(destinyVersion: DestinyVersion) {
-  return destinyVersion === 2 ? cannedSearchesForD2 : cannedSearchesForD1;
-}
-
 function queryHash(query: string) {
   return crypto.createHash('md5').update(query).digest();
 }

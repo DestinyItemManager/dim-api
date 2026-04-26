@@ -1,22 +1,110 @@
 import { captureMessage } from '@sentry/node';
 import { keyPath, ListToken } from '@stately-cloud/client';
-import { readTransaction, transaction } from '../db/index.js';
-import { deleteSettings, getSettings as getSettingsFromPostgres } from '../db/settings-queries.js';
+import { uniqBy } from 'es-toolkit';
+import { transaction } from '../db/index.js';
+import { replaceSettings } from '../db/settings-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
+import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
+import { Loadout } from '../shapes/loadouts.js';
 import { ProfileResponse } from '../shapes/profile.js';
-import { defaultSettings, Settings } from '../shapes/settings.js';
-import { delay, subtractObject } from '../utils.js';
+import { Settings } from '../shapes/settings.js';
+import { delay } from '../utils.js';
 import { client } from './client.js';
 import { AnyItem } from './generated/index.js';
-import { convertItemAnnotation, keyFor as tagKeyFor } from './item-annotations-queries.js';
-import { convertItemHashTag, keyFor as hashTagKeyFor } from './item-hash-tags-queries.js';
-import { convertLoadoutFromStately, keyFor as loadoutKeyFor } from './loadouts-queries.js';
-import { convertSearchFromStately, keyFor as searchKeyFor } from './searches-queries.js';
-import { deleteSettings as deleteSettingsInStately, getSettings } from './settings-queries.js';
+import {
+  convertItemAnnotation,
+  importTags,
+  keyFor as tagKeyFor,
+} from './item-annotations-queries.js';
+import {
+  convertItemHashTag,
+  keyFor as hashTagKeyFor,
+  importHashTags,
+} from './item-hash-tags-queries.js';
+import {
+  convertLoadoutFromStately,
+  importLoadouts,
+  keyFor as loadoutKeyFor,
+} from './loadouts-queries.js';
+import {
+  convertSearchFromStately,
+  importSearches,
+  keyFor as searchKeyFor,
+} from './searches-queries.js';
+import { deleteSettings as deleteSettingsInStately } from './settings-queries.js';
 import { batches, fromStatelyUUID, parseKeyPath } from './stately-utils.js';
-import { keyFor as triumphKeyFor } from './triumphs-queries.js';
+import { importTriumphs, keyFor as triumphKeyFor } from './triumphs-queries.js';
+
+type PlatformLoadout = Loadout & {
+  platformMembershipId: string;
+  destinyVersion: DestinyVersion;
+};
+
+type PlatformItemAnnotation = ItemAnnotation & {
+  platformMembershipId: string;
+  destinyVersion: DestinyVersion;
+};
+
+export async function statelyImport(
+  bungieMembershipId: number,
+  platformMembershipIds: string[],
+  settings: Partial<Settings>,
+  loadouts: PlatformLoadout[],
+  itemAnnotations: PlatformItemAnnotation[],
+  triumphs: ExportResponse['triumphs'],
+  searches: ExportResponse['searches'],
+  itemHashTags: ItemHashTag[],
+): Promise<number> {
+  // TODO: what we should do, is map all these to items, and then we can just do
+  // batch puts, 25 at a time.
+
+  let numTriumphs = 0;
+  await deleteAllDataForUser(bungieMembershipId, platformMembershipIds);
+
+  // The export will have duplicates because import saved to each profile
+  // instead of the one that was exported.
+  itemHashTags = uniqBy(itemHashTags, (a) => a.hash);
+  searches = uniqBy(searches, (s) => s.search.query);
+
+  const items: AnyItem[] = [];
+  items.push(...importLoadouts(loadouts));
+  items.push(...importTags(itemAnnotations));
+  // TODO: I guess save item hash tags to each platform? I should really
+  // refactor the import shape to have hashtags per platform, or merge/unique
+  // them.
+  for (const platformMembershipId of platformMembershipIds) {
+    items.push(...importHashTags(platformMembershipId, itemHashTags));
+  }
+  if (Array.isArray(triumphs)) {
+    for (const triumphData of triumphs) {
+      if (Array.isArray(triumphData?.triumphs)) {
+        items.push(...importTriumphs(triumphData.platformMembershipId, triumphData.triumphs));
+        numTriumphs += triumphData.triumphs.length;
+      }
+    }
+  }
+  for (const platformMembershipId of platformMembershipIds) {
+    // TODO: I guess save them to each platform? I should really refactor the
+    // import shape to have searches per platform, or merge/unique them.
+    items.push(...importSearches(platformMembershipId, searches));
+  }
+
+  // Settings live in Postgres now
+  await transaction(async (client) => replaceSettings(client, bungieMembershipId, settings));
+
+  // OK now put them in as fast as we can
+  for (const batch of batches(items)) {
+    // We shouldn't have any existing items...
+    await client.putBatch(
+      ...batch.map((item) => ({ item, mustNotExist: true, overwriteMetadataTimestamps: true })),
+    );
+    await delay(100); // give it some time to flush
+  }
+
+  return numTriumphs;
+}
 
 /**
  * Delete all the data for a user+profile combo.
@@ -29,8 +117,6 @@ export async function deleteAllDataForUser(
 
   // Also delete settings, which are stored by membershipId
   await deleteSettingsInStately(bungieMembershipId);
-  // And delete from Postgres too
-  await transaction(async (pgClient) => deleteSettings(pgClient, bungieMembershipId));
 
   const response = responses.reduce<DeleteAllResponse['deleted']>(
     (acc, r) => {
@@ -108,50 +194,15 @@ function keyFor(item: AnyItem): [keyPath: string, responseKey: keyof DeleteAllRe
   return ['', 'settings'];
 }
 
-/**
- * Export all data for a given membership and profile.
- */
-export async function exportDataForUser(
-  bungieMembershipId: number,
-  platformMembershipIds: string[],
-): Promise<ExportResponse> {
-  let settings: Settings;
-  const pgSettings = await readTransaction((client) =>
-    getSettingsFromPostgres(client, bungieMembershipId),
-  );
-  if (pgSettings) {
-    settings = { ...defaultSettings, ...pgSettings.settings };
-  } else {
-    settings = (await getSettings(bungieMembershipId)) ?? defaultSettings;
-  }
-
-  const responses = await Promise.all(platformMembershipIds.map((p) => exportDataForProfile(p)));
-
-  const initialResponse: ExportResponse = {
-    settings: subtractObject(settings, defaultSettings),
-    loadouts: [],
-    tags: [],
-    itemHashTags: [],
-    triumphs: [],
-    searches: [],
-  };
-
-  return responses.reduce<ExportResponse>((acc, r) => {
-    acc.loadouts.push(...r.loadouts);
-    acc.tags.push(...r.tags);
-    acc.itemHashTags.push(...r.itemHashTags);
-    acc.triumphs.push(...r.triumphs);
-    acc.searches.push(...r.searches);
-    return acc;
-  }, initialResponse);
-}
-
-async function exportDataForProfile(platformMembershipId: string): Promise<ExportResponse> {
+export async function exportDataForProfile(platformMembershipId: string): Promise<ExportResponse> {
   const prefix = keyPath`/p-${BigInt(platformMembershipId)}`;
 
   const loadouts: ExportResponse['loadouts'] = [];
   const itemAnnotations: ExportResponse['tags'] = [];
-  const itemHashTags: ExportResponse['itemHashTags'] = [];
+  const itemHashTags: {
+    platformMembershipId: string;
+    itemHashTag: ItemHashTag;
+  }[] = [];
   const searches: ExportResponse['searches'] = [];
   const triumphs: number[] = [];
 
@@ -167,7 +218,10 @@ async function exportDataForProfile(platformMembershipId: string): Promise<Expor
         annotation: convertItemAnnotation(item),
       });
     } else if (client.isType(item, 'ItemHashTag')) {
-      itemHashTags.push(convertItemHashTag(item));
+      itemHashTags.push({
+        platformMembershipId,
+        itemHashTag: convertItemHashTag(item),
+      });
     } else if (client.isType(item, 'Loadout')) {
       loadouts.push({
         platformMembershipId,

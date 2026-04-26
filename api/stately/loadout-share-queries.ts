@@ -8,7 +8,7 @@ import {
   convertLoadoutFromStately,
 } from './loadouts-queries.js';
 
-function keyFor(shareId: string) {
+export function keyFor(shareId: string) {
   return keyPath`/loadoutShare-${shareId}`;
 }
 

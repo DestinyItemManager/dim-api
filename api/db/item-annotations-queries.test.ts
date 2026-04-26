@@ -4,6 +4,7 @@ import {
   deleteItemAnnotation,
   deleteItemAnnotationList,
   getItemAnnotationsForProfile,
+  softDeleteAllItemAnnotations,
   updateItemAnnotation,
 } from './item-annotations-queries.js';
 
@@ -130,5 +131,43 @@ it('can clear tags', async () => {
 
     const annotations = await getItemAnnotationsForProfile(client, platformMembershipId, 2);
     expect(annotations).toEqual([]);
+  });
+});
+
+it('can soft delete all annotations and recreate them', async () => {
+  await transaction(async (client) => {
+    await updateItemAnnotation(client, bungieMembershipId, platformMembershipId, 2, {
+      id: '123456',
+      tag: 'favorite',
+      notes: 'the best',
+    });
+
+    // Verify it exists
+    let annotations = await getItemAnnotationsForProfile(client, platformMembershipId, 2);
+    expect(annotations).toEqual([
+      {
+        id: '123456',
+        tag: 'favorite',
+        notes: 'the best',
+      },
+    ]);
+
+    await softDeleteAllItemAnnotations(client, platformMembershipId, 2);
+
+    annotations = await getItemAnnotationsForProfile(client, platformMembershipId, 2);
+    expect(annotations).toEqual([]);
+
+    await updateItemAnnotation(client, bungieMembershipId, platformMembershipId, 2, {
+      id: '123456',
+      tag: 'junk',
+    });
+
+    annotations = await getItemAnnotationsForProfile(client, platformMembershipId, 2);
+    expect(annotations).toEqual([
+      {
+        id: '123456',
+        tag: 'junk',
+      },
+    ]);
   });
 });

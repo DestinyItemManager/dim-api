@@ -13,8 +13,8 @@ export async function setGlobalSettings(flavor: string, settings: Partial<Global
   return pool.query({
     name: 'set_global_settings',
     text: `
-      INSERT INTO global_settings (flavor, settings, updated_at)
-      VALUES ($1, $2, NOW())
+      INSERT INTO global_settings (flavor, settings)
+      VALUES ($1, $2)
       ON CONFLICT (flavor)
       DO UPDATE SET settings = (global_settings.settings || $2)
     `,

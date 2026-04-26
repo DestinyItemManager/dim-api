@@ -34,13 +34,15 @@ export async function backfillMigrationState(
   client: ClientBase,
   platformMembershipId: string,
   bungieMembershipId: number | undefined,
-): Promise<void> {
-  await client.query({
+): Promise<MigrationState> {
+  const result = await client.query<{ state: MigrationState }>({
     name: 'backfill_migration_state',
     text: `insert into migration_state (platform_membership_id, membership_id, state) VALUES ($1, $2, $3)
-on conflict (platform_membership_id) do nothing`,
+on conflict (platform_membership_id) do update set state = migration_state.state returning state`,
     values: [platformMembershipId, bungieMembershipId, MigrationState.Stately],
   });
+
+  return result.rows[0].state;
 }
 
 export async function getUsersToMigrate(client: ClientBase): Promise<number[]> {
@@ -145,8 +147,12 @@ async function updateMigrationState(
     name: 'update_migration_state',
     text: `insert into migration_state (platform_membership_id, membership_id, state, last_state_change_at, attempt_count, last_error) VALUES ($1, $2, $3, current_timestamp, $4, $5)
 on conflict (platform_membership_id)
-do update set state = $2, last_state_change_at = current_timestamp, attempt_count = migration_state.attempt_count + $3, last_error = coalesce($4, migration_state.last_error)
-where migration_state.state = $5`,
+do update set
+  state = $3,
+  last_state_change_at = current_timestamp,
+  attempt_count = migration_state.attempt_count + $4,
+  last_error = $5
+where migration_state.state = $6`,
     values: [
       platformMembershipId,
       bungieMembershipId,
@@ -170,6 +176,25 @@ export async function deleteMigrationState(
     name: 'delete_migration_state',
     text: 'DELETE FROM migration_state WHERE platform_membership_id = $1',
     values: [platformMembershipId],
+  });
+}
+
+/**
+ * Unconditionally set migration state for a test account. Unlike the other
+ * migration state functions, this doesn't validate state transitions.
+ */
+export async function setMigrationStateForTest(
+  client: ClientBase,
+  platformMembershipId: string,
+  bungieMembershipId: number,
+  state: MigrationState,
+): Promise<void> {
+  await client.query({
+    text: `INSERT INTO migration_state (platform_membership_id, membership_id, state)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (platform_membership_id)
+           DO UPDATE SET state = $3, last_state_change_at = NOW()`,
+    values: [platformMembershipId, bungieMembershipId, state],
   });
 }
 

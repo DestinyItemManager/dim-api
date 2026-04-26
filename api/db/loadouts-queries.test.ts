@@ -1,7 +1,12 @@
 import { v4 as uuid } from 'uuid';
 import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { closeDbPool, transaction } from './index.js';
-import { deleteLoadout, getLoadoutsForProfile, updateLoadout } from './loadouts-queries.js';
+import {
+  deleteLoadout,
+  getLoadoutsForProfile,
+  softDeleteAllLoadouts,
+  updateLoadout,
+} from './loadouts-queries.js';
 
 const bungieMembershipId = 4321;
 const platformMembershipId = '213512057';
@@ -90,5 +95,24 @@ it('can delete a loadout', async () => {
     const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
     expect(loadouts.length).toBe(0);
+  });
+});
+
+it('can soft-delete all loadouts for a platform and destiny version', async () => {
+  await transaction(async (client) => {
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
+    const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
+    expect(loadouts.length).toBe(1);
+
+    await softDeleteAllLoadouts(client, platformMembershipId, 2);
+
+    // D2 loadouts should be gone
+    const loadoutsDeleted = await getLoadoutsForProfile(client, platformMembershipId, 2);
+    expect(loadoutsDeleted.length).toBe(0);
+
+    // Recreate the loadout
+    await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
+    const loadoutsAfter = await getLoadoutsForProfile(client, platformMembershipId, 2);
+    expect(loadoutsAfter.length).toBe(1);
   });
 });

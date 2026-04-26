@@ -1,5 +1,5 @@
 import { SearchType } from '../shapes/search.js';
-import { deleteAllDataForUser, exportDataForUser } from './bulk-queries.js';
+import { deleteAllDataForUser, exportDataForProfile } from './bulk-queries.js';
 import { client } from './client.js';
 import { getItemAnnotationsForProfile, updateItemAnnotation } from './item-annotations-queries.js';
 import { getItemHashTagsForProfile, updateItemHashTag } from './item-hash-tags-queries.js';
@@ -84,8 +84,8 @@ describe('deleteAllDataForUser', () => {
   });
 });
 
-describe('exportDataForUser', () => {
-  it('should delete all kinds of data', async () => {
+describe('exportDataForProfile', () => {
+  it('should export all kinds of data', async () => {
     await client.transaction(async (txn) => {
       await updateItemAnnotation(txn, platformMembershipId, 2, [
         {
@@ -128,14 +128,10 @@ describe('exportDataForUser', () => {
       await trackUntrackTriumphs(txn, platformMembershipId, [
         { recordHash: 3851137658, tracked: true },
       ]);
-      await setSetting(txn, bungieMembershipId, {
-        showNewItems: true,
-      });
     });
 
-    const exportResponse = await exportDataForUser(bungieMembershipId, [platformMembershipId]);
+    const exportResponse = await exportDataForProfile(platformMembershipId);
 
-    expect(exportResponse.settings.showNewItems).toBe(true);
     expect(exportResponse.tags.length).toBe(2);
     expect(exportResponse.itemHashTags.length).toBe(1);
     expect(exportResponse.loadouts.length).toBe(1);

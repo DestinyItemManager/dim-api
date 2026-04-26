@@ -1,4 +1,15 @@
 import asyncHandler from 'express-async-handler';
+import { ClientBase } from 'pg';
+import { transaction } from '../db/index.js';
+import { softDeleteAllItemAnnotations } from '../db/item-annotations-queries.js';
+import { softDeleteAllItemHashTags } from '../db/item-hash-tags-queries.js';
+import { softDeleteAllLoadouts } from '../db/loadouts-queries.js';
+import { deleteMigrationState } from '../db/migration-state-queries.js';
+import { softDeleteAllSearches } from '../db/searches-queries.js';
+import { deleteSettings } from '../db/settings-queries.js';
+import { softDeleteAllTrackedTriumphs } from '../db/triumphs-queries.js';
+import { DeleteAllResponse } from '../shapes/delete-all.js';
+import { DestinyVersion } from '../shapes/general.js';
 import { UserInfo } from '../shapes/user.js';
 import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 
@@ -8,35 +19,19 @@ import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
 
-  // const migrationState = await readTransaction(async (client) =>
-  //   getMigrationState(client, bungieMembershipId),
-  // );
+  let result = await deleteAllDataForUser(bungieMembershipId, profileIds);
 
-  const result = await deleteAllDataForUser(bungieMembershipId, profileIds);
+  await transaction(async (client) => {
+    await deleteSettings(client, bungieMembershipId);
+    for (const profileId of profileIds) {
+      const pgResult1 = await deleteAllData(client, profileId, 1);
+      result = mergeResult(result, pgResult1);
+      const pgResult2 = await deleteAllData(client, profileId, 2);
+      result = mergeResult(result, pgResult2);
 
-  // switch (migrationState.state) {
-  //   case MigrationState.Postgres:
-  //     // Also delete from Stately, just to honor the "no data left here" promise
-  //     try {
-  //       await deleteAllDataForUser(bungieMembershipId, profileIds);
-  //     } catch (e) {
-  //       console.error('Error deleting data from Stately', e);
-  //     }
-  //     result = await transaction(async (client) => deleteAllData(client, bungieMembershipId));
-  //     break;
-  //   case MigrationState.Stately:
-  //     // Also delete from Postgres, just to honor the "no data left here" promise
-  //     try {
-  //       await transaction(async (client) => deleteAllData(client, bungieMembershipId));
-  //     } catch (e) {
-  //       console.error('Error deleting data from Postgres', e);
-  //     }
-  //     result = await deleteAllDataForUser(bungieMembershipId, profileIds);
-  //     break;
-  //   default:
-  //     // We're in the middle of a migration
-  //     throw new Error(`Unable to delete data - please wait a bit and try again.`);
-  // }
+      await deleteMigrationState(client, profileId);
+    }
+  });
 
   // default 200 OK
   res.status(200).send({
@@ -44,17 +39,39 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   });
 });
 
-// /** Postgres delete-all-data implementation just individually deletes from each table */
-// export async function deleteAllData(
-//   client: ClientBase,
-//   bungieMembershipId: number,
-// ): Promise<DeleteAllResponse['deleted']> {
-//   return {
-//     settings: (await deleteSettings(client, bungieMembershipId)).rowCount!,
-//     loadouts: (await deleteAllLoadouts(client, bungieMembershipId)).rowCount!,
-//     tags: (await deleteAllItemAnnotations(client, bungieMembershipId)).rowCount!,
-//     itemHashTags: (await deleteAllItemHashTags(client, bungieMembershipId)).rowCount!,
-//     triumphs: (await deleteAllTrackedTriumphs(client, bungieMembershipId)).rowCount!,
-//     searches: (await deleteAllSearches(client, bungieMembershipId)).rowCount!,
-//   };
-// }
+function mergeResult(
+  base: DeleteAllResponse['deleted'],
+  addition: DeleteAllResponse['deleted'],
+): DeleteAllResponse['deleted'] {
+  return {
+    settings: base.settings + addition.settings,
+    loadouts: base.loadouts + addition.loadouts,
+    tags: base.tags + addition.tags,
+    itemHashTags: base.itemHashTags + addition.itemHashTags,
+    triumphs: base.triumphs + addition.triumphs,
+    searches: base.searches + addition.searches,
+  };
+}
+
+/** Postgres delete-all-data implementation just individually deletes from each table */
+export async function deleteAllData(
+  client: ClientBase,
+  platformMembershipId: string,
+  destinyVersion: DestinyVersion,
+): Promise<DeleteAllResponse['deleted']> {
+  return {
+    settings: 0,
+    loadouts: (await softDeleteAllLoadouts(client, platformMembershipId, destinyVersion)).rowCount!,
+    tags: (await softDeleteAllItemAnnotations(client, platformMembershipId, destinyVersion))
+      .rowCount!,
+    itemHashTags:
+      destinyVersion === 2
+        ? (await softDeleteAllItemHashTags(client, platformMembershipId)).rowCount!
+        : 0,
+    triumphs:
+      destinyVersion === 2
+        ? (await softDeleteAllTrackedTriumphs(client, platformMembershipId)).rowCount!
+        : 0,
+    searches: (await softDeleteAllSearches(client, platformMembershipId, destinyVersion)).rowCount!,
+  };
+}

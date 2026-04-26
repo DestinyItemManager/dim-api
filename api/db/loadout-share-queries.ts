@@ -63,6 +63,43 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 }
 
 /**
+ * Insert a loadout share, but ignore if the share ID already exists. This is
+ * used for backfilling from Stately where we don't want to overwrite existing
+ * shares, but we also don't want to fail the whole batch if there's a
+ * duplicate.
+ */
+export async function addLoadoutShareIgnoring(
+  client: ClientBase,
+  bungieMembershipId: number | undefined,
+  platformMembershipId: string,
+  shareId: string,
+  loadout: Loadout,
+  viewCount = 0,
+): Promise<QueryResult> {
+  const response = await client.query({
+    name: 'add_loadout_share_ignoring',
+    text: `insert into loadout_shares (id, membership_id, platform_membership_id, name, notes, class_type, items, parameters, view_count)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict (id) do nothing`,
+    values: [
+      shareId,
+      bungieMembershipId,
+      platformMembershipId,
+      loadout.name,
+      loadout.notes,
+      loadout.classType,
+      {
+        equipped: loadout.equipped.map(cleanItem),
+        unequipped: loadout.unequipped.map(cleanItem),
+      },
+      loadout.parameters,
+      viewCount,
+    ],
+  });
+
+  return response;
+}
+
+/**
  * Touch the last_accessed_at and visits fields to keep track of access. This returns the loadout, if it exists.
  */
 export async function recordAccess(

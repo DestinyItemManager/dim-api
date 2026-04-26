@@ -1,8 +1,8 @@
+import { cannedSearches } from '../routes/profile.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { SearchType } from '../shapes/search.js';
 import { client } from './client.js';
 import {
-  cannedSearches,
   deleteAllSearches,
   deleteSearch,
   getSearchesForProfile,

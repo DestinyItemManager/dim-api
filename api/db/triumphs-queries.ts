@@ -1,3 +1,4 @@
+import { partition } from 'es-toolkit';
 import { ClientBase, QueryResult } from 'pg';
 import { metrics } from '../metrics/index.js';
 
@@ -17,35 +18,25 @@ export async function getTrackedTriumphsForProfile(
 }
 
 /**
- * Get ALL of the tracked triumphs for a particular user across all platforms.
- * @deprecated
+ * Get all of the tracked triumphs for a particular platform_membership_id.
  */
-// TODO: get rid of this!
-export async function getAllTrackedTriumphsForUser(
+export async function syncTrackedTriumphsForProfile(
   client: ClientBase,
-  bungieMembershipId: number,
-): Promise<
-  {
-    platformMembershipId: string;
-    triumphs: number[];
-  }[]
-> {
-  const results = await client.query<{ platform_membership_id: string; record_hash: string }>({
-    name: 'get_all_tracked_triumphs',
-    text: 'SELECT platform_membership_id, record_hash FROM tracked_triumphs WHERE membership_id = $1',
-    values: [bungieMembershipId],
+  platformMembershipId: string,
+  syncTimestamp: number,
+): Promise<{ updated: number[]; deleted: number[] }> {
+  const results = await client.query<{ record_hash: string; deleted_at: Date | null }>({
+    name: 'sync_tracked_triumphs',
+    text: 'SELECT record_hash, deleted_at FROM tracked_triumphs WHERE platform_membership_id = $1 and last_updated_at > $2',
+    values: [platformMembershipId, new Date(syncTimestamp)],
   });
 
-  const triumphsByAccount: { [platformMembershipId: string]: number[] } = {};
+  const [updatedRows, deletedRows] = partition(results.rows, (row) => row.deleted_at === null);
 
-  for (const row of results.rows) {
-    (triumphsByAccount[row.platform_membership_id] ||= []).push(parseInt(row.record_hash, 10));
-  }
-
-  return Object.entries(triumphsByAccount).map(([platformMembershipId, triumphs]) => ({
-    platformMembershipId,
-    triumphs,
-  }));
+  return {
+    updated: updatedRows.map((row) => parseInt(row.record_hash, 10)),
+    deleted: deletedRows.map((row) => parseInt(row.record_hash, 10)),
+  };
 }
 
 /**
@@ -100,6 +91,20 @@ export async function deleteAllTrackedTriumphs(
   return client.query({
     name: 'delete_all_tracked_triumphs',
     text: `delete from tracked_triumphs where platform_membership_id = $1`,
+    values: [platformMembershipId],
+  });
+}
+
+/**
+ * Soft-delete all tracked triumphs for a platform (sets deleted_at timestamp for sync support).
+ */
+export async function softDeleteAllTrackedTriumphs(
+  client: ClientBase,
+  platformMembershipId: string,
+): Promise<QueryResult> {
+  return client.query({
+    name: 'soft_delete_all_tracked_triumphs',
+    text: `update tracked_triumphs set deleted_at = now() where platform_membership_id = $1 and deleted_at is null`,
     values: [platformMembershipId],
   });
 }

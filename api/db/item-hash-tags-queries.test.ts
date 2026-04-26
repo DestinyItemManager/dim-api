@@ -3,6 +3,7 @@ import {
   deleteAllItemHashTags,
   deleteItemHashTag,
   getItemHashTagsForProfile,
+  softDeleteAllItemHashTags,
   updateItemHashTag,
 } from './item-hash-tags-queries.js';
 
@@ -109,5 +110,41 @@ it('can delete item hash tags by setting both values to null/empty', async () =>
 
     const annotations = await getItemHashTagsForProfile(client, platformMembershipId);
     expect(annotations).toEqual([]);
+  });
+});
+
+it('handles soft delete properly', async () => {
+  await transaction(async (client) => {
+    // Create a hash tag
+    await updateItemHashTag(client, bungieMembershipId, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
+
+    let annotations = await getItemHashTagsForProfile(client, platformMembershipId);
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]).toEqual({
+      hash: 2926662838,
+      tag: 'favorite',
+      notes: 'the best',
+    });
+
+    await softDeleteAllItemHashTags(client, platformMembershipId);
+
+    annotations = await getItemHashTagsForProfile(client, platformMembershipId);
+    expect(annotations).toEqual([]);
+
+    await updateItemHashTag(client, bungieMembershipId, platformMembershipId, {
+      hash: 2926662838,
+      tag: 'keep',
+    });
+
+    annotations = await getItemHashTagsForProfile(client, platformMembershipId);
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]).toEqual({
+      hash: 2926662838,
+      tag: 'keep',
+    });
   });
 });
