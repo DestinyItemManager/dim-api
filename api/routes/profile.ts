@@ -269,7 +269,7 @@ async function loadProfile(
           if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
             response.settings = { ...defaultSettings, ...pgSettings.settings };
           }
-          addSyncToken('s', { canSync: true, tokenData: pgSettings?.lastModifiedAt ?? now });
+          addSyncToken('s', { canSync: true, tokenData: now });
         } else {
           const tokenData = getSyncToken<Buffer>('settings');
           const { settings: storedSettings, token: settingsToken } = tokenData
