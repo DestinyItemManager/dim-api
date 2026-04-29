@@ -73,6 +73,7 @@ export async function claimMigrationWork(
       select platform_membership_id
       from migration_state
       where state = $1
+        and platform_membership_id = '4611686018433092312'
         and attempt_count < $2
       order by last_state_change_at asc
       limit $3
