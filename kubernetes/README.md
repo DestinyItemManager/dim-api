@@ -42,9 +42,9 @@ Required environment inputs:
 
 - `dim-api-config` ConfigMap (same values used by API deployment)
 - `dim-api-secret` keys:
-	- `pg_password`
-	- `stately_access_key`
-	- `stately_store_id`
+  - `pg_password`
+  - `stately_access_key`
+  - `stately_store_id`
 
 Build and push image:
 
@@ -73,4 +73,39 @@ If re-running after completion, delete and recreate the job:
 ```sh
 kubectl delete job dim-api-stately-backfill
 kubectl apply -f deployment/dim-api-stately-backfill-job.yaml
+```
+
+## Stately to Postgres Migration Worker
+
+Run continuous workers that claim `migration_state` rows in `Stately` state and
+migrate each claimed profile to Postgres.
+
+Use `dim-api-migration-worker-deployment.yaml`.
+
+This is a Deployment (not a Job) so you can scale replicas for parallelism. Each
+replica safely claims work via optimistic state transitions in `migration_state`
+(`Stately` -> `MigratingToPostgres`).
+
+Worker environment knobs:
+
+- `MIGRATION_WORKER_BATCH_SIZE`: Number of rows to claim per poll (default `25`).
+- `MIGRATION_WORKER_IDLE_DELAY_MS`: Sleep delay when no work is available (default `5000`).
+- `MIGRATION_WORKER_BETWEEN_USERS_DELAY_MS`: Delay between processing users in a claimed batch (default `100`).
+
+Apply the worker deployment:
+
+```sh
+pnpm run deploy:migration-worker
+```
+
+Scale workers:
+
+```sh
+kubectl scale deployment dim-api-migration-worker --replicas=4
+```
+
+Inspect worker logs:
+
+```sh
+kubectl logs -f deployment/dim-api-migration-worker
 ```

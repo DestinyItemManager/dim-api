@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dim-api-migration-worker
+  labels:
+    app: dim-api-migration-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dim-api-migration-worker
+  template:
+    metadata:
+      labels:
+        app: dim-api-migration-worker
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'true'
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: dim-api-migration-worker
+          image: destinyitemmanager/dim-api:$COMMITHASH
+          imagePullPolicy: IfNotPresent
+          command: ['node']
+          args:
+            - --enable-source-maps
+            - api/stately/init/migrate-stately-to-postgres.js
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: MIGRATION_WORKER_BATCH_SIZE
+              value: '25'
+            - name: MIGRATION_WORKER_IDLE_DELAY_MS
+              value: '5000'
+            - name: MIGRATION_WORKER_BETWEEN_USERS_DELAY_MS
+              value: '100'
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: pg_password
+            - name: STATELY_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: stately_access_key
+          envFrom:
+            - configMapRef:
+                name: dim-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi

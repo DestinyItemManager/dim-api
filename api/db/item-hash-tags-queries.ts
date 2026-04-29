@@ -66,7 +66,7 @@ function convertItemHashTag(row: ItemHashTagRow): ItemHashTag {
  */
 export async function updateItemHashTag(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   itemHashTag: ItemHashTag,
 ): Promise<QueryResult> {
@@ -114,7 +114,7 @@ export async function updateItemHashTag(
         END)
     `,
     values: [
-      bungieMembershipId,
+      bungieMembershipId ?? null,
       platformMembershipId,
       itemHashTag.hash,
       tagValue === null ? null : TagValueEnum[tagValue],

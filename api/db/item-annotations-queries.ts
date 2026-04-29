@@ -82,7 +82,7 @@ function convertItemAnnotation(row: ItemAnnotationRow): ItemAnnotation {
  */
 export async function updateItemAnnotation(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   itemAnnotation: ItemAnnotation,
@@ -135,7 +135,7 @@ export async function updateItemAnnotation(
         END)
     `,
     values: [
-      bungieMembershipId, // $1
+      bungieMembershipId ?? null, // $1
       platformMembershipId, // $2
       destinyVersion, // $3
       itemAnnotation.id, // $4

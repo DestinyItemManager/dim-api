@@ -13,15 +13,21 @@ export const enum MigrationState {
 
 export interface MigrationStateInfo {
   platformMembershipId: string;
-  bungieMembershipId: number;
+  bungieMembershipId: number | undefined;
   state: MigrationState;
   lastStateChangeAt: number;
   attemptCount: number;
   lastError?: string;
 }
 
+export interface MigrationWorkItem {
+  platformMembershipId: string;
+  bungieMembershipId: number | undefined;
+  attemptCount: number;
+}
+
 interface MigrationStateRow {
-  membership_id: number;
+  membership_id: number | null;
   platform_membership_id: string;
   state: number;
   last_state_change_at: Date;
@@ -45,12 +51,54 @@ on conflict (platform_membership_id) do update set state = migration_state.state
   return result.rows[0].state;
 }
 
-export async function getUsersToMigrate(client: ClientBase): Promise<number[]> {
+export async function getUsersToMigrate(client: ClientBase): Promise<string[]> {
   const results = await client.query<MigrationStateRow>({
     name: 'get_users_to_migrate',
-    text: 'select membership_id from migration_state where state != 3 limit 1000',
+    text: 'select platform_membership_id from migration_state where state != 3 limit 1000',
   });
-  return results.rows.map((row) => row.membership_id);
+  return results.rows.map((row) => row.platform_membership_id);
+}
+
+export async function claimMigrationWork(
+  client: ClientBase,
+  batchSize: number,
+): Promise<MigrationWorkItem[]> {
+  const results = await client.query<{
+    platform_membership_id: string;
+    membership_id: number | null;
+    attempt_count: number;
+  }>({
+    name: 'claim_migration_work',
+    text: `with candidates as (
+      select platform_membership_id
+      from migration_state
+      where state = $1
+        and attempt_count < $2
+      order by last_state_change_at asc
+      limit $3
+    )
+    update migration_state
+    set state = $4,
+        attempt_count = migration_state.attempt_count + 1,
+        last_state_change_at = current_timestamp
+    from candidates
+    where migration_state.platform_membership_id = candidates.platform_membership_id
+      and migration_state.state = $1
+      and migration_state.attempt_count < $2
+    returning migration_state.platform_membership_id, migration_state.membership_id, migration_state.attempt_count`,
+    values: [
+      MigrationState.Stately,
+      MAX_MIGRATION_ATTEMPTS,
+      batchSize,
+      MigrationState.MigratingToPostgres,
+    ],
+  });
+
+  return results.rows.map((row) => ({
+    platformMembershipId: row.platform_membership_id,
+    bungieMembershipId: row.membership_id ?? undefined,
+    attemptCount: row.attempt_count,
+  }));
 }
 
 export async function getMigrationState(
@@ -66,7 +114,7 @@ export async function getMigrationState(
     return convert(results.rows[0]);
   } else {
     return {
-      bungieMembershipId: 0,
+      bungieMembershipId: undefined,
       platformMembershipId,
       state: MigrationState.Stately,
       lastStateChangeAt: 0,
@@ -77,7 +125,7 @@ export async function getMigrationState(
 
 function convert(row: MigrationStateRow): MigrationStateInfo {
   return {
-    bungieMembershipId: row.membership_id,
+    bungieMembershipId: row.membership_id ?? undefined,
     platformMembershipId: row.platform_membership_id,
     state: row.state,
     lastStateChangeAt: row.last_state_change_at.getTime(),
@@ -88,7 +136,7 @@ function convert(row: MigrationStateRow): MigrationStateInfo {
 
 export function startMigrationToPostgres(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
 ): Promise<void> {
   return updateMigrationState(
@@ -103,7 +151,7 @@ export function startMigrationToPostgres(
 
 export function finishMigrationToPostgres(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
 ): Promise<void> {
   return updateMigrationState(
@@ -118,7 +166,7 @@ export function finishMigrationToPostgres(
 
 export function abortMigrationToPostgres(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   err: string,
 ): Promise<void> {
@@ -135,7 +183,7 @@ export function abortMigrationToPostgres(
 
 async function updateMigrationState(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   state: MigrationState,
   expectedState: MigrationState,
@@ -149,13 +197,14 @@ async function updateMigrationState(
 on conflict (platform_membership_id)
 do update set
   state = $3,
+  membership_id = coalesce($2, migration_state.membership_id),
   last_state_change_at = current_timestamp,
   attempt_count = migration_state.attempt_count + $4,
   last_error = $5
 where migration_state.state = $6`,
     values: [
       platformMembershipId,
-      bungieMembershipId,
+      bungieMembershipId ?? null,
       state,
       incrementAttempt ? 1 : 0,
       err ?? null,
@@ -186,7 +235,7 @@ export async function deleteMigrationState(
 export async function setMigrationStateForTest(
   client: ClientBase,
   platformMembershipId: string,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   state: MigrationState,
 ): Promise<void> {
   await client.query({
@@ -194,7 +243,7 @@ export async function setMigrationStateForTest(
            VALUES ($1, $2, $3)
            ON CONFLICT (platform_membership_id)
            DO UPDATE SET state = $3, last_state_change_at = NOW()`,
-    values: [platformMembershipId, bungieMembershipId, state],
+    values: [platformMembershipId, bungieMembershipId ?? null, state],
   });
 }
 
