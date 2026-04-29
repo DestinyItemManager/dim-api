@@ -75,7 +75,7 @@ function convertSearch(row: SearchRow): Search {
  */
 export async function updateUsedSearch(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
@@ -90,7 +90,7 @@ do update set
   usage_count = CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count + 1 END,
   last_used = current_timestamp,
   deleted_at = null`,
-    values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type],
+    values: [bungieMembershipId ?? null, platformMembershipId, destinyVersion, query, type],
   });
 
   if (response.rowCount! < 1) {
@@ -107,7 +107,7 @@ do update set
  */
 export async function saveSearch(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
@@ -123,7 +123,7 @@ DO UPDATE SET
   saved = $6,
   usage_count = CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count END,
   deleted_at = null`,
-    values: [bungieMembershipId, platformMembershipId, destinyVersion, query, type, saved],
+    values: [bungieMembershipId ?? null, platformMembershipId, destinyVersion, query, type, saved],
   });
 }
 
@@ -132,7 +132,7 @@ DO UPDATE SET
  */
 export async function importSearch(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   query: string,
@@ -148,7 +148,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (platform_membership_id, destiny_version, qhash)
 DO UPDATE SET saved = $5, usage_count = $7, last_used = $8, deleted_at = null`,
     values: [
-      bungieMembershipId,
+      bungieMembershipId ?? null,
       platformMembershipId,
       destinyVersion,
       query,

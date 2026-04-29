@@ -44,7 +44,7 @@ export async function syncTrackedTriumphsForProfile(
  */
 export async function trackTriumph(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   recordHash: number,
 ): Promise<QueryResult> {
@@ -53,7 +53,7 @@ export async function trackTriumph(
     text: `insert INTO tracked_triumphs (membership_id, platform_membership_id, record_hash)
 values ($1, $2, $3)
 on conflict (platform_membership_id, record_hash) do update set deleted_at = null, membership_id = $1`,
-    values: [bungieMembershipId, platformMembershipId, recordHash],
+    values: [bungieMembershipId ?? null, platformMembershipId, recordHash],
   });
 
   return response;

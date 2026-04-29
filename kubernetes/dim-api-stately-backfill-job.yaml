@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dim-api-stately-backfill-token
+  labels:
+    app: dim-api-stately-backfill
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dim-api-stately-backfill
+  labels:
+    app: dim-api-stately-backfill
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 12
+  template:
+    metadata:
+      labels:
+        app: dim-api-stately-backfill
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      restartPolicy: OnFailure
+      containers:
+        - name: stately-backfill
+          image: destinyitemmanager/dim-api:$COMMITHASH
+          imagePullPolicy: IfNotPresent
+          command: ['node']
+          args:
+            - --enable-source-maps
+            - api/stately/init/stately-backfill.js
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: BACKFILL_PARALLEL_SEGMENTS
+              value: '4'
+            - name: BACKFILL_TOKEN_PATH
+              value: /var/lib/dim-api-backfill/backfill-token.bin
+            - name: BACKFILL_RETRY_MAX_ATTEMPTS
+              value: '12'
+            - name: BACKFILL_RETRY_BASE_DELAY_MS
+              value: '1000'
+            - name: BACKFILL_RETRY_MAX_DELAY_MS
+              value: '30000'
+            - name: BACKFILL_PROFILE_BATCH_SIZE
+              value: '1000'
+            - name: BACKFILL_SETTINGS_BATCH_SIZE
+              value: '50'
+            - name: BACKFILL_SHARE_BATCH_SIZE
+              value: '50'
+            - name: BACKFILL_CONTINUATION_DELAY_MS
+              value: '1000'
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: pg_password
+            - name: STATELY_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dim-api-secret
+                  key: stately_access_key
+          envFrom:
+            - configMapRef:
+                name: dim-api-config
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+          volumeMounts:
+            - name: token-state
+              mountPath: /var/lib/dim-api-backfill
+      volumes:
+        - name: token-state
+          persistentVolumeClaim:
+            claimName: dim-api-stately-backfill-token

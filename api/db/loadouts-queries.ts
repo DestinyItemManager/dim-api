@@ -79,7 +79,7 @@ export function convertLoadout(row: LoadoutRow): Loadout {
  */
 export async function updateLoadout(
   client: ClientBase,
-  bungieMembershipId: number,
+  bungieMembershipId: number | undefined,
   platformMembershipId: string,
   destinyVersion: DestinyVersion,
   loadout: Loadout,
@@ -101,7 +101,7 @@ do update set
   created_at = CASE WHEN loadouts.deleted_at IS NOT NULL THEN now() ELSE loadouts.created_at END`,
     values: [
       loadout.id,
-      bungieMembershipId,
+      bungieMembershipId ?? null,
       platformMembershipId,
       destinyVersion,
       loadout.name,
