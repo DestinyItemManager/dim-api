@@ -252,17 +252,25 @@ async function migrateOneClaimedUser(
   }
 
   for (const searchData of searches) {
-    await importSearch(
-      pgClient,
-      bungieMembershipId,
-      platformMembershipId,
-      searchData.destinyVersion,
-      searchData.search.query,
-      searchData.search.saved,
-      searchData.search.lastUsage,
-      searchData.search.usageCount,
-      searchData.search.type,
-    );
+    try {
+      await importSearch(
+        pgClient,
+        bungieMembershipId,
+        platformMembershipId,
+        searchData.destinyVersion,
+        searchData.search.query,
+        searchData.search.saved,
+        searchData.search.lastUsage,
+        searchData.search.usageCount,
+        searchData.search.type,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('invalid byte sequence')) {
+      } else {
+        console.error(`Failed to import search for ${platformMembershipId}`, searchData, error);
+        throw error;
+      }
+    }
   }
 }
 
@@ -311,7 +319,7 @@ try {
         console.log(`Migration finished for ${platformMembershipId}`);
       } catch (error) {
         const errorMessage = toErrorMessage(error);
-        console.error(`Migration failed for ${platformMembershipId}:`, errorMessage);
+        console.error(`Migration failed for ${platformMembershipId}:`, error);
         await withRetry(`abortMigration:${platformMembershipId}`, () =>
           transaction(async (pgClient) => {
             await abortMigrationToPostgres(
