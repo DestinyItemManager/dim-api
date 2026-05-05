@@ -253,6 +253,15 @@ async function migrateOneClaimedUser(
 
   for (const searchData of searches) {
     try {
+      // if the query isn't valid UTF-8, the importSearch function will throw. In that case we want to skip it and continue with the rest of the migration instead of failing the whole migration.
+      if (!searchData.search.query.isWellFormed()) {
+        console.warn(
+          `Skipping search with invalid UTF-8 query for ${platformMembershipId}:`,
+          searchData.search.query,
+        );
+        continue;
+      }
+
       await importSearch(
         pgClient,
         bungieMembershipId,
@@ -265,11 +274,8 @@ async function migrateOneClaimedUser(
         searchData.search.type,
       );
     } catch (error) {
-      if (error instanceof Error && error.message.includes('invalid byte sequence')) {
-      } else {
-        console.error(`Failed to import search for ${platformMembershipId}`, searchData, error);
-        throw error;
-      }
+      console.error(`Failed to import search for ${platformMembershipId}`, searchData, error);
+      throw error;
     }
   }
 }
