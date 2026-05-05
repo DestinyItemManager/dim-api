@@ -210,6 +210,47 @@ function toErrorMessage(error: unknown): string {
   return String(error).slice(0, 500);
 }
 
+function hasUnpairedSurrogates(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = value.charCodeAt(i + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) {
+        return true;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isWellFormedUnicode(value: string): boolean {
+  const candidate = value as string & { isWellFormed?: () => boolean };
+  if (typeof candidate.isWellFormed === 'function') {
+    return candidate.isWellFormed();
+  }
+
+  return !hasUnpairedSurrogates(value);
+}
+
+function getUnsafePostgresTextReason(value: string): string | undefined {
+  if (!isWellFormedUnicode(value)) {
+    return 'string contains unpaired UTF-16 surrogate code units';
+  }
+
+  if (value.includes('\u0000')) {
+    return 'string contains NUL (\\u0000), which Postgres text cannot store';
+  }
+
+  return undefined;
+}
+
 async function migrateOneClaimedUser(
   pgClient: ClientBase,
   bungieMembershipId: number | undefined,
@@ -254,9 +295,10 @@ async function migrateOneClaimedUser(
   for (const searchData of searches) {
     try {
       // if the query isn't valid UTF-8, the importSearch function will throw. In that case we want to skip it and continue with the rest of the migration instead of failing the whole migration.
-      if (!searchData.search.query.isWellFormed()) {
+      const invalidReason = getUnsafePostgresTextReason(searchData.search.query);
+      if (invalidReason) {
         console.warn(
-          `Skipping search with invalid UTF-8 query for ${platformMembershipId}:`,
+          `Skipping search with invalid query for ${platformMembershipId} (${invalidReason}):`,
           searchData.search.query,
         );
         continue;
