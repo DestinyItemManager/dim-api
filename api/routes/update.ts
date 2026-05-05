@@ -121,7 +121,7 @@ export const updateHandler = asyncHandler(async (req, res) => {
   // that we've seen this user and they are in the Stately migration state. This
   // makes sure new users get put into the migration table while we're
   // backfilling.
-  let migrationState: MigrationState = MigrationState.Stately;
+  let migrationState: MigrationState = MigrationState.Postgres;
   if (platformMembershipId) {
     migrationState = await transaction(async (client) =>
       backfillMigrationState(client, platformMembershipId ?? profileIds[0], bungieMembershipId),
