@@ -210,6 +210,47 @@ function toErrorMessage(error: unknown): string {
   return String(error).slice(0, 500);
 }
 
+function hasUnpairedSurrogates(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = value.charCodeAt(i + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) {
+        return true;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isWellFormedUnicode(value: string): boolean {
+  const candidate = value as string & { isWellFormed?: () => boolean };
+  if (typeof candidate.isWellFormed === 'function') {
+    return candidate.isWellFormed();
+  }
+
+  return !hasUnpairedSurrogates(value);
+}
+
+function getUnsafePostgresTextReason(value: string): string | undefined {
+  if (!isWellFormedUnicode(value)) {
+    return 'string contains unpaired UTF-16 surrogate code units';
+  }
+
+  if (value.includes('\u0000')) {
+    return 'string contains NUL (\\u0000), which Postgres text cannot store';
+  }
+
+  return undefined;
+}
+
 async function migrateOneClaimedUser(
   pgClient: ClientBase,
   bungieMembershipId: number | undefined,
@@ -252,17 +293,32 @@ async function migrateOneClaimedUser(
   }
 
   for (const searchData of searches) {
-    await importSearch(
-      pgClient,
-      bungieMembershipId,
-      platformMembershipId,
-      searchData.destinyVersion,
-      searchData.search.query,
-      searchData.search.saved,
-      searchData.search.lastUsage,
-      searchData.search.usageCount,
-      searchData.search.type,
-    );
+    try {
+      // if the query isn't valid UTF-8, the importSearch function will throw. In that case we want to skip it and continue with the rest of the migration instead of failing the whole migration.
+      const invalidReason = getUnsafePostgresTextReason(searchData.search.query);
+      if (invalidReason) {
+        console.warn(
+          `Skipping search with invalid query for ${platformMembershipId} (${invalidReason}):`,
+          searchData.search.query,
+        );
+        continue;
+      }
+
+      await importSearch(
+        pgClient,
+        bungieMembershipId,
+        platformMembershipId,
+        searchData.destinyVersion,
+        searchData.search.query,
+        searchData.search.saved,
+        searchData.search.lastUsage,
+        searchData.search.usageCount,
+        searchData.search.type,
+      );
+    } catch (error) {
+      console.error(`Failed to import search for ${platformMembershipId}`, searchData, error);
+      throw error;
+    }
   }
 }
 
@@ -311,7 +367,7 @@ try {
         console.log(`Migration finished for ${platformMembershipId}`);
       } catch (error) {
         const errorMessage = toErrorMessage(error);
-        console.error(`Migration failed for ${platformMembershipId}:`, errorMessage);
+        console.error(`Migration failed for ${platformMembershipId}:`, error);
         await withRetry(`abortMigration:${platformMembershipId}`, () =>
           transaction(async (pgClient) => {
             await abortMigrationToPostgres(

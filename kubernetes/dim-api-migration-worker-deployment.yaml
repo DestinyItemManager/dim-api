@@ -5,7 +5,7 @@ metadata:
   labels:
     app: dim-api-migration-worker
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dim-api-migration-worker
@@ -20,7 +20,7 @@ spec:
       containers:
         - name: dim-api-migration-worker
           image: destinyitemmanager/dim-api:$COMMITHASH
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: ['node']
           args:
             - --enable-source-maps

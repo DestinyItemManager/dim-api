@@ -45,7 +45,7 @@ export async function backfillMigrationState(
     name: 'backfill_migration_state',
     text: `insert into migration_state (platform_membership_id, membership_id, state) VALUES ($1, $2, $3)
 on conflict (platform_membership_id) do update set state = migration_state.state returning state`,
-    values: [platformMembershipId, bungieMembershipId, MigrationState.Stately],
+    values: [platformMembershipId, bungieMembershipId, MigrationState.Postgres],
   });
 
   return result.rows[0].state;
