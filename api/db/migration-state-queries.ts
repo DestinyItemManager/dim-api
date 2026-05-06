@@ -40,12 +40,13 @@ export async function backfillMigrationState(
   client: ClientBase,
   platformMembershipId: string,
   bungieMembershipId: number | undefined,
+  state: MigrationState = MigrationState.Postgres,
 ): Promise<MigrationState> {
   const result = await client.query<{ state: MigrationState }>({
     name: 'backfill_migration_state',
     text: `insert into migration_state (platform_membership_id, membership_id, state) VALUES ($1, $2, $3)
 on conflict (platform_membership_id) do update set state = migration_state.state returning state`,
-    values: [platformMembershipId, bungieMembershipId, MigrationState.Postgres],
+    values: [platformMembershipId, bungieMembershipId, state],
   });
 
   return result.rows[0].state;
@@ -116,7 +117,7 @@ export async function getMigrationState(
     return {
       bungieMembershipId: undefined,
       platformMembershipId,
-      state: MigrationState.Stately,
+      state: MigrationState.Postgres,
       lastStateChangeAt: 0,
       attemptCount: 0,
     };

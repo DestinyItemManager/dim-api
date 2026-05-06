@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { DatabaseError } from 'pg-protocol';
 import { closeDbPool, transaction } from '../../db/index.js';
 import { addLoadoutShareIgnoring } from '../../db/loadout-share-queries.js';
-import { backfillMigrationState } from '../../db/migration-state-queries.js';
+import { backfillMigrationState, MigrationState } from '../../db/migration-state-queries.js';
 import { getSettings, replaceSettings } from '../../db/settings-queries.js';
 import { Loadout } from '../../shapes/loadouts.js';
 import { defaultSettings } from '../../shapes/settings.js';
@@ -312,7 +312,12 @@ async function runSegment(segmentIndex: number, totalSegments: number, workerCou
     await withRetry(`${logPrefix} Backfill migration states`, async () => {
       await transaction(async (pgClient) => {
         for (const profileId of items) {
-          await backfillMigrationState(pgClient, profileId.toString(), undefined);
+          await backfillMigrationState(
+            pgClient,
+            profileId.toString(),
+            undefined,
+            MigrationState.Stately,
+          );
         }
       });
     });
