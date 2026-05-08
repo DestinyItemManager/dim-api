@@ -1,9 +1,9 @@
 import { captureMessage } from '@sentry/node';
-import { chunk, groupBy, partition, sortBy } from 'es-toolkit';
+import { sortBy } from 'es-toolkit';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import { ClientBase } from 'pg';
-import { readTransaction, transaction } from '../db/index.js';
+import { transaction } from '../db/index.js';
 import {
   deleteItemAnnotationList,
   updateItemAnnotation as updateItemAnnotationInDb,
@@ -13,17 +13,12 @@ import {
   deleteLoadout as deleteLoadoutInDb,
   updateLoadout as updateLoadoutInDb,
 } from '../db/loadouts-queries.js';
-import { backfillMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import {
   deleteSearch as deleteSearchInDb,
   saveSearch as saveSearchInDb,
   updateUsedSearch,
 } from '../db/searches-queries.js';
-import {
-  getSettings,
-  replaceSettings,
-  setSetting as setSettingInPostgres,
-} from '../db/settings-queries.js';
+import { setSetting as setSettingInPostgres } from '../db/settings-queries.js';
 import { trackTriumph as trackTriumphInDb, unTrackTriumph } from '../db/triumphs-queries.js';
 import { metrics } from '../metrics/index.js';
 import { ApiApp } from '../shapes/app.js';
@@ -31,52 +26,24 @@ import { DestinyVersion } from '../shapes/general.js';
 import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import {
-  DeleteLoadoutUpdate,
   DeleteSearchUpdate,
   ItemHashTagUpdate,
-  LoadoutUpdate,
   ProfileUpdate,
   ProfileUpdateRequest,
   ProfileUpdateResult,
   SavedSearchUpdate,
   SettingUpdate,
-  TagCleanupUpdate,
-  TagUpdate,
   TrackTriumphUpdate,
   UsedSearchUpdate,
 } from '../shapes/profile.js';
 import { SearchType } from '../shapes/search.js';
-import { defaultSettings, Settings } from '../shapes/settings.js';
+import { Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { client as statelyClient } from '../stately/client.js';
-import {
-  deleteItemAnnotation as deleteItemAnnotationListStately,
-  updateItemAnnotation as updateItemAnnotationInStately,
-} from '../stately/item-annotations-queries.js';
-import { updateItemHashTag as updateItemHashTagInStately } from '../stately/item-hash-tags-queries.js';
-import {
-  deleteLoadout as deleteLoadoutInStately,
-  updateLoadout as updateLoadoutInStately,
-} from '../stately/loadouts-queries.js';
-import {
-  deleteSearch as deleteSearchInStately,
-  UpdateSearch,
-  updateSearches,
-} from '../stately/searches-queries.js';
-import {
-  getSettingsForUpdate,
-  getSettings as getSettingsStately,
-  keyFor,
-} from '../stately/settings-queries.js';
-import { Transaction } from '../stately/stately-utils.js';
-import { trackUntrackTriumphs } from '../stately/triumphs-queries.js';
 import {
   badRequest,
   checkPlatformMembershipId,
-  delay,
   isValidItemId,
   isValidPlatformMembershipId,
-  subtractObject,
 } from '../utils.js';
 
 /**
@@ -117,42 +84,11 @@ export const updateHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  // Do a conditional update of the migration state table in Postgres to mark
-  // that we've seen this user and they are in the Stately migration state. This
-  // makes sure new users get put into the migration table while we're
-  // backfilling.
-  let migrationState: MigrationState = MigrationState.Postgres;
-  if (platformMembershipId) {
-    migrationState = await transaction(async (client) =>
-      backfillMigrationState(client, platformMembershipId ?? profileIds[0], bungieMembershipId),
-    );
-  }
-
-  if (
-    migrationState === MigrationState.MigratingToPostgres &&
-    updates.some((u) => u.action !== 'setting')
-  ) {
-    res.status(503).header('Retry-After', '60').send({
-      error: 'MigrationInProgress',
-      message: `This account is being migrated. Try again in a little bit.`,
-    });
-    return;
-  }
-
   const results: ProfileUpdateResult[] = validateUpdates(req, updates, platformMembershipId, appId);
   // Only attempt updates that pass validation
   const updatesToApply = updates.filter((_, index) => results[index].status === 'Success');
 
-  if (migrationState === MigrationState.Postgres) {
-    await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
-  } else {
-    await statelyUpdate(
-      updatesToApply,
-      bungieMembershipId,
-      platformMembershipId ?? profileIds[0],
-      destinyVersion,
-    );
-  }
+  await pgUpdate(updatesToApply, bungieMembershipId, platformMembershipId, destinyVersion);
 
   res.send({
     results,
@@ -243,127 +179,6 @@ function validateUpdates(
   return results;
 }
 
-async function statelyUpdate(
-  updates: ProfileUpdate[],
-  bungieMembershipId: number,
-  platformMembershipId: string | undefined,
-  destinyVersion: DestinyVersion,
-) {
-  // We want to group save/delete search and search updates together
-  const actionKey = (u: ProfileUpdate) =>
-    u.action === 'save_search' || u.action === 'delete_search' ? 'search' : u.action;
-
-  const sortedUpdates = sortBy(updates, [actionKey]).flatMap((u): ProfileUpdate[] => {
-    // Separate out tag_cleanup updates into individual updates
-    if (u.action === 'tag_cleanup') {
-      return u.payload.map((p) => ({ action: 'tag_cleanup', payload: [p] }));
-    }
-    return [u];
-  });
-
-  const tagIds = new Set<string>();
-  for (const update of sortedUpdates) {
-    if (update.action === 'tag') {
-      tagIds.add(update.payload.id);
-    }
-  }
-
-  for (const updateChunk of chunk(sortedUpdates, 25)) {
-    await statelyClient.transaction(async (txn) => {
-      for (const [action, group] of Object.entries(groupBy(updateChunk, actionKey))) {
-        switch (action) {
-          case 'setting': {
-            await settingsUpdates(group as SettingUpdate[], bungieMembershipId, txn);
-            break;
-          }
-
-          case 'loadout':
-            await updateLoadoutInStately(
-              txn,
-              platformMembershipId!,
-              destinyVersion,
-              (group as LoadoutUpdate[]).map((u) => u.payload),
-            );
-            break;
-
-          case 'delete_loadout':
-            await deleteLoadoutInStately(
-              txn,
-              platformMembershipId!,
-              destinyVersion,
-              (group as DeleteLoadoutUpdate[]).map((u) => u.payload),
-            );
-            break;
-
-          case 'tag':
-            await updateItemAnnotationInStately(
-              txn,
-              platformMembershipId!,
-              destinyVersion,
-              (group as TagUpdate[]).map((u) => u.payload),
-            );
-            break;
-
-          case 'tag_cleanup': {
-            const instanceIds = (group as TagCleanupUpdate[])
-              .flatMap((u) => u.payload)
-              .filter(
-                (id) =>
-                  // We've seen a problem where DIM sends a tag_cleanup and a tag for the same item in the same update
-                  !tagIds.has(id) && isValidItemId(id),
-              );
-            if (instanceIds.length) {
-              await deleteItemAnnotationListStately(
-                txn,
-                platformMembershipId!,
-                destinyVersion,
-                instanceIds,
-              );
-            }
-            break;
-          }
-
-          case 'item_hash_tag':
-            for (const update of group as ItemHashTagUpdate[]) {
-              // TODO: Batch this one too
-              await updateItemHashTagInStately(txn, platformMembershipId!, update.payload);
-            }
-            break;
-
-          case 'track_triumph':
-            await trackUntrackTriumphs(
-              txn,
-              platformMembershipId!,
-              (group as TrackTriumphUpdate[]).map((u) => u.payload),
-            );
-            break;
-
-          // saved searches and used searches are collectively "searches"
-          case 'search': {
-            const searchUpdates = consolidateSearchUpdates(
-              group as (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],
-            );
-            const [deletes, updates] = partition(searchUpdates, (u) => u.deleted);
-            if (deletes.length) {
-              await deleteSearchInStately(
-                txn,
-                platformMembershipId!,
-                destinyVersion,
-                deletes.map((u) => u.query),
-              );
-            }
-            if (updates.length) {
-              await updateSearches(txn, platformMembershipId!, destinyVersion, updates);
-            }
-            break;
-          }
-        }
-      }
-    });
-    await delay(100); // sleep to let transaction flush
-  }
-}
-
 async function pgUpdate(
   updates: ProfileUpdate[],
   bungieMembershipId: number,
@@ -393,7 +208,7 @@ async function pgUpdate(
     for (const update of updates) {
       switch (update.action) {
         case 'setting':
-          await settingsUpdates([update], bungieMembershipId, undefined, client);
+          await settingsUpdates([update], bungieMembershipId, client);
           break;
 
         case 'loadout':
@@ -815,38 +630,10 @@ async function updateItemHashTag(
   metrics.timing('update.updateItemHashTag', start);
 }
 
-function consolidateSearchUpdates(
-  updates: (UsedSearchUpdate | SavedSearchUpdate | DeleteSearchUpdate)[],
-) {
-  const updatesByQuery = groupBy(updates, (u) => u.payload.query);
-  return Object.values(updatesByQuery).map((group) => {
-    const u: UpdateSearch = {
-      query: group[0].payload.query,
-      type: group[0].payload.type ?? SearchType.Item,
-      incrementUsed: 0,
-      deleted: false,
-    };
-    for (const update of group) {
-      if (update.action === 'save_search') {
-        u.deleted = false;
-        u.saved = update.payload.saved;
-      } else if (update.action === 'delete_search') {
-        u.deleted = true;
-        u.incrementUsed = 0;
-      } else {
-        u.deleted = false;
-        u.incrementUsed++;
-      }
-    }
-    return u;
-  });
-}
-
 async function settingsUpdates(
   group: SettingUpdate[],
   bungieMembershipId: number,
-  txn?: Transaction,
-  client?: ClientBase,
+  client: ClientBase,
 ) {
   // The DIM reducer already combines settings updates, but just in case...
   let mergedSettings: Partial<Settings> = group.shift()!.payload;
@@ -854,44 +641,5 @@ async function settingsUpdates(
     mergedSettings = { ...mergedSettings, ...update.payload };
   }
 
-  // TODO: Remove the check for settings in Postgres once we're fully migrated off Stately
-  const pgSettings = await (client
-    ? getSettings(client, bungieMembershipId)
-    : readTransaction((client) => getSettings(client, bungieMembershipId)));
-  if (pgSettings) {
-    await (client
-      ? setSettingInPostgres(client, bungieMembershipId, mergedSettings)
-      : transaction(async (client) => {
-          await setSettingInPostgres(client, bungieMembershipId, mergedSettings);
-        }));
-  } else {
-    const statelySettings = await (txn
-      ? getSettingsForUpdate(txn, bungieMembershipId)
-      : getSettingsStately(bungieMembershipId));
-    if (statelySettings) {
-      mergedSettings = { ...statelySettings, ...mergedSettings };
-      await (client
-        ? replaceSettings(
-            client,
-            bungieMembershipId,
-            subtractObject(mergedSettings, defaultSettings),
-          )
-        : transaction(async (client) => {
-            replaceSettings(
-              client,
-              bungieMembershipId,
-              subtractObject(mergedSettings, defaultSettings),
-            );
-          }));
-      await (txn
-        ? txn.del(keyFor(bungieMembershipId))
-        : statelyClient.del(keyFor(bungieMembershipId)));
-    } else {
-      await (client
-        ? setSettingInPostgres(client, bungieMembershipId, mergedSettings)
-        : transaction(async (client) => {
-            await setSettingInPostgres(client, bungieMembershipId, mergedSettings);
-          }));
-    }
-  }
+  await setSettingInPostgres(client, bungieMembershipId, mergedSettings);
 }

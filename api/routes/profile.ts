@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { ListToken } from '@stately-cloud/client';
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import { readTransaction } from '../db/index.js';
@@ -12,9 +11,8 @@ import {
   syncItemHashTagsForProfile,
 } from '../db/item-hash-tags-queries.js';
 import { getLoadoutsForProfile, syncLoadoutsForProfile } from '../db/loadouts-queries.js';
-import { getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { getSearchesForProfile, syncSearchesForProfile } from '../db/searches-queries.js';
-import { getSettings } from '../db/settings-queries.js';
+import { getSettings, syncSettings } from '../db/settings-queries.js';
 import {
   getTrackedTriumphsForProfile,
   syncTrackedTriumphsForProfile,
@@ -26,8 +24,6 @@ import { ProfileResponse } from '../shapes/profile.js';
 import { Search, SearchType } from '../shapes/search.js';
 import { defaultSettings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { getProfile, syncProfile } from '../stately/bulk-queries.js';
-import { querySettings, syncSettings } from '../stately/settings-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
 type ProfileComponent = 'settings' | 'loadouts' | 'tags' | 'hashtags' | 'triumphs' | 'searches';
@@ -224,21 +220,15 @@ async function loadProfile(
   destinyVersion: DestinyVersion,
   incomingSyncTokens?: { [component: string]: Buffer | number },
 ) {
-  let response: ProfileResponse = {
+  const response: ProfileResponse = {
     sync: Boolean(incomingSyncTokens),
   };
   const timerPrefix = response.sync ? 'profileSync' : 'profileStately';
   const counterPrefix = response.sync ? 'sync' : 'stately';
-  const syncTokens: { [component: string]: string | number } = {};
-  const addSyncToken = (
-    name: string,
-    token: ListToken | { canSync: boolean; tokenData: number },
-  ) => {
+  const syncTokens: { [component: string]: number } = {};
+  const addSyncToken = (name: string, token: { canSync: boolean; tokenData: number }) => {
     if (token.canSync) {
-      syncTokens[name] =
-        token.tokenData instanceof Uint8Array
-          ? Buffer.from(token.tokenData).toString('base64')
-          : token.tokenData;
+      syncTokens[name] = token.tokenData;
     }
   };
   const getSyncToken = <T extends number | Buffer>(name: string) => {
@@ -256,55 +246,38 @@ async function loadProfile(
     // TODO: should settings be stored under profile too?? maybe primary profile ID?
     promises.push(
       (async () => {
-        // Load settings from Postgres. If they're there, you're done. Otherwise load from Stately.
         const start = new Date();
-
         const now = Date.now();
+        const tokenData = getSyncToken<number>('s');
         // TODO: Should add the token to the query to avoid fetching if unchanged
         const pgSettings = await readTransaction(async (pgClient) =>
-          getSettings(pgClient, bungieMembershipId),
+          tokenData
+            ? syncSettings(pgClient, bungieMembershipId, tokenData)
+            : getSettings(pgClient, bungieMembershipId),
         );
-        if (pgSettings) {
-          const tokenData = getSyncToken<number>('s');
-          if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
-            response.settings = { ...defaultSettings, ...pgSettings.settings };
-          }
-          addSyncToken('s', { canSync: true, tokenData: now });
-        } else {
-          const tokenData = getSyncToken<Buffer>('settings');
-          const { settings: storedSettings, token: settingsToken } = tokenData
-            ? await syncSettings(tokenData)
-            : await querySettings(bungieMembershipId);
-          response.settings = storedSettings;
-          addSyncToken('settings', settingsToken);
+        if (
+          tokenData === undefined ||
+          (pgSettings !== undefined && pgSettings.lastModifiedAt > tokenData)
+        ) {
+          response.settings = { ...defaultSettings, ...pgSettings?.settings };
         }
+        addSyncToken('s', { canSync: true, tokenData: now });
 
         metrics.timing(`${timerPrefix}.settings`, start);
       })(),
     );
   }
 
-  let loadFromPostgres = false;
   if (
-    platformMembershipId &&
     (['loadouts', 'tags', 'hashtags', 'triumphs', 'searches'] as const).some((c) =>
       components.includes(c),
     )
   ) {
-    const { state: migrationState } = await readTransaction(async (client) =>
-      getMigrationState(client, platformMembershipId),
-    );
-
-    if (migrationState === MigrationState.Postgres) {
-      loadFromPostgres = true;
-    }
-  }
-
-  if (loadFromPostgres) {
     if (!platformMembershipId) {
       badRequest(res, `Need a platformMembershipId to return ${components.join(', ')}`);
       return;
     }
+
     promises.push(
       (async () => {
         const now = Date.now();
@@ -446,71 +419,6 @@ async function loadProfile(
         });
       })(),
     );
-  } else {
-    // Special case: DIM wants everything, so we can get it in a single query
-    if (
-      platformMembershipId &&
-      (['loadouts', 'tags', 'hashtags', 'triumphs', 'searches'] as const).every((c) =>
-        components.includes(c),
-      )
-    ) {
-      // Replace the individual components with a bulk fetch
-      components = components.includes('settings') ? ['settings', 'p'] : ['p'];
-    }
-
-    const loadComponent = (
-      name: Exclude<ProfileComponent, 'settings'> | 'p',
-      suffix: string,
-      handleEmpty: () => void,
-    ) => {
-      if (components.includes(name)) {
-        if (!platformMembershipId) {
-          badRequest(res, `Need a platformMembershipId to return ${name}`);
-          return;
-        }
-        promises.push(
-          (async () => {
-            const start = new Date();
-            const tokenData = getSyncToken<Buffer>(name);
-            const { profile, token } = tokenData
-              ? await syncProfile(tokenData)
-              : await getProfile(platformMembershipId, destinyVersion, suffix);
-            response = { ...response, ...profile };
-            if (!tokenData) {
-              handleEmpty();
-            }
-            addSyncToken(name, token);
-            metrics.timing(`${timerPrefix}.${name}`, start);
-          })(),
-        );
-      }
-    };
-
-    loadComponent('p', '', () => {
-      response.loadouts ??= [];
-      response.searches ??= [];
-      response.tags ??= [];
-      response.itemHashTags ??= [];
-      response.triumphs ??= [];
-      response.searches ??= [];
-    });
-    loadComponent('loadouts', '/loadout', () => {
-      response.loadouts ??= [];
-    });
-    loadComponent('tags', '/ia', () => {
-      response.tags ??= [];
-    });
-    if (destinyVersion === 2) {
-      loadComponent('hashtags', '/iht', () => {
-        response.itemHashTags ??= [];
-      });
-    }
-    loadComponent('triumphs', '/triumph', () => {
-      response.triumphs ??= [];
-    });
-    loadComponent('searches', '/search', () => {
-      response.searches ??= [];
-    });
   }
 
   await Promise.all(promises);

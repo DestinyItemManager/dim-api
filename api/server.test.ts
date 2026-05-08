@@ -5,11 +5,8 @@ import { makeFetch } from 'supertest-fetch';
 import { promisify } from 'util';
 import { v4 as uuid } from 'uuid';
 import { refreshApps, stopAppsRefresh } from './apps/index.js';
-import { setGlobalSettings } from './db/global-settings-queries.js';
 import { closeDbPool, transaction } from './db/index.js';
 import { MigrationState, setMigrationStateForTest } from './db/migration-state-queries.js';
-import { replaceSettings as replaceSettingsPostgres } from './db/settings-queries.js';
-import { extractImportData } from './routes/import.js';
 import { app } from './server.js';
 import { ApiApp } from './shapes/app.js';
 import { DeleteAllResponse } from './shapes/delete-all.js';
@@ -21,47 +18,11 @@ import { Loadout, LoadoutItem } from './shapes/loadouts.js';
 import { ProfileResponse, ProfileUpdateRequest, ProfileUpdateResponse } from './shapes/profile.js';
 import { SearchType } from './shapes/search.js';
 import { defaultSettings } from './shapes/settings.js';
-import { statelyImport } from './stately/bulk-queries.js';
 
 const fetch = makeFetch(app);
 
 // Test backend configurations
 const backendConfigs = [
-  {
-    backend: 'Stately',
-    state: MigrationState.Stately,
-    bungieMembershipId: 1234,
-    platformMembershipId: '4611686018433092312',
-    async setup() {
-      await transaction(async (client) => {
-        await setMigrationStateForTest(
-          client,
-          this.platformMembershipId,
-          this.bungieMembershipId,
-          this.state,
-        );
-        await replaceSettingsPostgres(client, this.bungieMembershipId, defaultSettings);
-      });
-    },
-    importer: async () => {
-      const file = JSON.parse(
-        (await promisify(readFile)('./dim-data.json')).toString(),
-      ) as ExportResponse;
-
-      const data = extractImportData(file);
-
-      await statelyImport(
-        1234,
-        ['4611686018433092312'],
-        data.settings,
-        data.loadouts,
-        data.itemAnnotations,
-        data.triumphs,
-        data.searches,
-        data.itemHashTags,
-      );
-    },
-  },
   {
     backend: 'Postgres',
     state: MigrationState.Postgres,
@@ -88,19 +49,6 @@ beforeAll(async () => {
   testApiKey = appResponse.dimApiKey;
   expect(testApiKey).toBeDefined();
   await refreshApps();
-
-  // Make sure we have global settings in Stately
-  for (const stage of ['dev', 'beta', 'app']) {
-    await setGlobalSettings(stage, {
-      dimApiEnabled: true,
-      destinyProfileMinimumRefreshInterval: 15,
-      destinyProfileRefreshInterval: 120,
-      autoRefresh: true,
-      refreshProfileOnVisible: true,
-      dimProfileMinimumRefreshInterval: 600,
-      showIssueBanner: false,
-    });
-  }
 });
 
 afterAll(async () => {
@@ -199,7 +147,7 @@ describe.each(backendConfigs)('$backend backend', (backend) => {
 
   describe('profile', () => {
     // Applies only to tests in this describe block
-    beforeEach(backend.importer ?? importData);
+    beforeEach(importData);
 
     it('can retrieve all profile data', async () => {
       const profileResponse = (await getRequestAuthed(
