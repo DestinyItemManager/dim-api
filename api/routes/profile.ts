@@ -268,151 +268,158 @@ async function loadProfile(
     );
   }
 
-  if (!platformMembershipId) {
-    badRequest(res, `Need a platformMembershipId to return ${components.join(', ')}`);
-    return;
+  if (
+    (['loadouts', 'tags', 'hashtags', 'triumphs', 'searches'] as const).some((c) =>
+      components.includes(c),
+    )
+  ) {
+    if (!platformMembershipId) {
+      badRequest(res, `Need a platformMembershipId to return ${components.join(', ')}`);
+      return;
+    }
+
+    promises.push(
+      (async () => {
+        const now = Date.now();
+        await readTransaction(async (client) => {
+          // TODO: Special case: DIM wants everything, so we can get it in a single query
+
+          if (components.includes('loadouts')) {
+            const start = new Date();
+            const tokenData = getSyncToken<number>('loadouts');
+            if (tokenData) {
+              const { updated, deletedLoadoutIds } = await syncLoadoutsForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+                tokenData,
+              );
+              if (updated.length) {
+                response.loadouts = updated;
+              }
+              if (deletedLoadoutIds.length) {
+                response.deletedLoadoutIds = deletedLoadoutIds;
+              }
+            } else {
+              const loadouts = await getLoadoutsForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+              );
+              response.loadouts = loadouts;
+            }
+            addSyncToken('loadouts', {
+              canSync: true,
+              tokenData: now,
+            });
+            metrics.timing(`${timerPrefix}.loadouts`, start);
+          }
+
+          if (components.includes('tags')) {
+            const start = new Date();
+            const tokenData = getSyncToken<number>('tags');
+            if (tokenData) {
+              const { updated, deletedItemIds } = await syncItemAnnotationsForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+                tokenData,
+              );
+              if (updated.length) {
+                response.tags = updated;
+              }
+              if (deletedItemIds.length) {
+                response.deletedTagsIds = deletedItemIds;
+              }
+            } else {
+              const tags = await getItemAnnotationsForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+              );
+              response.tags = tags;
+            }
+            addSyncToken('tags', { canSync: true, tokenData: now });
+            metrics.timing(`${timerPrefix}.tags`, start);
+          }
+
+          if (components.includes('hashtags')) {
+            const start = new Date();
+            const tokenData = getSyncToken<number>('hashtags');
+            if (tokenData) {
+              const { updated, deletedItemHashes } = await syncItemHashTagsForProfile(
+                client,
+                platformMembershipId,
+                tokenData,
+              );
+              if (updated.length) {
+                response.itemHashTags = updated;
+              }
+              if (deletedItemHashes.length) {
+                response.deletedItemHashTagHashes = deletedItemHashes;
+              }
+            } else {
+              const tags = await getItemHashTagsForProfile(client, platformMembershipId);
+              response.itemHashTags = tags;
+            }
+            addSyncToken('hashtags', { canSync: true, tokenData: now });
+            metrics.timing(`${timerPrefix}.hashtags`, start);
+          }
+
+          if (components.includes('triumphs') && destinyVersion === 2) {
+            const start = new Date();
+            const tokenData = getSyncToken<number>('triumphs');
+            if (tokenData) {
+              const { updated, deleted } = await syncTrackedTriumphsForProfile(
+                client,
+                platformMembershipId,
+                tokenData,
+              );
+              if (updated.length) {
+                response.triumphs = updated;
+              }
+              if (deleted.length) {
+                response.deletedTriumphs = deleted;
+              }
+            } else {
+              const triumphs = await getTrackedTriumphsForProfile(client, platformMembershipId);
+              response.triumphs = triumphs;
+            }
+            addSyncToken('triumphs', { canSync: true, tokenData: now });
+            metrics.timing(`${timerPrefix}.triumphs`, start);
+          }
+
+          if (components.includes('searches')) {
+            const start = new Date();
+            const tokenData = getSyncToken<number>('searches');
+            if (tokenData) {
+              const { updated, deletedSearchHashes } = await syncSearchesForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+                tokenData,
+              );
+              if (updated.length) {
+                response.searches = updated;
+              }
+              if (deletedSearchHashes.length) {
+                response.deletedSearchHashes = deletedSearchHashes;
+              }
+            } else {
+              const searches = await getSearchesForProfile(
+                client,
+                platformMembershipId,
+                destinyVersion,
+              );
+              response.searches = searches;
+            }
+            addSyncToken('searches', { canSync: true, tokenData: now });
+            metrics.timing(`${timerPrefix}.searches`, start);
+          }
+        });
+      })(),
+    );
   }
-  promises.push(
-    (async () => {
-      const now = Date.now();
-      await readTransaction(async (client) => {
-        // TODO: Special case: DIM wants everything, so we can get it in a single query
-
-        if (components.includes('loadouts')) {
-          const start = new Date();
-          const tokenData = getSyncToken<number>('loadouts');
-          if (tokenData) {
-            const { updated, deletedLoadoutIds } = await syncLoadoutsForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-              tokenData,
-            );
-            if (updated.length) {
-              response.loadouts = updated;
-            }
-            if (deletedLoadoutIds.length) {
-              response.deletedLoadoutIds = deletedLoadoutIds;
-            }
-          } else {
-            const loadouts = await getLoadoutsForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-            );
-            response.loadouts = loadouts;
-          }
-          addSyncToken('loadouts', {
-            canSync: true,
-            tokenData: now,
-          });
-          metrics.timing(`${timerPrefix}.loadouts`, start);
-        }
-
-        if (components.includes('tags')) {
-          const start = new Date();
-          const tokenData = getSyncToken<number>('tags');
-          if (tokenData) {
-            const { updated, deletedItemIds } = await syncItemAnnotationsForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-              tokenData,
-            );
-            if (updated.length) {
-              response.tags = updated;
-            }
-            if (deletedItemIds.length) {
-              response.deletedTagsIds = deletedItemIds;
-            }
-          } else {
-            const tags = await getItemAnnotationsForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-            );
-            response.tags = tags;
-          }
-          addSyncToken('tags', { canSync: true, tokenData: now });
-          metrics.timing(`${timerPrefix}.tags`, start);
-        }
-
-        if (components.includes('hashtags')) {
-          const start = new Date();
-          const tokenData = getSyncToken<number>('hashtags');
-          if (tokenData) {
-            const { updated, deletedItemHashes } = await syncItemHashTagsForProfile(
-              client,
-              platformMembershipId,
-              tokenData,
-            );
-            if (updated.length) {
-              response.itemHashTags = updated;
-            }
-            if (deletedItemHashes.length) {
-              response.deletedItemHashTagHashes = deletedItemHashes;
-            }
-          } else {
-            const tags = await getItemHashTagsForProfile(client, platformMembershipId);
-            response.itemHashTags = tags;
-          }
-          addSyncToken('hashtags', { canSync: true, tokenData: now });
-          metrics.timing(`${timerPrefix}.hashtags`, start);
-        }
-
-        if (components.includes('triumphs') && destinyVersion === 2) {
-          const start = new Date();
-          const tokenData = getSyncToken<number>('triumphs');
-          if (tokenData) {
-            const { updated, deleted } = await syncTrackedTriumphsForProfile(
-              client,
-              platformMembershipId,
-              tokenData,
-            );
-            if (updated.length) {
-              response.triumphs = updated;
-            }
-            if (deleted.length) {
-              response.deletedTriumphs = deleted;
-            }
-          } else {
-            const triumphs = await getTrackedTriumphsForProfile(client, platformMembershipId);
-            response.triumphs = triumphs;
-          }
-          addSyncToken('triumphs', { canSync: true, tokenData: now });
-          metrics.timing(`${timerPrefix}.triumphs`, start);
-        }
-
-        if (components.includes('searches')) {
-          const start = new Date();
-          const tokenData = getSyncToken<number>('searches');
-          if (tokenData) {
-            const { updated, deletedSearchHashes } = await syncSearchesForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-              tokenData,
-            );
-            if (updated.length) {
-              response.searches = updated;
-            }
-            if (deletedSearchHashes.length) {
-              response.deletedSearchHashes = deletedSearchHashes;
-            }
-          } else {
-            const searches = await getSearchesForProfile(
-              client,
-              platformMembershipId,
-              destinyVersion,
-            );
-            response.searches = searches;
-          }
-          addSyncToken('searches', { canSync: true, tokenData: now });
-          metrics.timing(`${timerPrefix}.searches`, start);
-        }
-      });
-    })(),
-  );
 
   await Promise.all(promises);
 

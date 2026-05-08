@@ -39,7 +39,7 @@ export async function syncSettings(
     deleted_at: Date | null;
     last_updated_at: Date;
   }>({
-    name: 'get_settings',
+    name: 'sync_settings',
     text: 'SELECT settings, deleted_at, last_updated_at FROM settings WHERE membership_id = $1 and last_updated_at > $2',
     values: [bungieMembershipId, new Date(syncTimestamp)],
   });
