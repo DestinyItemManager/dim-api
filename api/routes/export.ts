@@ -4,17 +4,12 @@ import { readTransaction } from '../db/index.js';
 import { getItemAnnotationsForProfile } from '../db/item-annotations-queries.js';
 import { getItemHashTagsForProfile } from '../db/item-hash-tags-queries.js';
 import { getLoadoutsForProfile } from '../db/loadouts-queries.js';
-import { getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { getSearchesForProfile } from '../db/searches-queries.js';
 import { getSettings as getSettingsFromPostgres } from '../db/settings-queries.js';
 import { getTrackedTriumphsForProfile } from '../db/triumphs-queries.js';
 import { ExportResponse } from '../shapes/export.js';
 import { DestinyVersion } from '../shapes/general.js';
-import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { exportDataForProfile } from '../stately/bulk-queries.js';
-import { getSettings } from '../stately/settings-queries.js';
-import { subtractObject } from '../utils.js';
 
 export const exportHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
@@ -31,20 +26,11 @@ export const exportHandler = asyncHandler(async (req, res) => {
   };
 
   for (const profileId of profileIds) {
-    const migrationState = await readTransaction(async (client) =>
-      getMigrationState(client, profileId),
-    );
-
-    let partialResponse: ExportResponse;
-    if (migrationState.state === MigrationState.Postgres) {
-      partialResponse = await readTransaction(async (client) => {
-        const d1Response = await pgExport(client, profileId, 1);
-        const d2Response = await pgExport(client, profileId, 2);
-        return mergeResponses(d1Response, d2Response);
-      });
-    } else {
-      partialResponse = await exportDataForProfile(profileId);
-    }
+    const partialResponse = await readTransaction(async (client) => {
+      const d1Response = await pgExport(client, profileId, 1);
+      const d2Response = await pgExport(client, profileId, 2);
+      return mergeResponses(d1Response, d2Response);
+    });
 
     response = mergeResponses(response, partialResponse);
   }
@@ -71,16 +57,10 @@ function mergeResponses(base: ExportResponse, addition: ExportResponse): ExportR
 export async function exportSettings(
   bungieMembershipId: number,
 ): Promise<ExportResponse['settings']> {
-  let settings: Partial<Settings>;
   const pgSettings = await readTransaction((client) =>
     getSettingsFromPostgres(client, bungieMembershipId),
   );
-  if (pgSettings) {
-    settings = pgSettings.settings;
-  } else {
-    settings = subtractObject((await getSettings(bungieMembershipId)) ?? {}, defaultSettings);
-  }
-  return settings;
+  return pgSettings?.settings ?? {};
 }
 
 export async function pgExport(

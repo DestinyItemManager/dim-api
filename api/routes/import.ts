@@ -7,7 +7,6 @@ import {
 } from '../db/item-annotations-queries.js';
 import { softDeleteAllItemHashTags, updateItemHashTag } from '../db/item-hash-tags-queries.js';
 import { softDeleteAllLoadouts, updateLoadout } from '../db/loadouts-queries.js';
-import { doMigration, getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { importSearch, softDeleteAllSearches } from '../db/searches-queries.js';
 import { replaceSettings } from '../db/settings-queries.js';
 import { softDeleteAllTrackedTriumphs, trackTriumph } from '../db/triumphs-queries.js';
@@ -18,7 +17,6 @@ import { ItemAnnotation, ItemHashTag } from '../shapes/item-annotations.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { defaultSettings, Settings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
-import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 import { badRequest, subtractObject } from '../utils.js';
 
 export const importHandler = asyncHandler(async (req, res) => {
@@ -120,25 +118,7 @@ export const importHandler = asyncHandler(async (req, res) => {
       response.itemHashTags += importResp.itemHashTags;
     };
 
-    const migrationState = await transaction(async (client) =>
-      getMigrationState(client, profileId),
-    );
-
-    if (migrationState.state === MigrationState.MigratingToPostgres) {
-      badRequest(
-        res,
-        `Unable to import data for profile ${profileId} - migration in progress. Please wait a bit and try again.`,
-      );
-      return;
-    }
-
-    if (migrationState.state === MigrationState.Stately) {
-      await doMigration(bungieMembershipId, profileId, doImport, async () =>
-        deleteAllDataForUser(bungieMembershipId, [profileId]),
-      );
-    } else {
-      await doImport();
-    }
+    await doImport();
   }
 
   // default 200 OK
