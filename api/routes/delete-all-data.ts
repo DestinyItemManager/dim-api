@@ -11,7 +11,6 @@ import { softDeleteAllTrackedTriumphs } from '../db/triumphs-queries.js';
 import { DeleteAllResponse } from '../shapes/delete-all.js';
 import { DestinyVersion } from '../shapes/general.js';
 import { UserInfo } from '../shapes/user.js';
-import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 
 /**
  * Delete My Data - this allows a user to wipe all their data from DIM storage.
@@ -19,7 +18,14 @@ import { deleteAllDataForUser } from '../stately/bulk-queries.js';
 export const deleteAllDataHandler = asyncHandler(async (req, res) => {
   const { bungieMembershipId, profileIds } = req.user as UserInfo;
 
-  let result = await deleteAllDataForUser(bungieMembershipId, profileIds);
+  let result = {
+    settings: 1,
+    loadouts: 0,
+    tags: 0,
+    itemHashTags: 0,
+    triumphs: 0,
+    searches: 0,
+  };
 
   await transaction(async (client) => {
     await deleteSettings(client, bungieMembershipId);
