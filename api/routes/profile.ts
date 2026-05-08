@@ -14,7 +14,7 @@ import {
 import { getLoadoutsForProfile, syncLoadoutsForProfile } from '../db/loadouts-queries.js';
 import { getMigrationState, MigrationState } from '../db/migration-state-queries.js';
 import { getSearchesForProfile, syncSearchesForProfile } from '../db/searches-queries.js';
-import { getSettings } from '../db/settings-queries.js';
+import { getSettings, syncSettings } from '../db/settings-queries.js';
 import {
   getTrackedTriumphsForProfile,
   syncTrackedTriumphsForProfile,
@@ -27,7 +27,6 @@ import { Search, SearchType } from '../shapes/search.js';
 import { defaultSettings } from '../shapes/settings.js';
 import { UserInfo } from '../shapes/user.js';
 import { getProfile, syncProfile } from '../stately/bulk-queries.js';
-import { querySettings, syncSettings } from '../stately/settings-queries.js';
 import { badRequest, checkPlatformMembershipId, isValidPlatformMembershipId } from '../utils.js';
 
 type ProfileComponent = 'settings' | 'loadouts' | 'tags' | 'hashtags' | 'triumphs' | 'searches';
@@ -256,28 +255,22 @@ async function loadProfile(
     // TODO: should settings be stored under profile too?? maybe primary profile ID?
     promises.push(
       (async () => {
-        // Load settings from Postgres. If they're there, you're done. Otherwise load from Stately.
         const start = new Date();
-
         const now = Date.now();
+        const tokenData = getSyncToken<number>('s');
         // TODO: Should add the token to the query to avoid fetching if unchanged
         const pgSettings = await readTransaction(async (pgClient) =>
-          getSettings(pgClient, bungieMembershipId),
+          tokenData
+            ? syncSettings(pgClient, bungieMembershipId, tokenData)
+            : getSettings(pgClient, bungieMembershipId),
         );
-        if (pgSettings) {
-          const tokenData = getSyncToken<number>('s');
-          if (tokenData === undefined || pgSettings.lastModifiedAt > tokenData) {
-            response.settings = { ...defaultSettings, ...pgSettings.settings };
-          }
-          addSyncToken('s', { canSync: true, tokenData: now });
-        } else {
-          const tokenData = getSyncToken<Buffer>('settings');
-          const { settings: storedSettings, token: settingsToken } = tokenData
-            ? await syncSettings(tokenData)
-            : await querySettings(bungieMembershipId);
-          response.settings = storedSettings;
-          addSyncToken('settings', settingsToken);
+        if (
+          tokenData === undefined ||
+          (pgSettings !== undefined && pgSettings.lastModifiedAt > tokenData)
+        ) {
+          response.settings = { ...defaultSettings, ...pgSettings?.settings };
         }
+        addSyncToken('s', { canSync: true, tokenData: now });
 
         metrics.timing(`${timerPrefix}.settings`, start);
       })(),

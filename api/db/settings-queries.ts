@@ -27,6 +27,32 @@ export async function getSettings(
 }
 
 /**
+ * Get settings for a particular account.
+ */
+export async function syncSettings(
+  client: ClientBase,
+  bungieMembershipId: number,
+  syncTimestamp: number,
+): Promise<{ settings: Partial<Settings>; deleted: boolean; lastModifiedAt: number } | undefined> {
+  const results = await client.query<{
+    settings: Partial<Settings>;
+    deleted_at: Date | null;
+    last_updated_at: Date;
+  }>({
+    name: 'get_settings',
+    text: 'SELECT settings, deleted_at, last_updated_at FROM settings WHERE membership_id = $1 and last_updated_at > $2',
+    values: [bungieMembershipId, new Date(syncTimestamp)],
+  });
+  return results.rows.length > 0
+    ? {
+        settings: results.rows[0].settings,
+        deleted: Boolean(results.rows[0].deleted_at),
+        lastModifiedAt: results.rows[0].last_updated_at.getTime(),
+      }
+    : undefined;
+}
+
+/**
  * Insert or update (upsert) an entire settings tree, totally replacing whatever's there.
  */
 export async function replaceSettings(
