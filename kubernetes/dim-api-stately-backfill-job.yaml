@@ -48,7 +48,7 @@ spec:
             - name: BACKFILL_PARALLEL_SEGMENTS
               value: '4'
             - name: BACKFILL_TOKEN_PATH
-              value: /var/lib/dim-api-backfill/backfill-token.bin
+              value: /var/lib/dim-api-backfill/backfill-token2.bin
             - name: BACKFILL_RETRY_MAX_ATTEMPTS
               value: '12'
             - name: BACKFILL_RETRY_BASE_DELAY_MS

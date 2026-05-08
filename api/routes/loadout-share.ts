@@ -13,10 +13,6 @@ import {
 } from '../shapes/loadout-share.js';
 import { Loadout } from '../shapes/loadouts.js';
 import { UserInfo } from '../shapes/user.js';
-import {
-  deleteLoadoutShare,
-  getLoadoutShare as getLoadoutShareStately,
-} from '../stately/loadout-share-queries.js';
 import slugify from './slugify.js';
 import { validateLoadout } from './update.js';
 
@@ -129,43 +125,5 @@ export async function loadLoadoutShare(shareId: string) {
     recordAccess(client, shareId),
   );
 
-  if (loadout) {
-    return loadout;
-  }
-
-  // Fall back to Stately, and backfill into Postgres if found
-  const result = await getLoadoutShareStately(shareId);
-  if (!result) {
-    return undefined;
-  }
-
-  // Backfill in Postgres
-  const backfilled = await transaction(async (client) => {
-    try {
-      await addLoadoutShare(
-        client,
-        undefined,
-        result.platformMembershipId,
-        shareId,
-        result.loadout,
-        result.viewCount,
-      );
-      return true;
-    } catch (e) {
-      // This is a unique constraint violation, give up
-      if (e instanceof DatabaseError && e.code === '23505') {
-        await client.query('ROLLBACK');
-        return false;
-      } else {
-        throw e;
-      }
-    }
-  });
-
-  if (backfilled) {
-    // Remove from Stately only if we successfully backfilled
-    await deleteLoadoutShare(shareId);
-  }
-
-  return result.loadout;
+  return loadout;
 }
