@@ -23,9 +23,6 @@ dependencies:
   '@sentry/tracing':
     specifier: ^7.120.4
     version: 7.120.4
-  '@stately-cloud/client':
-    specifier: ^0.37.0
-    version: 0.37.0
   bungie-api-ts:
     specifier: ^5.10.0
     version: 5.10.0
@@ -118,12 +115,6 @@ devDependencies:
   '@sentry/cli':
     specifier: ^2.58.2
     version: 2.58.2
-  '@stately-cloud/cli':
-    specifier: ^0.97.0
-    version: 0.97.0
-  '@stately-cloud/schema':
-    specifier: ^0.34.4
-    version: 0.34.4
   '@types/connect-pg-simple':
     specifier: ^7.0.3
     version: 7.0.3
@@ -1455,40 +1446,12 @@ packages:
 
   /@bufbuild/protobuf@2.10.1:
     resolution: {integrity: sha512-ckS3+vyJb5qGpEYv/s1OebUHDi/xSNtfgw1wqKZo7MR9F2z+qXr0q5XagafAG/9O0QPVIUfST0smluYSTpYFkg==}
+    dev: false
 
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
     dev: true
-
-  /@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.1)(@connectrpc/connect@2.1.1):
-    resolution: {integrity: sha512-s3TfsI1XF+n+1z6MBS9rTnFsxxR4Rw5wmdEnkQINli81ESGxcsfaEet8duzq8LVuuCupmhUsgpRo0Nv9pZkufg==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@bufbuild/protobuf': ^2.7.0
-      '@connectrpc/connect': 2.1.1
-    dependencies:
-      '@bufbuild/protobuf': 2.10.1
-      '@connectrpc/connect': 2.1.1(@bufbuild/protobuf@2.10.1)
-    dev: false
-
-  /@connectrpc/connect-web@2.1.1(@bufbuild/protobuf@2.10.1)(@connectrpc/connect@2.1.1):
-    resolution: {integrity: sha512-J8317Q2MaFRCT1jzVR1o06bZhDIBmU0UAzWx6xOIXzOq8+k71/+k7MUF7AwcBUX+34WIvbm5syRgC5HXQA8fOg==}
-    peerDependencies:
-      '@bufbuild/protobuf': ^2.7.0
-      '@connectrpc/connect': 2.1.1
-    dependencies:
-      '@bufbuild/protobuf': 2.10.1
-      '@connectrpc/connect': 2.1.1(@bufbuild/protobuf@2.10.1)
-    dev: false
-
-  /@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.1):
-    resolution: {integrity: sha512-JzhkaTvM73m2K1URT6tv53k2RwngSmCXLZJgK580qNQOXRzZRR/BCMfZw3h+90JpnG6XksP5bYT+cz0rpUzUWQ==}
-    peerDependencies:
-      '@bufbuild/protobuf': ^2.7.0
-    dependencies:
-      '@bufbuild/protobuf': 2.10.1
-    dev: false
 
   /@cspotcode/source-map-support@0.8.1:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -2692,34 +2655,6 @@ packages:
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
     dependencies:
       '@sinonjs/commons': 3.0.1
-    dev: true
-
-  /@stately-cloud/cli@0.97.0:
-    resolution: {integrity: sha512-9tyIKiArCRQJhIPRwXlXnBeAZftCrtvP/fKf2zGHT4cj7CDGvVDgGLUdwCdnoUJiUN+hykOF+MNO8RrmosjY2w==}
-    engines: {node: '>=20'}
-    hasBin: true
-    requiresBuild: true
-    dev: true
-
-  /@stately-cloud/client@0.37.0:
-    resolution: {integrity: sha512-ZSQoyF7UyhjSmIou7B0Keh8r2Wg0LtUYaw7Oojde8iTI2Bki/j5RYPSbZ7f9aCQogzZDo8kzkN6p/4F5QNpjJw==}
-    engines: {node: '>=20'}
-    dependencies:
-      '@bufbuild/protobuf': 2.10.1
-      '@connectrpc/connect': 2.1.1(@bufbuild/protobuf@2.10.1)
-      '@connectrpc/connect-node': 2.1.1(@bufbuild/protobuf@2.10.1)(@connectrpc/connect@2.1.1)
-      '@connectrpc/connect-web': 2.1.1(@bufbuild/protobuf@2.10.1)(@connectrpc/connect@2.1.1)
-    dev: false
-
-  /@stately-cloud/schema@0.34.4:
-    resolution: {integrity: sha512-W2stQ3h49z3QxgRoouIX8J6XPkGWdxZR9LkKK6vLkMgfjJMAiwB1FoqzwYQ82kPiB4IyU6m66mvIeNrRC3NDYw==}
-    engines: {node: '>=20'}
-    hasBin: true
-    dependencies:
-      '@bufbuild/protobuf': 2.10.1
-      fast-equals: 5.3.3
-      tsx: 4.21.0
-      typescript: 5.9.3
     dev: true
 
   /@tsconfig/node10@1.0.12:
@@ -4196,11 +4131,6 @@ packages:
 
   /fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
-    dev: true
-
-  /fast-equals@5.3.3:
-    resolution: {integrity: sha512-/boTcHZeIAQ2r/tL11voclBHDeP9WPxLt+tyAbVSyyXuUFyh0Tne7gJZTqGbxnvj79TjLdCXLOY7UIPhyG5MTw==}
-    engines: {node: '>=6.0.0'}
     dev: true
 
   /fast-json-stable-stringify@2.1.0:

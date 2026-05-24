@@ -171,7 +171,6 @@ function validateUpdates(
           dimVersion: `v${dimVersion?.replaceAll('.', '_') ?? 'Unknown'}`,
         },
       });
-      console.log('Stately failed update', update.action, result, appId);
     }
     results.push(result);
   }

@@ -4,7 +4,6 @@ import { transaction } from '../db/index.js';
 import { softDeleteAllItemAnnotations } from '../db/item-annotations-queries.js';
 import { softDeleteAllItemHashTags } from '../db/item-hash-tags-queries.js';
 import { softDeleteAllLoadouts } from '../db/loadouts-queries.js';
-import { deleteMigrationState } from '../db/migration-state-queries.js';
 import { softDeleteAllSearches } from '../db/searches-queries.js';
 import { deleteSettings } from '../db/settings-queries.js';
 import { softDeleteAllTrackedTriumphs } from '../db/triumphs-queries.js';
@@ -34,8 +33,6 @@ export const deleteAllDataHandler = asyncHandler(async (req, res) => {
       result = mergeResult(result, pgResult1);
       const pgResult2 = await deleteAllData(client, profileId, 2);
       result = mergeResult(result, pgResult2);
-
-      await deleteMigrationState(client, profileId);
     }
   });
 
