@@ -13,10 +13,8 @@
   "type": "module",
   "scripts": {
     "start": "rm -rf dist && pnpm build:api && node -r dotenv/config dist/api/index.js",
-    "build:api": "mkdir -p ./dist/api/stately/generated && cp -r ./api/stately/generated/*.js ./dist/api/stately/generated && tsc -p ./api/tsconfig.json",
+    "build:api": "tsc -p ./api/tsconfig.json",
     "deploy": "kubernetes/deploy.sh",
-    "deploy:stately-backfill": "kubernetes/deploy-stately-backfill-job.sh",
-    "deploy:migration-worker": "kubernetes/deploy-migration-worker.sh",
     "docker:build": "rm -rf dist && pnpm build:api && docker build -t destinyitemmanager/dim-api .",
     "docker:run": "docker run -p 3000:3000 destinyitemmanager/dim-api:latest",
     "docker:push": "docker push destinyitemmanager/dim-api:latest",
@@ -25,9 +23,6 @@
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --detectOpenHandles --verbose --coverage --forceExit",
     "test:watch": "jest --watch",
     "eslint-inspect": "pnpm dlx @eslint/config-inspector",
-    "generate": "stately schema generate -l js --schema-id 8030842688320564 api/stately/generated && prettier \"api/stately/**/*.{js,ts}\" --write",
-    "generate-preview": "stately schema generate -l js --preview api/stately/schema/index.ts api/stately/generated && prettier \"api/stately/**/*.{js,ts}\" --write",
-    "publish-schema": "stately schema put --allow-backwards-incompatible --schema-id 8030842688320564 api/stately/schema/index.ts && pnpm run generate",
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
@@ -41,8 +36,6 @@
     "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.3.1",
     "@sentry/cli": "^2.58.2",
-    "@stately-cloud/cli": "^0.97.0",
-    "@stately-cloud/schema": "^0.34.4",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.25",
@@ -80,7 +73,6 @@
     "@octokit/rest": "^21.0.2",
     "@sentry/node": "^7.120.4",
     "@sentry/tracing": "^7.120.4",
-    "@stately-cloud/client": "^0.37.0",
     "bungie-api-ts": "^5.10.0",
     "connect-pg-simple": "^9.0.1",
     "cors": "^2.8.5",

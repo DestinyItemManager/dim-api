@@ -22,12 +22,7 @@ export default tseslint.config(
   { name: 'sonarjs/recommended', ...sonarjs.configs.recommended },
   {
     name: 'global ignores',
-    ignores: [
-      '*.test.ts',
-      'api/migrations/*',
-      'api/stately/generated/*.js',
-      'api/test/postgres.*.mjs',
-    ],
+    ignores: ['*.test.ts', 'api/migrations/*', 'api/test/postgres.*.mjs'],
   },
   {
     name: 'dim-api-custom',

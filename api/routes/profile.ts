@@ -223,8 +223,8 @@ async function loadProfile(
   const response: ProfileResponse = {
     sync: Boolean(incomingSyncTokens),
   };
-  const timerPrefix = response.sync ? 'profileSync' : 'profileStately';
-  const counterPrefix = response.sync ? 'sync' : 'stately';
+  const timerPrefix = response.sync ? 'profileSync' : 'profileFull';
+  const counterPrefix = response.sync ? 'sync' : 'full';
   const syncTokens: { [component: string]: number } = {};
   const addSyncToken = (name: string, token: { canSync: boolean; tokenData: number }) => {
     if (token.canSync) {
