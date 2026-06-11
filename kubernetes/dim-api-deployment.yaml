@@ -46,8 +46,8 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: '100m'
-              memory: '100Mi'
+              cpu: '140m'
+              memory: '110Mi'
           env:
             - name: PGPASSWORD
               valueFrom:
