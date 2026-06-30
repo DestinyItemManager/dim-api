@@ -185,12 +185,11 @@ function extractSyncToken(syncTokenParam: string | undefined) {
 
     try {
       const tokenMap = JSON.parse(syncTokenParam) as { [component: string]: string | number };
-      const tokens = Object.entries(tokenMap).reduce<{ [component: string]: Buffer | number }>(
+      const tokens = Object.entries(tokenMap).reduce<{ [component: string]: number }>(
         (acc, [component, token]) => {
-          acc[component] =
-            typeof token === 'string' && !/^\d+$/.exec(token)
-              ? Buffer.from(token, 'base64')
-              : Number(token);
+          if (typeof token === 'number' || (typeof token === 'string' && /^\d+$/.exec(token))) {
+            acc[component] = Number(token);
+          }
           return acc;
         },
         {},
@@ -198,8 +197,7 @@ function extractSyncToken(syncTokenParam: string | undefined) {
 
       if (
         Object.values(tokens).some(
-          (t) =>
-            typeof t === 'number' && Date.now() - new Date(t).getTime() > 30 * 24 * 60 * 60 * 1000,
+          (t) => Date.now() - new Date(t).getTime() > 30 * 24 * 60 * 60 * 1000,
         )
       ) {
         return undefined; // Don't accept sync tokens older than 30 days
@@ -218,7 +216,7 @@ async function loadProfile(
   bungieMembershipId: number,
   platformMembershipId: string | undefined,
   destinyVersion: DestinyVersion,
-  incomingSyncTokens?: { [component: string]: Buffer | number },
+  incomingSyncTokens?: { [component: string]: number },
 ) {
   const response: ProfileResponse = {
     sync: Boolean(incomingSyncTokens),
@@ -231,12 +229,12 @@ async function loadProfile(
       syncTokens[name] = token.tokenData;
     }
   };
-  const getSyncToken = <T extends number | Buffer>(name: string) => {
+  const getSyncToken = (name: string) => {
     const tokenData = incomingSyncTokens?.[name];
     // if (incomingSyncTokens && !tokenData) {
     //   throw new Error(`Missing sync token: ${name}`);
     // }
-    return tokenData as T | undefined;
+    return tokenData;
   };
 
   // We'll accumulate promises and await them all at the end
@@ -248,7 +246,7 @@ async function loadProfile(
       (async () => {
         const start = new Date();
         const now = Date.now();
-        const tokenData = getSyncToken<number>('s');
+        const tokenData = getSyncToken('s');
         // TODO: Should add the token to the query to avoid fetching if unchanged
         const pgSettings = await readTransaction(async (pgClient) =>
           tokenData
@@ -286,7 +284,7 @@ async function loadProfile(
 
           if (components.includes('loadouts')) {
             const start = new Date();
-            const tokenData = getSyncToken<number>('loadouts');
+            const tokenData = getSyncToken('loadouts');
             if (tokenData) {
               const { updated, deletedLoadoutIds } = await syncLoadoutsForProfile(
                 client,
@@ -317,7 +315,7 @@ async function loadProfile(
 
           if (components.includes('tags')) {
             const start = new Date();
-            const tokenData = getSyncToken<number>('tags');
+            const tokenData = getSyncToken('tags');
             if (tokenData) {
               const { updated, deletedItemIds } = await syncItemAnnotationsForProfile(
                 client,
@@ -345,7 +343,7 @@ async function loadProfile(
 
           if (components.includes('hashtags')) {
             const start = new Date();
-            const tokenData = getSyncToken<number>('hashtags');
+            const tokenData = getSyncToken('hashtags');
             if (tokenData) {
               const { updated, deletedItemHashes } = await syncItemHashTagsForProfile(
                 client,
@@ -368,7 +366,7 @@ async function loadProfile(
 
           if (components.includes('triumphs') && destinyVersion === 2) {
             const start = new Date();
-            const tokenData = getSyncToken<number>('triumphs');
+            const tokenData = getSyncToken('triumphs');
             if (tokenData) {
               const { updated, deleted } = await syncTrackedTriumphsForProfile(
                 client,
@@ -391,7 +389,7 @@ async function loadProfile(
 
           if (components.includes('searches')) {
             const start = new Date();
-            const tokenData = getSyncToken<number>('searches');
+            const tokenData = getSyncToken('searches');
             if (tokenData) {
               const { updated, deletedSearchHashes } = await syncSearchesForProfile(
                 client,
