@@ -4,13 +4,11 @@ import { metrics } from '../metrics/index.js';
 // pools will use environment variables
 // for connection information (from .env or a ConfigMap)
 export const pool = new pg.Pool({
-  max: 8,
+  max: 4,
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 500,
-  // Statement timeout is at the Postgres side, times out any individual query
-  // statement_timeout: 750, // TODO: doesn't work with pgbouncer?
   // Query timeout is on the NodeJS side, it times out the an operation on the client
-  query_timeout: 1000,
+  query_timeout: 2000,
 });
 
 pool.on('connect', () => {
@@ -45,6 +43,7 @@ export async function transaction<T>(fn: (client: ClientBase) => Promise<T>) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await client.query("SET LOCAL statement_timeout = '2s';");
 
     const result = await fn(client);
 
@@ -65,11 +64,11 @@ export async function transaction<T>(fn: (client: ClientBase) => Promise<T>) {
 export async function readTransaction<T>(fn: (client: ClientBase) => Promise<T>) {
   const client = await pool.connect();
   try {
-    // We used to wrap multiple reads in a transaction but I'm not sure it matters all that much.
-    // await client.query('BEGIN');
+    await client.query('BEGIN');
+    await client.query("SET LOCAL statement_timeout = '2s';");
     return await fn(client);
   } finally {
-    // await client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     client.release();
   }
 }
