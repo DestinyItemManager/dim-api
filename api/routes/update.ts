@@ -118,47 +118,47 @@ function validateUpdates(
         status: 'InvalidArgument',
         message: `${update.action} requires platform membership ID to be set`,
       };
-    }
+    } else {
+      switch (update.action) {
+        case 'tag_cleanup':
+        case 'delete_loadout':
+        case 'track_triumph':
+        case 'delete_search':
+          // no special validation
+          break;
 
-    switch (update.action) {
-      case 'tag_cleanup':
-      case 'delete_loadout':
-      case 'track_triumph':
-      case 'delete_search':
-        // no special validation
-        break;
+        case 'setting':
+          result = validateUpdateSettings(update.payload);
+          break;
 
-      case 'setting':
-        result = validateUpdateSettings(update.payload);
-        break;
+        case 'loadout':
+          result = validateUpdateLoadout(update.payload);
+          break;
 
-      case 'loadout':
-        result = validateUpdateLoadout(update.payload);
-        break;
+        case 'tag':
+          result = validateUpdateItemAnnotation(update.payload);
+          break;
 
-      case 'tag':
-        result = validateUpdateItemAnnotation(update.payload);
-        break;
+        case 'item_hash_tag':
+          result = validateUpdateItemHashTag(update.payload);
+          break;
 
-      case 'item_hash_tag':
-        result = validateUpdateItemHashTag(update.payload);
-        break;
+        case 'search':
+        case 'save_search':
+          result = validateSearch(update.payload);
+          break;
 
-      case 'search':
-      case 'save_search':
-        result = validateSearch(update.payload);
-        break;
-
-      default:
-        console.warn(
-          `Unknown action type: ${(update as { action: string }).action} from ${appId}, ${req.header(
-            'User-Agent',
-          )}, ${req.header('Referer')}`,
-        );
-        result = {
-          status: 'InvalidArgument',
-          message: `Unknown action type: ${(update as { action: string }).action}`,
-        };
+        default:
+          console.warn(
+            `Unknown action type: ${(update as { action: string }).action} from ${appId}, ${req.header(
+              'User-Agent',
+            )}, ${req.header('Referer')}`,
+          );
+          result = {
+            status: 'InvalidArgument',
+            message: `Unknown action type: ${(update as { action: string }).action}`,
+          };
+      }
     }
     if (result.status !== 'Success') {
       const dimVersion = req.headers['x-dim-version']?.[0];

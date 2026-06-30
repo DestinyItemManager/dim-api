@@ -6,7 +6,7 @@ import { metrics } from '../metrics/index.js';
 export const pool = new pg.Pool({
   max: 4,
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
-  connectionTimeoutMillis: 500,
+  connectionTimeoutMillis: 1000,
   // Query timeout is on the NodeJS side, it times out the an operation on the client
   query_timeout: 2000,
 });
