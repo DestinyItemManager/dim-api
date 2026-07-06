@@ -28,7 +28,7 @@ jobs:
 
       - name: pnpm setup
         if: steps.check.outputs.changed == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
         if: steps.check.outputs.changed == 'true'
