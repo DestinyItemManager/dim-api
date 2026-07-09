@@ -8,7 +8,7 @@ export const pool = new pg.Pool({
   ssl: process.env.PGSSL ? process.env.PGSSL === 'true' : { rejectUnauthorized: false },
   connectionTimeoutMillis: 1000,
   // Query timeout is on the NodeJS side, it times out the an operation on the client
-  query_timeout: 2000,
+  query_timeout: 2500,
 });
 
 pool.on('connect', () => {
