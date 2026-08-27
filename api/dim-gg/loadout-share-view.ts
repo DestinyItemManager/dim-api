@@ -32,7 +32,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
 
   const numMods = loadout.parameters?.mods?.length ?? 0;
   const hasFashion = Boolean(loadout.parameters?.modsByBucket);
-  const hasSubclass = loadout.equipped.some((i) => i.socketOverrides);
+  const overrideCount = loadout.equipped.filter((i) => i.socketOverrides).length;
   const hasLoParams =
     loadout.parameters &&
     (loadout.parameters.query ||
@@ -40,7 +40,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
       loadout.parameters.statConstraints?.some(
         (s) => s.maxTier !== undefined || s.minTier !== undefined,
       ));
-  const numItems = loadout.equipped.length + loadout.unequipped.length - (hasSubclass ? 1 : 0);
+  const numItems = loadout.equipped.length + loadout.unequipped.length - overrideCount;
 
   const description = loadout.notes
     ? loadout.notes.length > 197
@@ -56,7 +56,7 @@ export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
     betaShareUrl,
     numMods,
     hasFashion,
-    hasSubclass,
+    hasOverrides: overrideCount > 0,
     hasLoParams,
     description,
     numItems,
