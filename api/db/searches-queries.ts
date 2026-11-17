@@ -85,7 +85,7 @@ export async function updateUsedSearch(
     name: 'upsert_search',
     text: `insert INTO searches (membership_id, platform_membership_id, destiny_version, query, search_type)
 values ($1, $2, $3, $4, $5)
-on conflict (platform_membership_id, destiny_version, qhash)
+on conflict (platform_membership_id, qhash, destiny_version)
 do update set
   usage_count = CASE WHEN searches.deleted_at IS NOT NULL THEN 1 ELSE searches.usage_count + 1 END,
   last_used = current_timestamp,
