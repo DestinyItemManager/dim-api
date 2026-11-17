@@ -5,7 +5,7 @@ import express from 'express';
 import http from 'http';
 import morgan from 'morgan';
 import vhost from 'vhost';
-import { refreshApps, stopAppsRefresh } from './apps/index.js';
+import { getAppsLastRefreshed, refreshApps, stopAppsRefresh } from './apps/index.js';
 import { closeDbPool } from './db/index.js';
 import { app as dimGgApp } from './dim-gg/server.js';
 import { metrics } from './metrics/index.js';
@@ -114,7 +114,8 @@ function beforeShutdown() {
 }
 
 async function healthCheck() {
-  return;
+  // Unhealthy if apps haven't been refreshed in the last 10 minutes
+  return Date.now() - getAppsLastRefreshed() < 600_000;
 }
 createTerminus(server, {
   healthChecks: {

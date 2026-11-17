@@ -42,6 +42,7 @@ let apps: ApiApp[] = [];
 let appsByApiKey: { [apiKey: string]: ApiApp };
 let origins = new Set<string>();
 let appsInterval: NodeJS.Timeout | null = null;
+let appsLastRefreshed: number | null = null;
 
 export function stopAppsRefresh() {
   if (appsInterval) {
@@ -92,4 +93,9 @@ function digestApps() {
   for (const app of apps) {
     origins.add(app.origin);
   }
+  appsLastRefreshed = Date.now();
+}
+
+export function getAppsLastRefreshed() {
+  return appsLastRefreshed ?? 0;
 }
