@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals';
 import { camelize } from './utils.js';
 
 describe('camelize', () => {

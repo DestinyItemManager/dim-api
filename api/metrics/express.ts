@@ -53,7 +53,7 @@ export default function expressStatsd({
 function sanitize(routeName: string) {
   return routeName
     .replace(/[:?]/g, '')
-    .replace(/\(.*?\)/g, '')
+    .replace(/\([^()]*\)/g, '')
     .replace(/^\/|\/$/g, '')
     .replace(/\//g, '_');
 }

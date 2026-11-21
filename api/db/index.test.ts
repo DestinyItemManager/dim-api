@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { closeDbPool, pool, readTransaction, transaction } from './index.js';
 
 beforeEach(async () => {
@@ -31,13 +32,13 @@ describe('transaction', () => {
         await client.query("insert into transaction_test (id, test) values (2, 'testing')");
         throw new Error('oops');
       });
-      fail('should have thrown an error');
+      throw new Error('should have thrown an error');
     } catch (e) {
       expect((e as Error).message).toBe('oops');
     }
 
     const result = await pool.query<TransactionTestRow>('select * from transaction_test');
-    expect(result.rows.length).toBe(1);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0].id).toBe(1);
   });
 
@@ -47,7 +48,7 @@ describe('transaction', () => {
     });
 
     const result = await pool.query<TransactionTestRow>('select * from transaction_test');
-    expect(result.rows.length).toBe(1);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0].test).toBe('testing commits');
   });
 });

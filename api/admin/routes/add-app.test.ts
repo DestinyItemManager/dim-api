@@ -3,6 +3,7 @@ process.env.GITHUB_CLIENT_ID = 'test-client-id';
 process.env.GITHUB_CLIENT_SECRET = 'test-client-secret';
 process.env.ADMIN_SESSION_SECRET = 'test-session-secret-for-testing-only';
 
+import { afterAll, beforeEach, describe, expect, it } from '@jest/globals';
 import express from 'express';
 import { resolve } from 'node:path';
 import { makeFetch } from 'supertest-fetch';
@@ -83,7 +84,7 @@ async function expectAppInDatabase(
     'SELECT * FROM apps WHERE id = $1',
     [appId],
   );
-  expect(result.rows.length).toBe(1);
+  expect(result.rows).toHaveLength(1);
   expect(result.rows[0].bungie_api_key).toBe(expectedData.bungieApiKey);
   expect(result.rows[0].origin).toBe(expectedData.origin);
 }

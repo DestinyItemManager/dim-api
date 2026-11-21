@@ -9,6 +9,7 @@ export const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', './api/dim-gg/views');
+app.disable('x-powered-by');
 
 app.use(expressStatsd({ client: metrics, prefix: 'dimgg' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
@@ -22,7 +23,7 @@ app.get('/', (_req, res) => {
 });
 
 // Loadout share preview/landing pages
-app.get('/:shareId([a-z0-9]{7})/:titleSlug?', loadoutShareViewHandler);
+app.get('/:shareId{/:titleSlug}', loadoutShareViewHandler);
 
 // Serve static files (images, JS, etc from the dim-gg-static folder
 // TODO: uniquely name these and then serve them with Cache-Control: Immutable

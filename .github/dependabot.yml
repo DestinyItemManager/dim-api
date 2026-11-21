@@ -1,15 +1,35 @@
-# Basic set up for three package managers
-
 version: 2
 updates:
-  # Maintain dependencies for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - directory: /
+    package-ecosystem: "npm"
     schedule:
       interval: "weekly"
+      time: "18:00" # UTC, = ~10AM Pacific
+    groups:
+      major:
+        update-types:
+          - major
+      minor:
+        update-types:
+          - minor
+          - patch
 
-  # Maintain dependencies for Docker
-  - package-ecosystem: "composer"
-    directory: "/"
+  - directory: /
+    package-ecosystem: "github-actions"
     schedule:
       interval: "weekly"
+      time: "18:00" # UTC, = ~10AM Pacific
+    groups:
+      major:
+        update-types:
+          - major
+      minor:
+        update-types:
+          - minor
+          - patch
+
+  - directory: /
+    package-ecosystem: "docker"
+    schedule:
+      interval: "weekly"
+      time: "18:00" # UTC, = ~10AM Pacific
