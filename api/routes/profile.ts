@@ -98,9 +98,9 @@ export const profileHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const components = (typeof req.query.components === 'string' ? req.query.components : '').split(
-    /\s*,\s*/,
-  ) as ProfileComponent[];
+  const components = (typeof req.query.components === 'string' ? req.query.components : '')
+    .split(',')
+    .map((component) => component.trim()) as ProfileComponent[];
 
   if (components.some((c) => !validComponents.has(c))) {
     badRequest(

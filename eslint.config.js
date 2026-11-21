@@ -207,6 +207,13 @@ export default tseslint.config(
       'sonarjs/prefer-immediate-return': 'off',
       'sonarjs/no-nested-switch': 'off',
       'sonarjs/no-nested-template-literals': 'off',
+      'sonarjs/redundant-type-aliases': 'off',
+      'sonarjs/todo-tag': 'off',
+      'sonarjs/deprecation': 'off',
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/function-return-type': 'off',
+      'sonarjs/pseudo-random': 'off',
+      'sonarjs/assertions-in-tests': 'off',
     },
   },
   {

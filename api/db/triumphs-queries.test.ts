@@ -46,7 +46,7 @@ it('can untrack a triumph', async () => {
     await unTrackTriumph(client, platformMembershipId, 3851137658);
 
     const triumphs = await getTrackedTriumphsForProfile(client, platformMembershipId);
-    expect(triumphs.length).toEqual(0);
+    expect(triumphs).toHaveLength(0);
   });
 });
 

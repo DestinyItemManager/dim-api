@@ -49,6 +49,7 @@ it('can record a shared loadout', async () => {
   });
 });
 
+ 
 it('rejects multiple shares with the same ID', async () => {
   await transaction(async (client) => {
     await addLoadoutShare(client, bungieMembershipId, platformMembershipId, shareID, loadout);

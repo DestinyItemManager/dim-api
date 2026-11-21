@@ -25,6 +25,7 @@ export const app = express();
 app.set('view engine', 'ejs');
 app.set('views', './api');
 app.set('trust proxy', 1); // trust first proxy
+app.disable('x-powered-by');
 
 app.use(expressStatsd({ client: metrics, prefix: 'http' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
@@ -123,11 +124,14 @@ app.use((req, _, next) => {
       }
     }
 
-    req.user = {
+    const user: UserInfo = {
       bungieMembershipId: parseInt(jwt.sub!, 10),
       dimApiKey: jwt.iss!,
       profileIds: jwt.profileIds ?? [],
     };
+    req.user = user;
+    // Sentry isolates scope per request, so this only tags the current request
+    Sentry.setUser({ id: user.bungieMembershipId.toString() });
     next();
   }
 });

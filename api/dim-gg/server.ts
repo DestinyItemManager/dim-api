@@ -9,6 +9,7 @@ export const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', './api/dim-gg/views');
+app.disable('x-powered-by');
 
 app.use(expressStatsd({ client: metrics, prefix: 'dimgg' })); // metrics
 app.use(express.json({ limit: '2mb' })); // for parsing application/json
