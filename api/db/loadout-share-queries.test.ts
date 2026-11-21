@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, expect, it } from '@jest/globals';
 import { v4 as uuid } from 'uuid';
 import { Loadout, LoadoutItem } from '../shapes/loadouts.js';
 import { closeDbPool, transaction } from './index.js';
@@ -54,7 +55,7 @@ it('rejects multiple shares with the same ID', async () => {
 
     try {
       await addLoadoutShare(client, bungieMembershipId, platformMembershipId, shareID, loadout);
-      fail('Expected this to throw an error');
+      throw new Error('Expected this to throw an error');
     } catch {}
   });
 });

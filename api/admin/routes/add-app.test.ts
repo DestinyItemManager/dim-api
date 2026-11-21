@@ -3,6 +3,7 @@ process.env.GITHUB_CLIENT_ID = 'test-client-id';
 process.env.GITHUB_CLIENT_SECRET = 'test-client-secret';
 process.env.ADMIN_SESSION_SECRET = 'test-session-secret-for-testing-only';
 
+import { afterAll, beforeEach, describe, expect, it } from '@jest/globals';
 import express from 'express';
 import { resolve } from 'node:path';
 import { makeFetch } from 'supertest-fetch';

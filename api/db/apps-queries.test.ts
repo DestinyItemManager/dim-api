@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, expect, it } from '@jest/globals';
 import { DatabaseError } from 'pg';
 import { v4 as uuid } from 'uuid';
 import { ApiApp } from '../shapes/app.js';
@@ -34,7 +35,7 @@ it('cannot create a new app with the same name as an existing one', async () => 
       await insertApp(client, app);
     } catch (e) {
       if (!(e instanceof DatabaseError)) {
-        fail('should have thrown a DatabaseError');
+        throw new Error('should have thrown a DatabaseError', { cause: e });
       }
       expect(e.code).toBe('23505');
     }

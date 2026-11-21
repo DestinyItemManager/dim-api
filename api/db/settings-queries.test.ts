@@ -1,3 +1,4 @@
+import { afterAll, expect, it } from '@jest/globals';
 import { closeDbPool, transaction } from './index.js';
 import { getSettings, setSetting } from './settings-queries.js';
 

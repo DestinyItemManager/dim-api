@@ -5,7 +5,7 @@ import { defaultGlobalSettings, GlobalSettings } from '../shapes/global-settings
 export const platformInfoHandler = asyncHandler(async (req, res) => {
   const flavor = (req.query.flavor as string) ?? 'app';
 
-  let settings: GlobalSettings | undefined = undefined;
+  let settings: GlobalSettings | undefined;
 
   const result = await getGlobalSettingsQuery(flavor);
   if (result.rowCount! > 0) {

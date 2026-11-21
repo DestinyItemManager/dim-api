@@ -15,6 +15,17 @@ const port = 3000;
 
 metrics.increment('startup.count', 1);
 
+/**
+ * Adapt an Express handler to vhost's handler type. vhost's types only promise
+ * plain Node http objects, but when vhost is mounted in an Express app the
+ * req/res it passes through really are Express's, so the cast is safe here.
+ */
+function expressHandler(
+  handler: (req: express.Request, res: express.Response) => void,
+): vhost.Handler {
+  return (req, res) => handler(req as unknown as express.Request, res as express.Response);
+}
+
 const app = express();
 
 app.set('trust proxy', true); // enable x-forwarded-for
@@ -50,32 +61,44 @@ switch (process.env.VHOST) {
       app.use(vhost('dim.gg', dimGgApp));
       // These are just redirects (for now?)
       app.use(
-        vhost('beta.dim.gg', (req, res) => {
-          // Instruct CF to cache for 15 minutes
-          res.set('Cache-Control', 'max-age=900');
-          res.redirect(`https://beta.destinyitemmanager.com${req.originalUrl}`);
-        }),
+        vhost(
+          'beta.dim.gg',
+          expressHandler((req, res) => {
+            // Instruct CF to cache for 15 minutes
+            res.set('Cache-Control', 'max-age=900');
+            res.redirect(301, `https://beta.destinyitemmanager.com${req.originalUrl}`);
+          }),
+        ),
       );
       app.use(
-        vhost('app.dim.gg', (req, res) => {
-          // Instruct CF to cache for 15 minutes
-          res.set('Cache-Control', 'max-age=900');
-          res.redirect(`https://app.destinyitemmanager.com${req.originalUrl}`);
-        }),
+        vhost(
+          'app.dim.gg',
+          expressHandler((req, res) => {
+            // Instruct CF to cache for 15 minutes
+            res.set('Cache-Control', 'max-age=900');
+            res.redirect(`https://app.destinyitemmanager.com${req.originalUrl}`);
+          }),
+        ),
       );
       app.use(
-        vhost('pr.dim.gg', (req, res) => {
-          // Instruct CF to cache for 15 minutes
-          res.set('Cache-Control', 'max-age=900');
-          res.redirect(`https://pr.destinyitemmanager.com${req.originalUrl}`);
-        }),
+        vhost(
+          'pr.dim.gg',
+          expressHandler((req, res) => {
+            // Instruct CF to cache for 15 minutes
+            res.set('Cache-Control', 'max-age=900');
+            res.redirect(`https://pr.destinyitemmanager.com${req.originalUrl}`);
+          }),
+        ),
       );
       app.use(
-        vhost('guide.dim.gg', (req, res) => {
-          // Instruct CF to cache for 15 minutes
-          res.set('Cache-Control', 'max-age=900');
-          res.redirect(`https://github.com/DestinyItemManager/DIM/wiki${req.originalUrl}`);
-        }),
+        vhost(
+          'guide.dim.gg',
+          expressHandler((req, res) => {
+            // Instruct CF to cache for 15 minutes
+            res.set('Cache-Control', 'max-age=900');
+            res.redirect(`https://github.com/DestinyItemManager/DIM/wiki${req.originalUrl}`);
+          }),
+        ),
       );
     }
     break;

@@ -22,7 +22,7 @@ app.get('/', (_req, res) => {
 });
 
 // Loadout share preview/landing pages
-app.get('/:shareId([a-z0-9]{7})/:titleSlug?', loadoutShareViewHandler);
+app.get('/:shareId{/:titleSlug}', loadoutShareViewHandler);
 
 // Serve static files (images, JS, etc from the dim-gg-static folder
 // TODO: uniquely name these and then serve them with Cache-Control: Immutable

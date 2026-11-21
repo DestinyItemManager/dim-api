@@ -5,8 +5,14 @@ import { loadLoadoutShare } from '../routes/loadout-share.js';
 /**
  * Save a loadout to be shared via a dim.gg link.
  */
-export const loadoutShareViewHandler = asyncHandler(async (req, res) => {
+export const loadoutShareViewHandler = asyncHandler(async (req, res, next) => {
   const { shareId } = req.params;
+  // Express 5 routes can't contain inline regexes, so validate the share ID
+  // here and fall through to other handlers (e.g. static files) if it doesn't match.
+  if (typeof shareId !== 'string' || !/^[a-z0-9]{7}$/.test(shareId)) {
+    next();
+    return;
+  }
 
   const loadout = await loadLoadoutShare(shareId);
 

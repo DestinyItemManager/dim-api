@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { closeDbPool, pool, readTransaction, transaction } from './index.js';
 
 beforeEach(async () => {
@@ -31,7 +32,7 @@ describe('transaction', () => {
         await client.query("insert into transaction_test (id, test) values (2, 'testing')");
         throw new Error('oops');
       });
-      fail('should have thrown an error');
+      throw new Error('should have thrown an error');
     } catch (e) {
       expect((e as Error).message).toBe('oops');
     }
