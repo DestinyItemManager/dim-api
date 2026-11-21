@@ -1,4 +1,4 @@
-import { DatabaseError } from 'pg-protocol';
+import { DatabaseError } from 'pg';
 import { v4 as uuid } from 'uuid';
 import { ApiApp } from '../shapes/app.js';
 import { getAllApps, getAppById, insertApp } from './apps-queries.js';
