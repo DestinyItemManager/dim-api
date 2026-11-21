@@ -1,6 +1,5 @@
 import { createTerminus } from '@godaddy/terminus';
 import * as Sentry from '@sentry/node';
-import * as Tracing from '@sentry/tracing';
 import express from 'express';
 import http from 'http';
 import morgan from 'morgan';
@@ -31,16 +30,6 @@ const app = express();
 app.set('trust proxy', true); // enable x-forwarded-for
 app.set('x-powered-by', false);
 
-// The request handler must be the first middleware on the app
-app.use(
-  Sentry.Handlers.requestHandler({
-    user: ['bungieMembershipId'],
-  }),
-);
-// TracingHandler creates a trace for every incoming request
-app.use(Sentry.Handlers.tracingHandler());
-// The error handler must be before any other error middleware
-app.use(Sentry.Handlers.errorHandler());
 app.use(morgan('combined')); // logging
 
 // In dev, edit .env to serve only one vhost
@@ -104,26 +93,9 @@ switch (process.env.VHOST) {
     break;
 }
 
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    release: process.env.COMMITHASH,
-    integrations: [
-      // enable HTTP calls tracing
-      new Sentry.Integrations.Http({ tracing: true }),
-      // enable Express.js middleware tracing
-      new Tracing.Integrations.Express({
-        // to trace all requests to the default router
-        app,
-        // alternatively, you can specify the routes you want to trace:
-        // router: someRouter,
-      }),
-      new Tracing.Integrations.Postgres(),
-    ],
-    tracesSampleRate: 0.001,
-    maxValueLength: 10_000,
-  });
-}
+// Sentry is initialized in instrument.ts, loaded via `node --import`.
+// The error handler must be registered after all routes.
+Sentry.setupExpressErrorHandler(app);
 
 const server = http.createServer(app);
 
