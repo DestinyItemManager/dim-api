@@ -99,7 +99,7 @@ app.post('/auth/token', authTokenHandler);
 /* Any routes declared below this will require an auth token */
 
 app.all(
-  '*',
+  '*everything',
   jwt({
     secret: process.env.JWT_SECRET!,
     requestProperty: 'jwt',
