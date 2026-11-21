@@ -83,7 +83,7 @@ async function expectAppInDatabase(
     'SELECT * FROM apps WHERE id = $1',
     [appId],
   );
-  expect(result.rows.length).toBe(1);
+  expect(result.rows).toHaveLength(1);
   expect(result.rows[0].bungie_api_key).toBe(expectedData.bungieApiKey);
   expect(result.rows[0].origin).toBe(expectedData.origin);
 }

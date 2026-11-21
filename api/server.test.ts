@@ -111,8 +111,8 @@ describe('import/export', () => {
       'name',
     ]);
 
-    expect(exportResponse.loadouts.length).toBe(37);
-    expect(exportResponse.tags.length).toBe(592);
+    expect(exportResponse.loadouts).toHaveLength(37);
+    expect(exportResponse.tags).toHaveLength(592);
   });
 
   // TODO: other import formats, validation
@@ -139,11 +139,11 @@ describe('profile', () => {
       'typeName',
       'name',
     ]);
-    expect(profileResponse.loadouts!.length).toBe(19);
-    expect(profileResponse.tags!.length).toBe(592);
-    expect(profileResponse.triumphs!.length).toBe(30);
-    expect(profileResponse.searches!.length).toBe(208);
-    expect(profileResponse.itemHashTags!.length).toBe(71);
+    expect(profileResponse.loadouts!).toHaveLength(19);
+    expect(profileResponse.tags!).toHaveLength(592);
+    expect(profileResponse.triumphs!).toHaveLength(30);
+    expect(profileResponse.searches!).toHaveLength(208);
+    expect(profileResponse.itemHashTags!).toHaveLength(71);
     expect(profileResponse.syncToken).toBeDefined();
   });
 
@@ -164,8 +164,8 @@ describe('profile', () => {
       'typeName',
       'name',
     ]);
-    expect(profileResponse.tags!.length).toBe(592);
-    expect(profileResponse.loadouts!.length).toBe(19);
+    expect(profileResponse.tags!).toHaveLength(592);
+    expect(profileResponse.loadouts!).toHaveLength(19);
     expect(profileResponse.sync).toBe(false);
 
     await delay(15);
@@ -206,9 +206,11 @@ describe('profile', () => {
     expect(profileSyncResponse.syncToken).toContain('"s":');
     expect(profileSyncResponse.sync).toBe(true);
     expect(profileSyncResponse.settings?.showNewItems).toBe(true);
-    expect(profileSyncResponse.tags?.length).toBe(1);
+    expect(profileSyncResponse.tags).toBeDefined();
+    expect(profileSyncResponse.tags).toHaveLength(1);
     expect(profileSyncResponse.tags?.[0].id).toBe('1234');
-    expect(profileSyncResponse.deletedLoadoutIds?.length).toBe(1);
+    expect(profileSyncResponse.deletedLoadoutIds).toBeDefined();
+    expect(profileSyncResponse.deletedLoadoutIds).toHaveLength(1);
 
     const request2: ProfileUpdateRequest = {
       platformMembershipId,
@@ -269,7 +271,7 @@ describe('profile', () => {
       .json()) as ProfileResponse;
 
     expect(profileResponse.settings).toBeUndefined();
-    expect(profileResponse.loadouts!.length).toBe(19);
+    expect(profileResponse.loadouts!).toHaveLength(19);
     expect(profileResponse.tags).toBeUndefined();
   });
 
@@ -288,9 +290,9 @@ describe('profile', () => {
     // Now re-export and make sure it's all gone
     const exportResponse = (await getRequestAuthed('/export').expect(200).json()) as ExportResponse;
 
-    expect(Object.keys(exportResponse.settings).length).toBe(0);
-    expect(exportResponse.loadouts.length).toBe(0);
-    expect(exportResponse.tags.length).toBe(0);
+    expect(Object.keys(exportResponse.settings)).toHaveLength(0);
+    expect(exportResponse.loadouts).toHaveLength(0);
+    expect(exportResponse.tags).toHaveLength(0);
   });
 });
 
@@ -378,7 +380,7 @@ describe('loadouts', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.loadouts?.length).toBe(1);
+    expect(profileResponse.loadouts).toHaveLength(1);
     const resultLoadout = profileResponse.loadouts![0];
     expect(resultLoadout.id).toBe(loadout.id);
     expect(resultLoadout.name).toBe(loadout.name);
@@ -431,7 +433,7 @@ describe('loadouts', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.loadouts?.length).toBe(1);
+    expect(profileResponse.loadouts).toHaveLength(1);
     expect(profileResponse.loadouts![0].name).toBe('Updated Name');
   });
 
@@ -478,7 +480,7 @@ describe('loadouts', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.loadouts?.length).toBe(0);
+    expect(profileResponse.loadouts).toHaveLength(0);
   });
 });
 
@@ -513,7 +515,7 @@ describe('tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.tags?.length).toBe(1);
+    expect(profileResponse.tags).toHaveLength(1);
     const resultTag = profileResponse.tags![0];
     expect(resultTag).toEqual({
       id: '1234',
@@ -571,7 +573,7 @@ describe('tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.tags?.length).toBe(1);
+    expect(profileResponse.tags).toHaveLength(1);
     const resultTag = profileResponse.tags![0];
     expect(resultTag).toEqual({
       id: '12345',
@@ -607,7 +609,7 @@ describe('tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse2.tags?.length).toBe(1);
+    expect(profileResponse2.tags).toHaveLength(1);
     const resultTag2 = profileResponse2.tags![0];
     expect(resultTag2).toEqual({
       id: '12345',
@@ -666,7 +668,7 @@ describe('tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.tags?.length).toBe(0);
+    expect(profileResponse.tags).toHaveLength(0);
   });
 
   it('can clear tags', async () => {
@@ -725,7 +727,7 @@ describe('tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.tags?.length).toBe(0);
+    expect(profileResponse.tags).toHaveLength(0);
   });
 });
 
@@ -760,7 +762,7 @@ describe('item hash tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.itemHashTags?.length).toBe(1);
+    expect(profileResponse.itemHashTags).toHaveLength(1);
     const resultTag = profileResponse.itemHashTags![0];
     expect(resultTag).toEqual({
       hash: 1234,
@@ -818,7 +820,7 @@ describe('item hash tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.itemHashTags?.length).toBe(1);
+    expect(profileResponse.itemHashTags).toHaveLength(1);
     const resultTag = profileResponse.itemHashTags![0];
     expect(resultTag).toEqual({
       hash: 1234,
@@ -854,7 +856,7 @@ describe('item hash tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse2.itemHashTags?.length).toBe(1);
+    expect(profileResponse2.itemHashTags).toHaveLength(1);
     const resultTag2 = profileResponse2.itemHashTags![0];
     expect(resultTag2).toEqual({
       hash: 1234,
@@ -913,7 +915,7 @@ describe('item hash tags', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.tags?.length).toBe(0);
+    expect(profileResponse.tags).toHaveLength(0);
   });
 });
 
@@ -948,7 +950,7 @@ describe('triumphs', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.triumphs?.length).toBe(1);
+    expect(profileResponse.triumphs).toHaveLength(1);
     expect(profileResponse.triumphs!).toEqual([1234]);
   });
 
@@ -1002,7 +1004,7 @@ describe('triumphs', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.triumphs?.length).toBe(0);
+    expect(profileResponse.triumphs).toHaveLength(0);
   });
 
   it('can set the same state twice', async () => {
@@ -1053,7 +1055,7 @@ describe('triumphs', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.triumphs?.length).toBe(1);
+    expect(profileResponse.triumphs).toHaveLength(1);
     expect(profileResponse.triumphs!).toEqual([1234]);
   });
 });
@@ -1089,7 +1091,7 @@ describe('searches', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)).toHaveLength(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].usageCount).toBe(1);
   });
@@ -1130,7 +1132,7 @@ describe('searches', () => {
       .expect(200)
       .json()) as ProfileResponse;
 
-    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)?.length).toBe(1);
+    expect(profileResponse.searches?.filter((s) => s.usageCount > 0)).toHaveLength(1);
     expect(profileResponse.searches![0].query).toBe('tag:favorite');
     expect(profileResponse.searches![0].saved).toBe(true);
     expect(profileResponse.searches![0].usageCount).toBe(1);

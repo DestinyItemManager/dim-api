@@ -150,7 +150,7 @@ it('can delete a search', async () => {
     const searches = (await getSearchesForProfile(client, platformMembershipId, 2)).filter(
       (s) => s.usageCount > 0,
     );
-    expect(searches.length).toBe(0);
+    expect(searches).toHaveLength(0);
   });
 });
 
@@ -210,14 +210,14 @@ it('can soft delete all searches', async () => {
     );
 
     const searches = await getSearchesForProfile(client, platformMembershipId, 2);
-    expect(searches.length).toBe(1);
+    expect(searches).toHaveLength(1);
 
     // Soft delete all searches
     await softDeleteAllSearches(client, platformMembershipId, 2);
 
     // Verify searches are soft deleted (usageCount = 0)
     const searchesAfter = await getSearchesForProfile(client, platformMembershipId, 2);
-    expect(searchesAfter.length).toBe(0);
+    expect(searchesAfter).toHaveLength(0);
 
     // Now re-use the same search - this should succeed and not create a duplicate
     await updateUsedSearch(
@@ -230,7 +230,7 @@ it('can soft delete all searches', async () => {
     );
 
     const searchesAfter2 = await getSearchesForProfile(client, platformMembershipId, 2);
-    expect(searchesAfter2.length).toBe(1);
+    expect(searchesAfter2).toHaveLength(1);
     expect(searchesAfter2[0].query).toBe('is:weapon');
     expect(searchesAfter2[0].usageCount).toBe(1);
   });

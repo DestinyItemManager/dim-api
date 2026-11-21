@@ -57,7 +57,7 @@ it('handles soft delete correctly', async () => {
     await softDeleteAllTrackedTriumphs(client, platformMembershipId);
 
     const triumphs = await getTrackedTriumphsForProfile(client, platformMembershipId);
-    expect(triumphs.length).toBe(0);
+    expect(triumphs).toHaveLength(0);
 
     // Now re-track the same triumph - this should succeed and not create a duplicate
     await trackTriumph(client, bungieMembershipId, platformMembershipId, 3851137658);

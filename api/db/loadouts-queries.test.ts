@@ -52,14 +52,14 @@ it('can record a loadout', async () => {
 
     const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
-    expect(loadouts.length).toBe(1);
+    expect(loadouts).toHaveLength(1);
 
     const firstLoadout = loadouts[0];
     expect(firstLoadout.createdAt).toBeDefined();
     delete firstLoadout.createdAt;
     expect(firstLoadout.lastUpdatedAt).toBeDefined();
     delete firstLoadout.lastUpdatedAt;
-    expect(firstLoadout.unequipped.length).toBe(1);
+    expect(firstLoadout.unequipped).toHaveLength(1);
     expect((firstLoadout.unequipped[0] as { fizbuzz?: number }).fizbuzz).toBeUndefined();
     (firstLoadout.unequipped[0] as { fizbuzz?: number }).fizbuzz = 11;
     expect(firstLoadout).toEqual(loadout);
@@ -78,9 +78,9 @@ it('can update a loadout', async () => {
 
     const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
-    expect(loadouts.length).toBe(1);
+    expect(loadouts).toHaveLength(1);
     expect(loadouts[0].name).toEqual('Updated');
-    expect(loadouts[0].unequipped.length).toBe(0);
+    expect(loadouts[0].unequipped).toHaveLength(0);
     expect(loadouts[0].equipped).toEqual(loadout.equipped);
   });
 });
@@ -94,7 +94,7 @@ it('can delete a loadout', async () => {
 
     const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
 
-    expect(loadouts.length).toBe(0);
+    expect(loadouts).toHaveLength(0);
   });
 });
 
@@ -102,17 +102,17 @@ it('can soft-delete all loadouts for a platform and destiny version', async () =
   await transaction(async (client) => {
     await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
     const loadouts = await getLoadoutsForProfile(client, platformMembershipId, 2);
-    expect(loadouts.length).toBe(1);
+    expect(loadouts).toHaveLength(1);
 
     await softDeleteAllLoadouts(client, platformMembershipId, 2);
 
     // D2 loadouts should be gone
     const loadoutsDeleted = await getLoadoutsForProfile(client, platformMembershipId, 2);
-    expect(loadoutsDeleted.length).toBe(0);
+    expect(loadoutsDeleted).toHaveLength(0);
 
     // Recreate the loadout
     await updateLoadout(client, bungieMembershipId, platformMembershipId, 2, loadout);
     const loadoutsAfter = await getLoadoutsForProfile(client, platformMembershipId, 2);
-    expect(loadoutsAfter.length).toBe(1);
+    expect(loadoutsAfter).toHaveLength(1);
   });
 });

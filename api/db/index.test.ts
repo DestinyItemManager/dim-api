@@ -37,7 +37,7 @@ describe('transaction', () => {
     }
 
     const result = await pool.query<TransactionTestRow>('select * from transaction_test');
-    expect(result.rows.length).toBe(1);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0].id).toBe(1);
   });
 
@@ -47,7 +47,7 @@ describe('transaction', () => {
     });
 
     const result = await pool.query<TransactionTestRow>('select * from transaction_test');
-    expect(result.rows.length).toBe(1);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0].test).toBe('testing commits');
   });
 });
