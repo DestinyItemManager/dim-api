@@ -26,10 +26,10 @@
     "dim-api-types:build": "./build-dim-api-types.sh"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.13",
-    "@babel/plugin-transform-class-properties": "^7.29.7",
-    "@babel/plugin-transform-object-rest-spread": "^7.29.7",
-    "@babel/preset-env": "^7.29.14",
+    "@babel/core": "^8.1.3",
+    "@babel/plugin-transform-class-properties": "^8.0.1",
+    "@babel/plugin-transform-object-rest-spread": "^8.0.1",
+    "@babel/preset-env": "^8.0.7",
     "@babel/preset-typescript": "^7.29.7",
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
