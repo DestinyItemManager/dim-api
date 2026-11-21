@@ -48,7 +48,7 @@
     "@types/vhost": "3.0.7",
     "@typescript-eslint/eslint-plugin": "^8.73.0",
     "@typescript-eslint/parser": "^8.73.0",
-    "db-migrate": "^0.11.14",
+    "db-migrate": "^1.9.0",
     "db-migrate-pg": "^1.7.1",
     "eslint": "^10.15.0",
     "eslint-plugin-regexp": "^3.3.3",
