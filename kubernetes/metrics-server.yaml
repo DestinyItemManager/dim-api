@@ -1,3 +1,5 @@
+# Upstream metrics-server v0.9.1, unmodified. DOKS doesn't provide one, and the HPA needs it.
+# To upgrade: curl -L -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/download/<version>/components.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -104,7 +106,8 @@ metadata:
   namespace: kube-system
 spec:
   ports:
-  - name: https
+  - appProtocol: https
+    name: https
     port: 443
     protocol: TCP
     targetPort: https
@@ -133,11 +136,11 @@ spec:
       containers:
       - args:
         - --cert-dir=/tmp
-        - --secure-port=4443
-        - --kubelet-preferred-address-types=InternalIP
+        - --secure-port=10250
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
         - --kubelet-use-node-status-port
         - --metric-resolution=15s
-        image: k8s.gcr.io/metrics-server/metrics-server:v0.6.1
+        image: registry.k8s.io/metrics-server/metrics-server:v0.9.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -148,7 +151,7 @@ spec:
           periodSeconds: 10
         name: metrics-server
         ports:
-        - containerPort: 4443
+        - containerPort: 10250
           name: https
           protocol: TCP
         readinessProbe:
@@ -165,9 +168,14 @@ spec:
             memory: 200Mi
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /tmp
           name: tmp-dir

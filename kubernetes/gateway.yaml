@@ -1,0 +1,117 @@
+# Gateway API routing for all public hostnames, served by the DOKS-managed
+# Cilium Gateway controller (no ingress controller or cert-manager to maintain).
+#
+# Requires a VPC-native DOKS cluster on Kubernetes 1.33+, where the `cilium`
+# GatewayClass is installed and managed by DigitalOcean. Check with:
+#   kubectl get gatewayclass cilium   # ACCEPTED must be True
+#
+# This single Gateway provisions a single DigitalOcean Load Balancer. All hostnames
+# share it; adding a hostname means adding it to an HTTPRoute (and a listener,
+# if it's in a new zone), never a new load balancer.
+#
+# TLS: every hostname is proxied through Cloudflare, which serves the public
+# certificate. The origin (this Gateway) uses long-lived Cloudflare Origin CA
+# certificates stored as Secrets, so nothing needs renewing. See README.md.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: dim-gateway
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    # Applied to the LoadBalancer Service that Cilium creates. Max 8 annotations.
+    annotations:
+      service.beta.kubernetes.io/do-loadbalancer-name: 'dim-gateway'
+      service.beta.kubernetes.io/do-loadbalancer-type: 'REGIONAL'
+      service.beta.kubernetes.io/do-loadbalancer-size-unit: '2'
+      # Pass TLS through to Cilium's Envoy, which terminates it with the Secrets below
+      service.beta.kubernetes.io/do-loadbalancer-tls-passthrough: 'true'
+  listeners:
+    - name: https-dim-gg
+      protocol: HTTPS
+      port: 443
+      hostname: 'dim.gg'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dim-gg-origin-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https-dim-gg-subdomains
+      protocol: HTTPS
+      port: 443
+      hostname: '*.dim.gg'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dim-gg-origin-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https-destinyitemmanager
+      protocol: HTTPS
+      port: 443
+      hostname: '*.destinyitemmanager.com'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: destinyitemmanager-origin-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+# Everything served by the dim-api pods. The app picks the behavior per hostname
+# itself (see api/index.ts), so these all go to the same backend.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dim-api
+spec:
+  parentRefs:
+    - name: dim-gateway
+  hostnames:
+    - api.destinyitemmanager.com
+    - dim.gg
+    - app.dim.gg
+    - beta.dim.gg
+    - pr.dim.gg
+    - guide.dim.gg
+  rules:
+    - backendRefs:
+        - name: dim-api
+          port: 80
+---
+# Replaces nginx's from-to-www-redirect annotation.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: www-dim-gg-redirect
+spec:
+  parentRefs:
+    - name: dim-gateway
+  hostnames:
+    - www.dim.gg
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            hostname: dim.gg
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+spec:
+  parentRefs:
+    - name: dim-gateway
+  hostnames:
+    - grafana.destinyitemmanager.com
+  rules:
+    - backendRefs:
+        - name: grafana
+          port: 80

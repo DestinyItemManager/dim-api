@@ -22,6 +22,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: graphite-storage-claim
 spec:
+  storageClassName: do-block-storage-retain
   accessModes:
     - ReadWriteOnce
   resources:

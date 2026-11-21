@@ -40,6 +40,16 @@ spec:
         'cluster-autoscaler.kubernetes.io/safe-to-evict': 'true'
         kubernetes.io/change-cause: $COMMITHASH
     spec:
+      # Prefer spreading pods evenly across nodes so one node failure doesn't take
+      # out most of the API. ScheduleAnyway keeps this a soft preference, so it
+      # never blocks scheduling or cluster-autoscaler scale-down.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: dim-api
       containers:
         - name: dim-api
           image: destinyitemmanager/dim-api:$COMMITHASH
